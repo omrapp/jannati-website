@@ -84,28 +84,43 @@ membership, with RLS public-read and staff-write-later, plus the indexes the sto
 
 ---
 
-## Task 1.3: Extractor script
+## Task 1.3: Extractor script ✅
 
 **Description:** Parse the darbeauty scrape into `data/catalog.json` — brands, categories, products,
 variants, image references and category membership. Read-only against `darbeauty.com/`, no database.
 
 **Acceptance criteria:**
 
-- [ ] Brands come from `pages/brands.html` (~104); every other collection is treated as a category
-- [ ] Each product carries handle, Arabic name and description, brand, tags, type, and its variants with sku, OMR price in minor units and image references
-- [ ] Category membership resolved from collection pages including their `?page=N` continuations
-- [ ] Products that fail to parse are reported individually with a reason; the run does not abort
-- [ ] Coverage summary printed at the end: products parsed, skipped, and why
+- [x] Brands come from `pages/brands.html` (55 brand cards); every other collection is treated as a category
+- [x] Each product carries handle, Arabic name and description, brand, tags, type, and its variants with sku, OMR price in minor units and image references
+- [x] Category membership resolved from collection pages including their `?page=N` continuations
+- [x] Products that fail to parse are reported individually with a reason; the run does not abort
+- [x] Coverage summary printed at the end: products parsed, skipped, and why
 
 **Verification:**
 
-- [ ] `npm run seed:extract` produces `data/catalog.json` with ≥95% of the 1049 products
-- [ ] `npm run test` — extractor unit tests against 2–3 checked-in fixture pages (including one outlier)
-- [ ] Spot-check: `abib-hand-creme-type-g` has price 6400 minor units, brand Abib, sku Z0301
+- [x] `npm run seed:extract` produces `data/catalog.json` — 1025/1025 products, 0 failures
+- [x] `npm run test` — 34 tests over 6 checked-in fixture pages plus malformed-payload cases
+- [x] Spot-check: `abib-hand-creme-type-g` has price 6400 minor units, brand Abib, sku Z0301
 
 **Dependencies:** None (needs no database)
-**Files:** `scripts/seed/extract.ts`, `scripts/seed/parse-product.ts`, `tests/extract.test.ts`, `tests/fixtures/*`
+**Files:** `scripts/seed/{extract,parse-product,parse-collection,slug,types}.ts`, `tests/extract.test.ts`, `tests/fixtures/*`
 **Scope:** M
+
+**Implementation notes:**
+
+- The product count is **1025**, not 1049 — 24 `.oembed` files inflated the earlier directory count.
+  There are 108 distinct collections (not 373; the rest are `?page=N` continuations) and 55 brand cards.
+- Data comes from the **inline Shopify product object**, not the JSON-LD: it carries variants, sku,
+  barcode, `compare_at_price`, stock and images in one payload. Two themes embed it differently, so it
+  is located by a marker field and decoded by walking braces.
+- Shopify serialises money at **two decimals regardless of currency** (6.400 OMR → `640`), so prices are
+  multiplied by 10 to reach baisa. A non-numeric price fails the page rather than becoming `NaN` → `null`.
+- Brands are anchors with `class="vendor-logo"`; matching on `/collections/` alone misfiled categories as
+  brands. Only 55 have a card, so the remaining products get a brand slugged from their `vendor` field —
+  147 brands total, 0 products left brandless.
+- Outstanding gaps for later tasks: **36 products in no category** and **958 needing English copy** (task 1.5).
+- `data/` is gitignored — `catalog.json` (6MB) is regenerated with `npm run seed:extract`.
 
 ---
 
