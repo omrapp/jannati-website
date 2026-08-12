@@ -10,5 +10,11 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts'],
+    // `src/lib/env` validates at import time. Unit tests never reach Supabase,
+    // but they do import modules that read these, so give them stand-ins.
+    env: {
+      NEXT_PUBLIC_SUPABASE_URL: 'https://test.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
+    },
   },
 });
