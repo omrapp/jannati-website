@@ -1,0 +1,41 @@
+<!doctype html>
+<!--
+  The other theme shape: the product JSON is wrapped in
+  `JSON.parse(JSON.stringify( ... ))`, JSON-LD is a ProductGroup rather than a
+  Product, and the product is out of stock with a compare-at price.
+-->
+<html lang="ar" dir="rtl">
+  <head>
+    <script type="application/ld+json">
+      {
+        "@context": "http://schema.org/",
+        "@type": "ProductGroup",
+        "brand": { "@type": "Brand", "name": "LOLLIS" },
+        "category": "Foundations & Concealers",
+        "description": "كريم أساس",
+        "name": "كريم أساس تغطية ناعمة من لوليس",
+        "hasVariant": [
+          {
+            "@type": "Product",
+            "sku": "NON0101937",
+            "offers": {
+              "@type": "Offer",
+              "availability": "http://schema.org/OutOfStock",
+              "price": "3.360",
+              "priceCurrency": "OMR"
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <script>
+      class ProductNotifier {
+        constructor() {
+          this.product = JSON.parse(JSON.stringify({"id":6722952855632,"title":"كريم أساس تغطية ناعمة من لوليس","handle":"lollis-soft-over-cover-foundation","description":"<p>تغطية ناعمة<\/p>","published_at":"2022-07-30T13:07:28+04:00","created_at":"2022-07-30T12:00:00+04:00","vendor":"LOLLIS","type":"كريم اساس","tags":["foundation","lollis","الفئة_مكياج","الماركة_lollis"],"price":336,"price_min":336,"price_max":336,"available":false,"price_varies":false,"compare_at_price":500,"variants":[{"id":39835226144848,"title":"MP01","option1":"MP01","sku":"NON0101937","featured_image":{"src":"\/\/darbeauty.com\/cdn\/shop\/products\/LollisMP01-DarBeauty.jpg?v=1659172891"},"available":false,"name":"كريم أساس تغطية ناعمة من لوليس - MP01","public_title":"MP01","options":["MP01"],"price":336,"compare_at_price":500,"barcode":"8681546109710"},{"id":39835226177616,"title":"MP02","option1":"MP02","sku":"NON0205836","featured_image":null,"available":true,"name":"كريم أساس تغطية ناعمة من لوليس - MP02","public_title":"MP02","options":["MP02"],"price":336,"compare_at_price":null,"barcode":"8681546109727"}],"images":["\/\/darbeauty.com\/cdn\/shop\/products\/LollisSoftOverCoverFoundation-DarBeauty.jpg?v=1659172891"],"featured_image":"\/\/darbeauty.com\/cdn\/shop\/products\/LollisSoftOverCoverFoundation-DarBeauty.jpg?v=1659172891","options":["اللون"],"media":[],"content":"<p>تغطية ناعمة<\/p>"}));
+        }
+      }
+    </script>
+  </body>
+</html>
