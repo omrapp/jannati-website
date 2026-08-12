@@ -1,0 +1,64 @@
+{
+  "brand": {
+    "name": "Jannati",
+    "tagline": "The World of Beauty in One Place"
+  },
+  "nav": {
+    "home": "Home",
+    "products": "Products",
+    "brands": "Brands",
+    "newArrivals": "New Arrivals",
+    "bestSellers": "Best Sellers",
+    "offers": "Offers",
+    "about": "About Us",
+    "contact": "Contact Us",
+    "faq": "FAQ",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "common": {
+    "search": "Search for a product or brand",
+    "cart": "Cart",
+    "account": "Account",
+    "wishlist": "Wishlist",
+    "loading": "Loading…",
+    "comingSoon": "Coming soon"
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "locale": {
+    "language": "Language",
+    "country": "Country",
+    "arabic": "العربية",
+    "english": "English"
+  },
+  "country": {
+    "om": "Oman",
+    "ae": "United Arab Emirates",
+    "sa": "Saudi Arabia",
+    "kw": "Kuwait",
+    "qa": "Qatar",
+    "bh": "Bahrain"
+  },
+  "home": {
+    "heroTitle": "Your beauty starts here",
+    "heroSubtitle": "Over 15 years of expertise in beauty and skincare, from Muscat to the Gulf.",
+    "shopNow": "Shop now",
+    "exploreBrands": "Explore brands"
+  },
+  "footer": {
+    "shop": "Shop",
+    "help": "Help",
+    "about": "About Jannati",
+    "shipping": "Shipping Policy",
+    "privacy": "Privacy Policy",
+    "terms": "Terms & Conditions",
+    "returns": "Returns & Exchanges",
+    "payments": "Payment methods",
+    "rights": "All rights reserved."
+  }
+}
