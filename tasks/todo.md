@@ -149,28 +149,43 @@ variants, image references and category membership. Read-only against `darbeauty
 
 ---
 
-## Task 1.4: Image uploader
+## Task 1.4: Image uploader ⚠️ written and dry-run verified, upload pending keys
 
 **Description:** Upload local product imagery to Supabase Storage, keeping only the widest copy of each
 photo, and record storage paths back into the catalog data.
 
 **Acceptance criteria:**
 
-- [ ] Widest `width=N` copy chosen per base filename; narrower duplicates skipped
-- [ ] Uploaded to a public `product-images` bucket under a stable path derived from the product handle
-- [ ] Re-running skips files already uploaded (idempotent) and reports total bytes stored
-- [ ] `--dry-run` reports what would upload and the projected total size without transferring anything
-- [ ] `data/catalog.json` updated with storage paths, not darbeauty URLs
+- [x] Widest `width=N` copy chosen per base filename; narrower duplicates skipped
+- [x] Uploaded to a public `product-images` bucket under a stable path derived from the product handle
+- [x] Re-running skips files already uploaded (idempotent) and reports total bytes stored
+- [x] `--dry-run` reports what would upload and the projected total size without transferring anything
+- [x] `data/catalog.json` updated with storage paths, not darbeauty URLs
 
 **Verification:**
 
-- [ ] `npm run seed:images -- --dry-run` size projection reviewed against the project's storage quota **before** the real run
-- [ ] `npm run seed:images` completes and prints total storage used
-- [ ] A sampled image loads over its public Storage URL
+- [x] `npm run test` — 8 unit tests over rendition picking, key derivation and the plan
+- [x] `npm run seed:images -- --dry-run` over the real scrape: **1134 images, 82.5 MB projected**, well
+      inside the Supabase free tier's 1 GB
+- [ ] `npm run seed:images` completes and prints total storage used — **blocked on Supabase keys**
+- [ ] A sampled image loads over its public Storage URL — **blocked on Supabase keys**
 
-**Dependencies:** 1.3, Supabase project linked
-**Files:** `scripts/seed/images.ts`, `supabase/migrations/*_storage_buckets.sql`
+**Dependencies:** 1.3, Supabase project linked — for the upload itself only
+**Files:** `scripts/seed/images.ts`, `scripts/seed/image-plan.ts`, `tests/image-plan.test.ts`,
+`supabase/migrations/20260812000003_storage_buckets.sql`
 **Scope:** M
+
+**Implementation notes:**
+
+- **The scrape is missing 2703 of the 3837 referenced photos.** It mirrored 1261 distinct images; the
+  extra gallery shots (`…_02.webp` … `…_07.webp`) were lazy-loaded and never fetched. Every one of the
+  1025 products still has at least one image, so nothing ships pictureless — but most will show a single
+  photo until better assets arrive. Worth pairing with the standing recommendation to replace darbeauty's
+  photography with brand-supplied imagery before launch.
+- Keys are `<handle>/<NN>-<filename>`, derived per product rather than per source file, so two products
+  sharing a photo each own their copy and removing one cannot blank the other.
+- The bucket migration cannot be checked against the local throwaway cluster — `storage.buckets` only
+  exists on a real Supabase project — so it is the one piece of SQL that reaches the project unverified.
 
 ---
 

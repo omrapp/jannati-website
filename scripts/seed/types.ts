@@ -28,6 +28,8 @@ export type ParsedImage = {
   /** Which `cdn/shop/<folder>` directory holds it. */
   folder: 'files' | 'products';
   position: number;
+  /** Key in the Storage bucket, written by `npm run seed:images`. */
+  storagePath?: string | null;
 };
 
 export type ParsedProduct = {
