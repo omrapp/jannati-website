@@ -131,7 +131,11 @@ export async function listProducts(options: ListProductsOptions): Promise<Page<P
   };
 }
 
-export async function getProductByHandle(
+/**
+ * Cached for the render: a product page asks once for its metadata and again
+ * for its body, and this is the heaviest join in the catalog.
+ */
+export const getProductByHandle = cache(async function getProductByHandle(
   handle: string,
   locale: Locale,
 ): Promise<ProductDetail | null> {
@@ -147,7 +151,7 @@ export async function getProductByHandle(
   if (!data) return null;
 
   return toProductDetail(data as unknown as ProductJoin, country, locale);
-}
+});
 
 export async function listBrands(locale: Locale): Promise<BrandSummary[]> {
   const supabase = await createClient();
