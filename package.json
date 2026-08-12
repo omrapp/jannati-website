@@ -14,8 +14,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "seed:extract": "node --experimental-strip-types scripts/seed/extract.ts",
-    "seed:images": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/seed/images.ts",
-    "db:link": "supabase link --project-ref $SUPABASE_PROJECT_REF",
+    "seed:images": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --experimental-strip-types scripts/seed/images.ts",
+    "db:link": "supabase link --project-ref $(node --env-file-if-exists=.env --env-file-if-exists=.env.local -p 'process.env.SUPABASE_PROJECT_REF')",
     "db:push": "supabase db push --linked",
     "db:pull": "supabase db pull --linked",
     "db:types": "supabase gen types typescript --linked > src/lib/supabase/types.ts"
