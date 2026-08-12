@@ -349,14 +349,18 @@ structured data for search engines.
 
 **Acceptance criteria:**
 
-- [ ] `/brands` lists every brand with its logo or name, grouped alphabetically in both scripts
-- [ ] `/brands/[slug]` reuses the product grid from 1.8
-- [ ] Brand names render in the active language
+- [x] `/brands` lists every brand with its logo or name, grouped alphabetically in both scripts —
+      `groupBrandsByInitial` collates with `Intl.Collator` in the active language, folds hamza/alef
+      variants together, and files digits and symbols under `#` last
+- [x] `/brands/[slug]` reuses the product grid from 1.8
+- [x] Brand names render in the active language
 
 **Verification:**
 
-- [ ] E2E: `/ar-om/brands` lists brands and one links through to its products
-- [ ] `npm run build` succeeds
+- [ ] E2E: `/ar-om/brands` lists brands and one links through to its products — blocked until the
+      database is seeded
+- [x] `npm run build` succeeds
+- [x] `groupBrandsByInitial` unit tested (6 cases); 103 tests green
 
 **Dependencies:** 1.7, 1.8
 **Files:** `src/app/[locale]/brands/page.tsx`, `src/app/[locale]/brands/[slug]/page.tsx`
