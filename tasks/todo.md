@@ -259,20 +259,23 @@ list brands and categories — with country pricing applied on the way out.
 
 **Acceptance criteria:**
 
-- [ ] `listProducts`, `getProductByHandle`, `listBrands`, `listCategories` return language-resolved fields for the active locale
-- [ ] Prices come back already converted and formatted for the active country via 1.1
-- [ ] Pagination and total counts supported; no unbounded catalog queries
-- [ ] No query returns more columns than the caller renders
+- [x] `listProducts`, `getProductByHandle`, `listBrands`, `listCategories` return language-resolved fields for the active locale
+- [x] Prices come back already converted and formatted for the active country via 1.1
+- [x] Pagination and total counts supported; no unbounded catalog queries
+- [x] No query returns more columns than the caller renders
 
 **Verification:**
 
-- [ ] `npm run test` — unit tests for the locale and price mapping with a stubbed client
-- [ ] A server component renders a product name and price from the real database
-- [ ] `npm run typecheck` against generated DB types
+- [x] `npm run test` — 16 unit tests over the locale fallback and the price mapping
+- [ ] A server component renders a product name and price from the real database — blocked, no database yet
+- [x] `npm run typecheck`, `npm run lint`, `npm run build`
 
 **Dependencies:** 1.1, 1.2, 1.6
 **Files:** `src/lib/catalog/queries.ts`, `src/lib/catalog/mappers.ts`, `tests/catalog-mappers.test.ts`
 **Scope:** M
+
+**Status:** written and unit tested ⚠️ unverified against a live database.
+English falls back to Arabic, so the layer works before the translation pass.
 
 ---
 
