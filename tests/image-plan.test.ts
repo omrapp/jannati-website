@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { planUploads, storagePath, widestCopy } from '../scripts/seed/image-plan';
+import { planUploads, storageFolder, storagePath, widestCopy } from '../scripts/seed/image-plan';
 import type { ParsedProduct } from '../scripts/seed/types';
 
 /** The scrape keeps every rendition as its own query-suffixed filename. */
@@ -56,6 +56,31 @@ describe('storagePath', () => {
 
   it('strips characters that would need escaping in a storage key', () => {
     expect(storagePath('x', 1, 'a b&c(1).JPG')).toBe('x/01-a-b-c-1.jpg');
+  });
+
+  it('leaves an already-ascii handle untouched, so earlier uploads keep their keys', () => {
+    expect(storageFolder('abib-hand-creme-type-g')).toBe('abib-hand-creme-type-g');
+  });
+
+  it('folds a handle Storage would reject to ascii and keeps it unique with a hash', () => {
+    const folder = storageFolder('centellian24-360º-shot-pdrn-glowing-eye-patch');
+
+    expect(folder).toMatch(/^centellian24-360-shot-pdrn-glowing-eye-patch-[0-9a-f]{8}$/);
+  });
+
+  it('still produces a key for a handle with no ascii left in it', () => {
+    expect(storageFolder('إسنس-نومبوزين-رقم-1')).toMatch(/^1-[0-9a-f]{8}$/);
+    expect(storageFolder('كريم-اليد')).toMatch(/^product-[0-9a-f]{8}$/);
+  });
+
+  it('keeps two different non-ascii handles apart', () => {
+    expect(storageFolder('كريم-اليد')).not.toBe(storageFolder('كريم-الوجه'));
+  });
+
+  it('uses the folded folder in the full path', () => {
+    expect(storagePath('centellian24-360º-shot', 1, 'a.webp')).toMatch(
+      /^centellian24-360-shot-[0-9a-f]{8}\/01-a\.webp$/,
+    );
   });
 });
 
