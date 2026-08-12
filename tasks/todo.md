@@ -313,16 +313,29 @@ structured data for search engines.
 
 **Acceptance criteria:**
 
-- [ ] Image gallery, Arabic/English name and description, brand link, per-variant price and stock
-- [ ] Variant selection updates price and availability without a full page load
-- [ ] Add-to-cart button present but disabled with a "coming soon" note until Phase 2
-- [ ] Product JSON-LD emitted with the active country's currency
+- [x] Image gallery, Arabic/English name and description, brand link, per-variant price and stock
+- [x] Variant selection updates price and availability without a full page load
+- [x] Add-to-cart button present but disabled with a "coming soon" note until Phase 2
+- [x] Product JSON-LD emitted with the active country's currency
 
 **Verification:**
 
-- [ ] E2E: `/ar-om/products/abib-hand-creme-type-g` shows the Arabic name and a 6.400 ر.ع. price
-- [ ] Switching country changes the displayed currency
-- [ ] `npm run build` succeeds
+- [ ] E2E: `/ar-om/products/abib-hand-creme-type-g` shows the Arabic name and a 6.400 ر.ع. price —
+      blocked until the database is seeded
+- [ ] Switching country changes the displayed currency — same blocker
+- [x] `npm run build` succeeds
+- [x] `productJsonLd` / `jsonLdScript` unit tested (12 cases); 97 tests green
+
+**Notes:**
+
+- Descriptions render as **plain text**, not HTML. The copy is scraped third-party markup and the same
+  column becomes staff-editable in Phase 3; server-rendered HTML executes a `<script>` on parse. No
+  description in `data/catalog.json` contains a tag today, so nothing is lost. If rich text is wanted
+  in admin, sanitize on write — that needs a sanitizer dependency, which is an "ask first" item.
+- JSON-LD is embedded through `jsonLdScript`, which escapes `<`, `>`, `&`, U+2028/9 — `JSON.stringify`
+  alone lets a product name close the script element.
+- Deferred to the Phase 4 SEO pass: `alternates.languages` hreflang across the 12 locales, and
+  `generateStaticParams`/ISR for the ~1000 product routes (all dynamic today).
 
 **Dependencies:** 1.7
 **Files:** `src/app/[locale]/products/[handle]/page.tsx`, `src/components/commerce/{product-gallery,variant-picker,price-display}.tsx`

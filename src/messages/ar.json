@@ -70,6 +70,12 @@
     "priceOnRequest": "السعر عند الطلب",
     "pagination": "تصفح الصفحات",
     "previous": "السابق",
-    "next": "التالي"
+    "next": "التالي",
+    "viewImage": "عرض الصورة {number}",
+    "chooseOption": "اختر الخيار",
+    "inStock": "متوفر",
+    "addToCart": "أضف إلى السلة",
+    "cartComingSoon": "الطلب عبر الموقع قريبًا. اتصل بالمتجر لحجز هذا المنتج.",
+    "description": "الوصف"
   }
 }

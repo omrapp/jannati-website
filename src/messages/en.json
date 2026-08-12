@@ -70,6 +70,12 @@
     "priceOnRequest": "Price on request",
     "pagination": "Pagination",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "viewImage": "View image {number}",
+    "chooseOption": "Choose an option",
+    "inStock": "In stock",
+    "addToCart": "Add to cart",
+    "cartComingSoon": "Online ordering opens soon. Call the shop to reserve this item.",
+    "description": "Description"
   }
 }
