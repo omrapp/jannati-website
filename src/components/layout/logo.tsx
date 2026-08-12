@@ -1,11 +1,12 @@
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 
 /**
- * Wordmark placeholder. Swap the glyph for the supplied Jannati logo once
- * brand assets arrive; the layout around it stays the same.
+ * The Jannati flower mark beside the wordmark. The mark is a transparent PNG,
+ * so it sits on either theme without a variant.
  */
 export function Logo({ className }: { className?: string }) {
   const t = useTranslations('brand');
@@ -16,9 +17,14 @@ export function Logo({ className }: { className?: string }) {
       className={cn('group flex items-center gap-2', className)}
       aria-label={t('name')}
     >
-      <span className="bg-primary text-primary-foreground grid size-9 place-items-center rounded-full text-lg font-semibold">
-        ج
-      </span>
+      <Image
+        src="/brand/jannati-logo.png"
+        alt=""
+        width={36}
+        height={36}
+        priority
+        className="size-9 object-contain"
+      />
       <span className="flex flex-col leading-tight">
         <span className="font-display text-xl font-semibold tracking-tight">{t('name')}</span>
         <span className="text-muted-foreground hidden text-[11px] sm:block">{t('tagline')}</span>
