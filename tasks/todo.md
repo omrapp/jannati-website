@@ -431,10 +431,10 @@ by newest, best selling or price.
 
 ## Blocked / waiting on the user
 
-| Item                                                         | Blocks        |
-| ------------------------------------------------------------ | ------------- |
-| Hosted Supabase URL, anon key, service-role key, project ref | 1.2 onward    |
-| Approval of translation API spend                            | 1.5           |
-| One project for dev + production, or a separate prod project | launch prep   |
-| Which countries go live day one                              | pricing QA    |
-| Jannati logo and brand colours                               | visual polish |
+| Item                                                         | Blocks      |
+| ------------------------------------------------------------ | ----------- |
+| Hosted Supabase URL, anon key, service-role key, project ref | 1.2 onward  |
+| Approval of translation API spend                            | 1.5         |
+| One project for dev + production, or a separate prod project | launch prep |
+| Which countries go live day one                              | pricing QA  |
+| ~~Jannati logo and brand colours~~ — supplied, applied       | done        |
