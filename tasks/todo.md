@@ -286,16 +286,19 @@ category listing pages sharing the same components.
 
 **Acceptance criteria:**
 
-- [ ] Grid of cards: image, brand, name, price, out-of-stock state
-- [ ] Pagination works and is crawlable (real links, not client-only state)
-- [ ] `/collections/[slug]` renders a category's products using the same components
-- [ ] Correct in RTL and LTR at mobile and desktop widths
+- [x] Grid of cards: image, brand, name, price, out-of-stock state
+- [x] Pagination works and is crawlable (real links, not client-only state)
+- [x] `/collections/[slug]` renders a category's products using the same components
+- [x] Correct in RTL and LTR at mobile and desktop widths — logical properties only (`start-2`,
+      `gap-x`), no physical direction classes
 
 **Verification:**
 
-- [ ] E2E: open `/ar-om/products`, assert cards render with prices in OMR
-- [ ] E2E: same page in `/en-ae` shows AED prices
-- [ ] `npm run build` succeeds
+- [ ] E2E: open `/ar-om/products`, assert cards render with prices in OMR — blocked until the
+      database is seeded (`npm run db:push` + `npm run seed:load`)
+- [ ] E2E: same page in `/en-ae` shows AED prices — same blocker
+- [x] `npm run build` succeeds
+- [x] `paginationItems` unit tested (`tests/pagination.test.ts`, 5 cases); 85 tests green
 
 **Dependencies:** 1.7
 **Files:** `src/app/[locale]/products/page.tsx`, `src/app/[locale]/collections/[slug]/page.tsx`, `src/components/commerce/{product-card,product-grid,pagination}.tsx`

@@ -60,5 +60,16 @@
     "returns": "Returns & Exchanges",
     "payments": "Payment methods",
     "rights": "All rights reserved."
+  },
+  "catalog": {
+    "allProducts": "All products",
+    "count": "{count} products",
+    "empty": "No products here yet.",
+    "noImage": "No image",
+    "outOfStock": "Out of stock",
+    "priceOnRequest": "Price on request",
+    "pagination": "Pagination",
+    "previous": "Previous",
+    "next": "Next"
   }
 }
