@@ -4,74 +4,77 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Jannati brand tokens. Primary is a deep rose drawn from the shop's beauty
- * positioning; gold is the accent used for offers and highlights. Placeholder
- * values until the official logo and brand colours are supplied.
+ * Jannati brand tokens, sampled from the supplied logo:
+ *   magenta #df2789 — the flower and the Latin wordmark, used as primary
+ *   purple  #7755a1 — the Arabic wordmark, used as the accent
+ *   violet  #a53692 — the tagline, the midpoint between the two
+ * Neutrals are warmed towards the magenta hue so greys sit with the brand.
  */
 :root {
   --radius: 0.75rem;
 
-  --background: oklch(0.99 0.005 20);
-  --foreground: oklch(0.22 0.02 20);
+  --background: oklch(0.99 0.004 340);
+  --foreground: oklch(0.22 0.02 330);
 
   --card: oklch(1 0 0);
   --card-foreground: var(--foreground);
   --popover: oklch(1 0 0);
   --popover-foreground: var(--foreground);
 
-  --primary: oklch(0.52 0.14 12);
-  --primary-foreground: oklch(0.99 0.005 20);
+  --primary: oklch(0.604 0.227 354.7);
+  --primary-foreground: oklch(0.99 0.004 340);
 
-  --secondary: oklch(0.95 0.02 20);
-  --secondary-foreground: oklch(0.28 0.04 12);
+  --secondary: oklch(0.95 0.02 340);
+  --secondary-foreground: oklch(0.3 0.08 340);
 
-  --muted: oklch(0.96 0.008 20);
-  --muted-foreground: oklch(0.52 0.02 20);
+  --muted: oklch(0.96 0.008 340);
+  --muted-foreground: oklch(0.52 0.02 330);
 
-  --accent: oklch(0.78 0.11 85);
-  --accent-foreground: oklch(0.25 0.04 60);
+  --accent: oklch(0.519 0.121 303.1);
+  --accent-foreground: oklch(0.99 0.004 340);
 
   --destructive: oklch(0.58 0.21 27);
-  --destructive-foreground: oklch(0.99 0.005 20);
+  --destructive-foreground: oklch(0.99 0.004 340);
 
   --success: oklch(0.6 0.13 150);
-  --success-foreground: oklch(0.99 0.005 20);
+  --success-foreground: oklch(0.99 0.004 340);
 
-  --border: oklch(0.9 0.01 20);
-  --input: oklch(0.9 0.01 20);
-  --ring: oklch(0.52 0.14 12);
+  --border: oklch(0.9 0.012 340);
+  --input: oklch(0.9 0.012 340);
+  --ring: oklch(0.604 0.227 354.7);
 }
 
+/* Both brand colours are lifted and de-saturated for contrast on dark. */
 .dark {
-  --background: oklch(0.17 0.01 20);
-  --foreground: oklch(0.95 0.008 20);
+  --background: oklch(0.17 0.012 330);
+  --foreground: oklch(0.95 0.008 340);
 
-  --card: oklch(0.21 0.012 20);
+  --card: oklch(0.21 0.015 330);
   --card-foreground: var(--foreground);
-  --popover: oklch(0.21 0.012 20);
+  --popover: oklch(0.21 0.015 330);
   --popover-foreground: var(--foreground);
 
-  --primary: oklch(0.68 0.13 12);
-  --primary-foreground: oklch(0.17 0.01 20);
+  --primary: oklch(0.72 0.19 354.7);
+  --primary-foreground: oklch(0.17 0.012 330);
 
-  --secondary: oklch(0.27 0.02 20);
-  --secondary-foreground: oklch(0.95 0.008 20);
+  --secondary: oklch(0.27 0.025 330);
+  --secondary-foreground: oklch(0.95 0.008 340);
 
-  --muted: oklch(0.26 0.015 20);
-  --muted-foreground: oklch(0.7 0.015 20);
+  --muted: oklch(0.26 0.018 330);
+  --muted-foreground: oklch(0.7 0.018 330);
 
-  --accent: oklch(0.72 0.1 85);
-  --accent-foreground: oklch(0.18 0.02 60);
+  --accent: oklch(0.68 0.12 303.1);
+  --accent-foreground: oklch(0.17 0.012 330);
 
   --destructive: oklch(0.65 0.19 27);
-  --destructive-foreground: oklch(0.17 0.01 20);
+  --destructive-foreground: oklch(0.17 0.012 330);
 
   --success: oklch(0.68 0.12 150);
-  --success-foreground: oklch(0.17 0.01 20);
+  --success-foreground: oklch(0.17 0.012 330);
 
-  --border: oklch(0.3 0.015 20);
-  --input: oklch(0.3 0.015 20);
-  --ring: oklch(0.68 0.13 12);
+  --border: oklch(0.3 0.02 330);
+  --input: oklch(0.3 0.02 330);
+  --ring: oklch(0.72 0.19 354.7);
 }
 
 @theme inline {
