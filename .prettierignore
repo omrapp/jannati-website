@@ -5,3 +5,7 @@ node_modules/
 data/
 package-lock.json
 supabase/.temp/
+
+# Scrape fixtures are kept byte-faithful; reformatting them would rewrite the
+# inline product JSON the parser is tested against.
+tests/fixtures/

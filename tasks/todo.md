@@ -59,28 +59,44 @@ Notes from implementation:
 
 ---
 
-## Task 1.2: Catalog schema migration
+## Task 1.2: Catalog schema migration ⚠️ written, not yet applied
 
 **Description:** Tables for brands, categories, products, variants, images and product↔category
 membership, with RLS public-read and staff-write-later, plus the indexes the storefront queries need.
 
 **Acceptance criteria:**
 
-- [ ] Tables created per the spec's data model, all money columns integer minor units in OMR
-- [ ] RLS enabled on every table with a public read policy; no public write policy
-- [ ] Unique constraints on `products.handle`, `brands.slug`, `categories.slug`, `product_variants.sku`
-- [ ] Indexes on `products.brand_id`, `product_categories(category_id, product_id)`, `products.status`
+- [x] Tables created per the spec's data model, all money columns integer minor units in OMR
+- [x] RLS enabled on every table with a public read policy; no public write policy
+- [x] Unique constraints on `products.handle`, `brands.slug`, `categories.slug`, `product_variants.sku`
+- [x] Indexes on `products.brand_id`, `product_categories(category_id, product_id)`, `products.status`
 
 **Verification:**
 
-- [ ] Migration SQL reviewed before it runs — there is no local database to reset if it is wrong
-- [ ] `npm run db:push` applies cleanly to the linked cloud project
-- [ ] `npm run db:types` regenerates `src/lib/supabase/types.ts` (replacing the hand-written stub)
-- [ ] Anon client can select from `products`; anon insert is rejected
+- [x] Migration SQL reviewed before it runs — there is no local database to reset if it is wrong
+- [x] Both migrations apply cleanly, in order, to a throwaway PostgreSQL 18 cluster
+- [x] Anon role selects an active product; draft products, their variants and their memberships stay
+      invisible; anon insert rejected; negative price, compare-at below price and duplicate handle all
+      rejected; skuless variants coexist; `updated_at` trigger fires; variants cascade on product delete
+- [ ] `npm run db:push` applies cleanly to the linked cloud project — **blocked on Supabase keys**
+- [ ] `npm run db:types` regenerates `src/lib/supabase/types.ts` — **blocked on Supabase keys**
 
-**Dependencies:** Supabase keys supplied, `npm run db:link` done
-**Files:** `supabase/migrations/*_catalog.sql`, `src/lib/supabase/types.ts`
+**Dependencies:** Supabase keys supplied, `npm run db:link` done — for the two blocked steps only
+**Files:** `supabase/migrations/20260812000002_catalog.sql`, `src/lib/supabase/types.ts`
 **Scope:** M
+
+**Implementation notes:**
+
+- Verified against a throwaway local PostgreSQL 18 cluster rather than a container, so the schema is
+  proven to apply without touching any hosted project. The two steps above still need the real project.
+- `src/lib/supabase/types.ts` was extended by hand to cover the new tables so tasks 1.6–1.13 are not
+  blocked; `npm run db:types` overwrites it wholesale once the project is linked.
+- Storage columns hold bucket **paths** (`logo_path`, `image_path`, `storage_path`), not URLs, so the
+  bucket can be made private later without a data migration.
+- Products are `draft` by default and the public read policy requires `status = 'active'`; variants,
+  images and category memberships are hidden with their product via an `exists` check.
+- Full-text search columns are deliberately absent — they land with task 1.11, alongside the queries
+  that decide the tsvector configuration.
 
 ---
 
