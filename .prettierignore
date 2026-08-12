@@ -1,0 +1,7 @@
+darbeauty.com/
+plans/
+node_modules/
+.next/
+data/
+package-lock.json
+supabase/.temp/

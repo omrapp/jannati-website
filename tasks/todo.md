@@ -1,0 +1,382 @@
+# Task List
+
+Phase 0 (foundation) is complete: scaffold, tooling, CI, i18n routing for 12 locales, theming, base
+layout, `countries` migration and Supabase clients. Verified with build, lint, typecheck, 6 unit tests
+and 6 E2E tests. Outstanding: no migration has been applied yet — **waiting on the hosted Supabase
+project keys**.
+
+**Database setup (no Docker, no local stack).** Development runs against the hosted Supabase project.
+Once the user supplies the keys:
+
+```bash
+# .env.local <- NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
+#               SUPABASE_SERVICE_ROLE_KEY, SUPABASE_PROJECT_REF
+npm run db:link      # supabase link --project-ref $SUPABASE_PROJECT_REF
+npm run db:push      # apply supabase/migrations/ to the cloud project
+npm run db:types     # regenerate src/lib/supabase/types.ts from the linked project
+```
+
+Because there is no throwaway local database, every destructive step is gated: migrations are additive
+and reviewed before `db:push`, seed scripts support `--dry-run`, and the loader upserts rather than
+truncating.
+
+---
+
+# Phase 1 — Catalog
+
+## Task 1.1: Money and FX library
+
+**Description:** Pure integer money maths — convert an OMR base price into a country's currency, round
+it, and format it for display in Arabic and English. Everything downstream prices through this module.
+
+**Acceptance criteria:**
+
+- [ ] `convertFromOmr(baseMinor, country)` returns minor units in the target currency, rounded up to the country's `rounding_step_minor`
+- [ ] `formatMoney(minor, country, locale)` renders correct decimals per currency (3 for OMR/KWD/BHD, 2 for AED/SAR/QAR) with the currency name in the right language
+- [ ] All arithmetic is integer-only; no `Number.prototype.toFixed` rounding of money and no floats in intermediate steps
+
+**Verification:**
+
+- [ ] `npm run test` — cases for all 6 currencies, including a 3-decimal and a 2-decimal country at the same base price
+- [ ] Explicit test that 6.400 OMR converts and formats correctly in every country
+- [ ] `npm run typecheck`
+
+**Dependencies:** None (needs no database)
+**Files:** `src/lib/commerce/money.ts`, `src/lib/commerce/types.ts`, `tests/money.test.ts`
+**Scope:** S
+
+---
+
+## Task 1.2: Catalog schema migration
+
+**Description:** Tables for brands, categories, products, variants, images and product↔category
+membership, with RLS public-read and staff-write-later, plus the indexes the storefront queries need.
+
+**Acceptance criteria:**
+
+- [ ] Tables created per the spec's data model, all money columns integer minor units in OMR
+- [ ] RLS enabled on every table with a public read policy; no public write policy
+- [ ] Unique constraints on `products.handle`, `brands.slug`, `categories.slug`, `product_variants.sku`
+- [ ] Indexes on `products.brand_id`, `product_categories(category_id, product_id)`, `products.status`
+
+**Verification:**
+
+- [ ] Migration SQL reviewed before it runs — there is no local database to reset if it is wrong
+- [ ] `npm run db:push` applies cleanly to the linked cloud project
+- [ ] `npm run db:types` regenerates `src/lib/supabase/types.ts` (replacing the hand-written stub)
+- [ ] Anon client can select from `products`; anon insert is rejected
+
+**Dependencies:** Supabase keys supplied, `npm run db:link` done
+**Files:** `supabase/migrations/*_catalog.sql`, `src/lib/supabase/types.ts`
+**Scope:** M
+
+---
+
+## Task 1.3: Extractor script
+
+**Description:** Parse the darbeauty scrape into `data/catalog.json` — brands, categories, products,
+variants, image references and category membership. Read-only against `darbeauty.com/`, no database.
+
+**Acceptance criteria:**
+
+- [ ] Brands come from `pages/brands.html` (~104); every other collection is treated as a category
+- [ ] Each product carries handle, Arabic name and description, brand, tags, type, and its variants with sku, OMR price in minor units and image references
+- [ ] Category membership resolved from collection pages including their `?page=N` continuations
+- [ ] Products that fail to parse are reported individually with a reason; the run does not abort
+- [ ] Coverage summary printed at the end: products parsed, skipped, and why
+
+**Verification:**
+
+- [ ] `npm run seed:extract` produces `data/catalog.json` with ≥95% of the 1049 products
+- [ ] `npm run test` — extractor unit tests against 2–3 checked-in fixture pages (including one outlier)
+- [ ] Spot-check: `abib-hand-creme-type-g` has price 6400 minor units, brand Abib, sku Z0301
+
+**Dependencies:** None (needs no database)
+**Files:** `scripts/seed/extract.ts`, `scripts/seed/parse-product.ts`, `tests/extract.test.ts`, `tests/fixtures/*`
+**Scope:** M
+
+---
+
+## Checkpoint A — after 1.1 and 1.3
+
+- [ ] Money maths proven correct in all 6 currencies by tests
+- [ ] `data/catalog.json` exists with ≥95% coverage and a clean failure report
+- [ ] Supabase keys supplied; `npm run db:link` and `npm run db:push` succeed against the cloud project
+- [ ] Review the extracted data with the user before anything is written to the shared database
+
+---
+
+## Task 1.4: Image uploader
+
+**Description:** Upload local product imagery to Supabase Storage, keeping only the widest copy of each
+photo, and record storage paths back into the catalog data.
+
+**Acceptance criteria:**
+
+- [ ] Widest `width=N` copy chosen per base filename; narrower duplicates skipped
+- [ ] Uploaded to a public `product-images` bucket under a stable path derived from the product handle
+- [ ] Re-running skips files already uploaded (idempotent) and reports total bytes stored
+- [ ] `--dry-run` reports what would upload and the projected total size without transferring anything
+- [ ] `data/catalog.json` updated with storage paths, not darbeauty URLs
+
+**Verification:**
+
+- [ ] `npm run seed:images -- --dry-run` size projection reviewed against the project's storage quota **before** the real run
+- [ ] `npm run seed:images` completes and prints total storage used
+- [ ] A sampled image loads over its public Storage URL
+
+**Dependencies:** 1.3, Supabase project linked
+**Files:** `scripts/seed/images.ts`, `supabase/migrations/*_storage_buckets.sql`
+**Scope:** M
+
+---
+
+## Task 1.5: English translation pass
+
+**Description:** Fill the English descriptions missing for ~982 products by translating the Arabic copy,
+reusing the 67 genuine English pages where they exist.
+
+**Acceptance criteria:**
+
+- [ ] Real English copy from `en/products/*.html` used verbatim where available; never overwritten by a translation
+- [ ] Remaining products translated ar→en and marked `en_translation_status = 'machine'` so staff can review
+- [ ] Results cached to disk so re-runs cost nothing
+- [ ] English titles derived from the product handle where no English name exists
+
+**Verification:**
+
+- [ ] Cost estimated and approved by the user **before** the full run
+- [ ] Dry run on 10 products reviewed for quality first
+- [ ] `data/catalog.json` has an English description for ≥99% of products
+
+**Dependencies:** 1.3, user approval of spend
+**Files:** `scripts/seed/translate.ts`, `data/translations.cache.json`
+**Scope:** M
+
+---
+
+## Task 1.6: Loader
+
+**Description:** Load `data/catalog.json` into Postgres with the service-role client, as an idempotent
+upsert keyed on handle/slug/sku.
+
+**Acceptance criteria:**
+
+- [ ] Insert order respects FKs: brands → categories → products → variants → images → memberships
+- [ ] Re-running updates catalog fields without duplicating rows or resetting stock and status
+- [ ] Runs inside a transaction per batch; a failure leaves no half-loaded product
+- [ ] Never truncates or deletes — the cloud database is shared and cannot be reset
+- [ ] `--dry-run` prints the insert/update counts it would produce without writing
+- [ ] Prints a summary: rows inserted, updated, skipped
+
+**Verification:**
+
+- [ ] `npm run seed:load` twice in a row produces identical row counts
+- [ ] `select count(*) from products` ≈ 1049; every product has ≥1 variant and ≥1 image
+- [ ] Spot-check one product's Arabic and English copy, price and images in the database
+
+**Dependencies:** 1.2, 1.3, 1.4, 1.5
+**Files:** `scripts/seed/load.ts`
+**Scope:** M
+
+---
+
+## Checkpoint B — after 1.6
+
+- [ ] Full catalog in the database, re-runnable without duplication
+- [ ] Images serving from Supabase Storage
+- [ ] Storage and translation costs reported to the user
+
+---
+
+## Task 1.7: Catalog data access layer
+
+**Description:** Typed server-side queries the storefront pages call — list products, get one product,
+list brands and categories — with country pricing applied on the way out.
+
+**Acceptance criteria:**
+
+- [ ] `listProducts`, `getProductByHandle`, `listBrands`, `listCategories` return language-resolved fields for the active locale
+- [ ] Prices come back already converted and formatted for the active country via 1.1
+- [ ] Pagination and total counts supported; no unbounded catalog queries
+- [ ] No query returns more columns than the caller renders
+
+**Verification:**
+
+- [ ] `npm run test` — unit tests for the locale and price mapping with a stubbed client
+- [ ] A server component renders a product name and price from the real database
+- [ ] `npm run typecheck` against generated DB types
+
+**Dependencies:** 1.1, 1.2, 1.6
+**Files:** `src/lib/catalog/queries.ts`, `src/lib/catalog/mappers.ts`, `tests/catalog-mappers.test.ts`
+**Scope:** M
+
+---
+
+## Task 1.8: Product listing page
+
+**Description:** Replace the `/products` placeholder with a real grid — product card, pagination, and
+category listing pages sharing the same components.
+
+**Acceptance criteria:**
+
+- [ ] Grid of cards: image, brand, name, price, out-of-stock state
+- [ ] Pagination works and is crawlable (real links, not client-only state)
+- [ ] `/collections/[slug]` renders a category's products using the same components
+- [ ] Correct in RTL and LTR at mobile and desktop widths
+
+**Verification:**
+
+- [ ] E2E: open `/ar-om/products`, assert cards render with prices in OMR
+- [ ] E2E: same page in `/en-ae` shows AED prices
+- [ ] `npm run build` succeeds
+
+**Dependencies:** 1.7
+**Files:** `src/app/[locale]/products/page.tsx`, `src/app/[locale]/collections/[slug]/page.tsx`, `src/components/commerce/{product-card,product-grid,pagination}.tsx`
+**Scope:** M
+
+---
+
+## Task 1.9: Product detail page
+
+**Description:** The `/products/[handle]` page — gallery, variant selection, price, stock, and
+structured data for search engines.
+
+**Acceptance criteria:**
+
+- [ ] Image gallery, Arabic/English name and description, brand link, per-variant price and stock
+- [ ] Variant selection updates price and availability without a full page load
+- [ ] Add-to-cart button present but disabled with a "coming soon" note until Phase 2
+- [ ] Product JSON-LD emitted with the active country's currency
+
+**Verification:**
+
+- [ ] E2E: `/ar-om/products/abib-hand-creme-type-g` shows the Arabic name and a 6.400 ر.ع. price
+- [ ] Switching country changes the displayed currency
+- [ ] `npm run build` succeeds
+
+**Dependencies:** 1.7
+**Files:** `src/app/[locale]/products/[handle]/page.tsx`, `src/components/commerce/{product-gallery,variant-picker,price-display}.tsx`
+**Scope:** M
+
+---
+
+## Task 1.10: Brand pages
+
+**Description:** Brand index listing all ~104 brands, and a brand page listing that brand's products.
+
+**Acceptance criteria:**
+
+- [ ] `/brands` lists every brand with its logo or name, grouped alphabetically in both scripts
+- [ ] `/brands/[slug]` reuses the product grid from 1.8
+- [ ] Brand names render in the active language
+
+**Verification:**
+
+- [ ] E2E: `/ar-om/brands` lists brands and one links through to its products
+- [ ] `npm run build` succeeds
+
+**Dependencies:** 1.7, 1.8
+**Files:** `src/app/[locale]/brands/page.tsx`, `src/app/[locale]/brands/[slug]/page.tsx`
+**Scope:** S
+
+---
+
+## Checkpoint C — after 1.10
+
+- [ ] A shopper can browse from home → category → product → brand entirely in Arabic
+- [ ] Prices correct in all 6 countries on the same product
+- [ ] Review the browsing experience with the user before search and filters
+
+---
+
+## Task 1.11: Search
+
+**Description:** Postgres full-text search across Arabic and English product text, with trigram fuzzy
+matching, exposed through the `/search` page and the header search box.
+
+**Acceptance criteria:**
+
+- [ ] `search_ar` and `search_en` tsvector columns maintained by trigger over name, description, brand and tags
+- [ ] `pg_trgm` similarity fallback so near-misses and misspellings still return results
+- [ ] Search RPC returns ranked results with pagination
+- [ ] Header search box submits to `/search` and results render in the active language
+
+**Acceptance risk:** Postgres has no Arabic stemmer — relevance is measured, not assumed.
+
+**Verification:**
+
+- [ ] `npm run test` — ranking tests over a seeded fixture set
+- [ ] Manual: 10 real Arabic queries and 10 English ones reviewed for relevance with the user
+- [ ] Server-side search completes in under 500ms on the full catalog
+
+**Dependencies:** 1.2, 1.6
+**Files:** `supabase/migrations/*_search.sql`, `src/lib/catalog/search.ts`, `src/app/[locale]/search/page.tsx`
+**Scope:** M
+
+---
+
+## Task 1.12: Filters and sorting
+
+**Description:** Narrow and order the product grid — by brand, category, price range and stock, sorted
+by newest, best selling or price.
+
+**Acceptance criteria:**
+
+- [ ] Filter state lives in the URL so results are shareable and back/forward works
+- [ ] Filtering and sorting happen in Postgres, never by filtering a full result set in JavaScript
+- [ ] Price filter operates in the active country's currency but queries in OMR
+- [ ] Facet counts reflect the current filter set
+
+**Verification:**
+
+- [ ] E2E: filter by brand, assert the URL and the result count change
+- [ ] E2E: sort by price ascending, assert order in AED on `/en-ae`
+- [ ] `npm run test` — unit tests for URL ↔ query translation
+
+**Dependencies:** 1.8
+**Files:** `src/components/commerce/{filter-panel,sort-select}.tsx`, `src/lib/catalog/query-params.ts`, `tests/query-params.test.ts`
+**Scope:** M
+
+---
+
+## Task 1.13: New arrivals and best sellers
+
+**Description:** The two merchandising pages named in the brief, built on the existing grid and sorting.
+
+**Acceptance criteria:**
+
+- [ ] `/products?sort=new` and `/products?sort=best-selling` (already linked from the nav) return correctly ordered results
+- [ ] "New" derives from a product's `is_new` flag or creation date; "best selling" from order counts, seeded from darbeauty's best-seller collection until real sales exist
+- [ ] Both are reachable from the header and footer links already in place
+
+**Verification:**
+
+- [ ] E2E: both nav links land on populated, correctly ordered pages
+- [ ] `npm run build` succeeds
+
+**Dependencies:** 1.12
+**Files:** `src/lib/catalog/queries.ts`, `src/app/[locale]/products/page.tsx`
+**Scope:** S
+
+---
+
+## Checkpoint D — Phase 1 complete
+
+- [ ] 1049 products browsable, searchable and filterable in both languages
+- [ ] Prices correct in all 6 currencies, verified against the money tests
+- [ ] Full suite green: build, lint, typecheck, unit, E2E
+- [ ] Lighthouse spot-check on the product detail page before Phase 2 begins
+- [ ] Reviewed with the user
+
+---
+
+## Blocked / waiting on the user
+
+| Item                                                         | Blocks        |
+| ------------------------------------------------------------ | ------------- |
+| Hosted Supabase URL, anon key, service-role key, project ref | 1.2 onward    |
+| Approval of translation API spend                            | 1.5           |
+| One project for dev + production, or a separate prod project | launch prep   |
+| Which countries go live day one                              | pricing QA    |
+| Jannati logo and brand colours                               | visual polish |
