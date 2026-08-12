@@ -64,7 +64,9 @@ create index categories_parent_id_idx on public.categories (parent_id);
 create table public.products (
   id uuid primary key default gen_random_uuid(),
   -- Kept from the source catalog: it is the storefront URL and the seed key.
-  handle text not null unique check (handle ~ '^[a-z0-9-]+$'),
+  -- Arabic handles are allowed and common — the storefront is Arabic first —
+  -- so this only rejects what a URL path cannot carry unescaped.
+  handle text not null unique check (handle ~ '^[^A-Z[:space:]/?#%]+$'),
   brand_id uuid references public.brands (id) on delete set null,
 
   name_ar text not null,
