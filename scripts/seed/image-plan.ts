@@ -8,6 +8,8 @@
  * uploading; Next.js resizes from there.
  */
 
+import { createHash } from 'node:crypto';
+
 import type { ParsedImage, ParsedProduct } from './types.ts';
 
 export type PlannedUpload = {
@@ -58,6 +60,30 @@ export function widestCopy(file: string, candidates: string[]): string | null {
 }
 
 /**
+ * Storage keys are ascii-only: the upload of
+ * `centellian24-360º-shot-pdrn-glowing-eye-patch` is rejected outright, and
+ * Arabic handles — which the catalog allows, because the storefront is Arabic
+ * first — would fare no better.
+ *
+ * Handles that are already safe pass through unchanged so a re-run recognises
+ * files uploaded by an earlier one. The rest are folded to ascii and given a
+ * hash of the original, because folding alone collapses two Arabic handles onto
+ * the same key.
+ */
+export function storageFolder(handle: string): string {
+  if (/^[a-z0-9_-]+$/.test(handle)) return handle;
+
+  const ascii = handle
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const hash = createHash('sha1').update(handle).digest('hex').slice(0, 8);
+
+  return `${ascii || 'product'}-${hash}`;
+}
+
+/**
  * `<handle>/<NN>-<slugified filename>`.
  *
  * Keyed by product rather than by source filename so one product's imagery can
@@ -72,7 +98,7 @@ export function storagePath(handle: string, position: number, file: string): str
     .replace(/[^a-z0-9_]+/g, '-')
     .replace(/^-|-$/g, '');
 
-  return `${handle}/${String(position).padStart(2, '0')}-${name}${extension}`;
+  return `${storageFolder(handle)}/${String(position).padStart(2, '0')}-${name}${extension}`;
 }
 
 export function planUploads(products: ParsedProduct[], local: LocalFiles): UploadPlan {

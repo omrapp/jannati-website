@@ -90,17 +90,22 @@ async function main(): Promise<void> {
   let skipped = 0;
   let bytes = 0;
 
+  const failed: { path: string; message: string }[] = [];
+
   for (const upload of plan.uploads) {
     const body = readFileSync(join(cdnRoot, upload.folder, upload.localFile));
     const { error } = await supabase.storage
       .from(BUCKET)
       .upload(upload.storagePath, body, { contentType: contentType(upload.localFile) });
 
-    // Already there from an earlier run: leave it, count it as done.
+    // One rejected key must not throw away a run of a thousand uploads: the
+    // objects would survive, but the catalog would never get its paths written.
     if (error && !/exists/i.test(error.message)) {
-      throw new Error(`upload failed for ${upload.storagePath}: ${error.message}`);
+      failed.push({ path: upload.storagePath, message: error.message });
+      continue;
     }
 
+    // Already there from an earlier run: leave it, count it as done.
     if (error) {
       skipped += 1;
       continue;
@@ -113,8 +118,13 @@ async function main(): Promise<void> {
   }
 
   // Record the keys so the loader writes storage paths, never darbeauty URLs.
+  // A key that failed to upload is left out, so the loader records no image
+  // rather than a path that 404s.
+  const rejected = new Set(failed.map((failure) => failure.path));
   const keys = new Map(
-    plan.uploads.map((upload) => [`${upload.handle}#${upload.position}`, upload.storagePath]),
+    plan.uploads
+      .filter((upload) => !rejected.has(upload.storagePath))
+      .map((upload) => [`${upload.handle}#${upload.position}`, upload.storagePath]),
   );
 
   for (const product of catalog.products) {
@@ -127,6 +137,14 @@ async function main(): Promise<void> {
 
   console.log(`\nuploaded ${uploaded} (${humanBytes(bytes)}), already present ${skipped}`);
   console.log(`catalog updated with storage paths: ${catalogPath}`);
+
+  if (failed.length > 0) {
+    console.error(`\n${failed.length} upload(s) failed:`);
+    for (const failure of failed.slice(0, 20)) {
+      console.error(`  ${failure.path}: ${failure.message}`);
+    }
+    process.exitCode = 1;
+  }
 }
 
 await main();
