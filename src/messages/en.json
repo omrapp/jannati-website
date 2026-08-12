@@ -76,6 +76,8 @@
     "inStock": "In stock",
     "addToCart": "Add to cart",
     "cartComingSoon": "Online ordering opens soon. Call the shop to reserve this item.",
-    "description": "Description"
+    "description": "Description",
+    "allBrands": "All brands",
+    "brandCount": "{count} brands"
   }
 }

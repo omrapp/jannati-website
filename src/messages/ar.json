@@ -76,6 +76,8 @@
     "inStock": "متوفر",
     "addToCart": "أضف إلى السلة",
     "cartComingSoon": "الطلب عبر الموقع قريبًا. اتصل بالمتجر لحجز هذا المنتج.",
-    "description": "الوصف"
+    "description": "الوصف",
+    "allBrands": "جميع العلامات التجارية",
+    "brandCount": "{count} علامة تجارية"
   }
 }
