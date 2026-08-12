@@ -24,26 +24,38 @@ truncating.
 
 # Phase 1 — Catalog
 
-## Task 1.1: Money and FX library
+## Task 1.1: Money and FX library ✅
 
 **Description:** Pure integer money maths — convert an OMR base price into a country's currency, round
 it, and format it for display in Arabic and English. Everything downstream prices through this module.
 
 **Acceptance criteria:**
 
-- [ ] `convertFromOmr(baseMinor, country)` returns minor units in the target currency, rounded up to the country's `rounding_step_minor`
-- [ ] `formatMoney(minor, country, locale)` renders correct decimals per currency (3 for OMR/KWD/BHD, 2 for AED/SAR/QAR) with the currency name in the right language
-- [ ] All arithmetic is integer-only; no `Number.prototype.toFixed` rounding of money and no floats in intermediate steps
+- [x] `convertFromOmr(baseMinor, country)` returns minor units in the target currency, rounded up to the country's `rounding_step_minor`
+- [x] `formatMoney(minor, country, locale)` renders correct decimals per currency (3 for OMR/KWD/BHD, 2 for AED/SAR/QAR) with the currency name in the right language
+- [x] All arithmetic is integer-only; no `Number.prototype.toFixed` rounding of money and no floats in intermediate steps
 
 **Verification:**
 
-- [ ] `npm run test` — cases for all 6 currencies, including a 3-decimal and a 2-decimal country at the same base price
-- [ ] Explicit test that 6.400 OMR converts and formats correctly in every country
-- [ ] `npm run typecheck`
+- [x] `npm run test` — 17 tests green, all 6 currencies covered
+- [x] Explicit test that 6.400 OMR converts and formats correctly in every country
+- [x] `npm run typecheck`, `npm run lint`, `npm run build`
 
 **Dependencies:** None (needs no database)
 **Files:** `src/lib/commerce/money.ts`, `src/lib/commerce/types.ts`, `tests/money.test.ts`
 **Scope:** S
+**Merged:** `feat/money-fx-library` → `main`
+
+Notes from implementation:
+
+- Conversion runs in `BigInt` — price × rate × exponent overflows `Number.MAX_SAFE_INTEGER`. Required
+  bumping `tsconfig` target to ES2020, since TypeScript cannot downlevel BigInt.
+- `formatMoney` formats an exact decimal string via Intl.NumberFormat V3 rather than dividing into a
+  float, and forces Latin digits so the Arabic storefront shows the same numerals as the English one.
+- Corrected the `fx_rate_from_omr` comment in the countries migration: seeded values are **major** units
+  per OMR (9.55 AED), not minor units as the comment claimed.
+- Rounding steps produce visible jumps: 6.400 OMR is 61.25 AED (step 25 fils), 5.110 KWD, 6.275 BHD.
+  Confirm those steps are what the shop wants before the catalogue goes live.
 
 ---
 
