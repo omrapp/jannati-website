@@ -220,22 +220,27 @@ upsert keyed on handle/slug/sku.
 
 **Acceptance criteria:**
 
-- [ ] Insert order respects FKs: brands → categories → products → variants → images → memberships
-- [ ] Re-running updates catalog fields without duplicating rows or resetting stock and status
-- [ ] Runs inside a transaction per batch; a failure leaves no half-loaded product
-- [ ] Never truncates or deletes — the cloud database is shared and cannot be reset
-- [ ] `--dry-run` prints the insert/update counts it would produce without writing
-- [ ] Prints a summary: rows inserted, updated, skipped
+- [x] Insert order respects FKs: brands → categories → products → variants → images → memberships
+- [x] Re-running updates catalog fields without duplicating rows or resetting stock and status
+- [x] Runs inside a transaction per batch; a failure leaves no half-loaded product
+- [x] Never truncates or deletes — the cloud database is shared and cannot be reset
+- [x] `--dry-run` prints the insert/update counts it would produce without writing
+- [x] Prints a summary: rows inserted, updated, skipped
 
 **Verification:**
 
-- [ ] `npm run seed:load` twice in a row produces identical row counts
-- [ ] `select count(*) from products` ≈ 1049; every product has ≥1 variant and ≥1 image
-- [ ] Spot-check one product's Arabic and English copy, price and images in the database
+- [ ] `npm run seed:load` twice in a row produces identical row counts — blocked, no database yet
+- [ ] `select count(*) from products` ≈ 1049; every product has ≥1 variant and ≥1 image — blocked
+- [ ] Spot-check one product's Arabic and English copy, price and images in the database — blocked
+- [x] `npm run test` — 18 unit tests over the row mapping and the re-run split
+- [x] `npm run lint`, `npm run typecheck`, `npm run build`
 
 **Dependencies:** 1.2, 1.3, 1.4, 1.5
-**Files:** `scripts/seed/load.ts`
+**Files:** `scripts/seed/load.ts`, `scripts/seed/load-plan.ts`, `tests/load-plan.test.ts`
 **Scope:** M
+
+**Status:** written and unit tested ⚠️ the run itself waits on database access (see 1.2).
+English copy lands on a later re-run — the loader is idempotent, so 1.5 does not block it.
 
 ---
 
