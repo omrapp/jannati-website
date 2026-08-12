@@ -60,5 +60,16 @@
     "returns": "الإرجاع والاستبدال",
     "payments": "طرق الدفع",
     "rights": "جميع الحقوق محفوظة."
+  },
+  "catalog": {
+    "allProducts": "جميع المنتجات",
+    "count": "{count} منتج",
+    "empty": "لا توجد منتجات هنا بعد.",
+    "noImage": "لا توجد صورة",
+    "outOfStock": "نفد المخزون",
+    "priceOnRequest": "السعر عند الطلب",
+    "pagination": "تصفح الصفحات",
+    "previous": "السابق",
+    "next": "التالي"
   }
 }
