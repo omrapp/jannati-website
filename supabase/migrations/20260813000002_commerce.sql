@@ -107,6 +107,13 @@ create table public.carts (
 
 create index carts_customer_id_idx on public.carts (customer_id) where customer_id is not null;
 
+-- At most one active (unconverted) cart per customer — without this, a
+-- double-click or a retried request in the get-or-create-cart action (2.3)
+-- could race and insert two carts, silently splitting the customer's items.
+create unique index carts_one_active_per_customer_idx
+  on public.carts (customer_id)
+  where customer_id is not null and converted_at is null;
+
 create table public.cart_items (
   cart_id uuid not null references public.carts (id) on delete cascade,
   variant_id uuid not null references public.product_variants (id) on delete cascade,
@@ -122,7 +129,10 @@ create table public.cart_items (
 --
 -- Usage counts are derived from `orders.coupon_code` at validation time
 -- rather than tracked in a separate counter column, so a count can never
--- drift out of sync with the orders it is meant to describe.
+-- drift out of sync with the orders it is meant to describe. That derivation
+-- keeps the count *correct*; making it *race-safe* under a concurrent
+-- checkout is task 2.9's job (locking the coupon row inside the order-insert
+-- transaction), not something this schema enforces on its own.
 
 create table public.coupons (
   id uuid primary key default gen_random_uuid(),
@@ -131,6 +141,8 @@ create table public.coupons (
   -- Percent: whole percent, 1-100. Fixed: OMR minor units (baisa), same base
   -- currency as product prices, converted at checkout like everything else.
   value integer not null check (value > 0),
+  -- Same OMR-minor-units scale as `value` above — compared against the
+  -- cart's OMR-equivalent subtotal, not the checkout-currency subtotal.
   min_order_minor integer check (min_order_minor >= 0),
   starts_at timestamptz,
   ends_at timestamptz,
@@ -188,7 +200,10 @@ create table public.orders (
   )
 );
 
-create index orders_customer_id_idx on public.orders (customer_id) where customer_id is not null;
+-- Covers the "my orders" list (task 2.9), sorted newest first, without an
+-- extra sort step.
+create index orders_customer_id_created_at_idx
+  on public.orders (customer_id, created_at desc) where customer_id is not null;
 create index orders_guest_email_idx on public.orders (guest_email) where guest_email is not null;
 create index orders_coupon_code_idx on public.orders (coupon_code) where coupon_code is not null;
 
@@ -213,6 +228,9 @@ create index order_items_order_id_idx on public.order_items (order_id);
 create table public.order_events (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null references public.orders (id) on delete cascade,
+  -- Free text, not an enum, deliberately: unlike `orders.payment_status` /
+  -- `orders.fulfilment_status`, this timeline also carries payment-provider
+  -- and staff-note events an enum can't anticipate up front.
   status text not null,
   note text,
   -- Null for system/webhook-generated events (payment confirmation, etc.);
@@ -254,7 +272,7 @@ alter table public.order_events enable row level security;
 create policy "a customer can read their own row"
   on public.customers for select using (id = auth.uid());
 create policy "a customer can update their own row"
-  on public.customers for update using (id = auth.uid());
+  on public.customers for update using (id = auth.uid()) with check (id = auth.uid());
 
 create policy "a customer can manage their own addresses"
   on public.addresses for all
