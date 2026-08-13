@@ -42,7 +42,7 @@ const PRODUCT_COLUMNS = `
  * an inner join, so the brand and category embeds turn inner exactly when they
  * are being filtered on.
  */
-function summaryColumns(filters: { brandSlug?: string; categorySlug?: string }): string {
+export function summaryColumns(filters: { brandSlug?: string; categorySlug?: string }): string {
   const brands = `brands${filters.brandSlug ? '!inner' : ''} ( slug, name_en, name_ar, logo_path )`;
   const categories = filters.categorySlug
     ? ', product_categories!inner ( categories!inner ( slug ) )'

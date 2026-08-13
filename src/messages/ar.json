@@ -79,5 +79,11 @@
     "description": "الوصف",
     "allBrands": "جميع العلامات التجارية",
     "brandCount": "{count} علامة تجارية"
+  },
+  "search": {
+    "heading": "نتائج البحث",
+    "prompt": "ابحث عن منتج أو علامة تجارية",
+    "resultsFor": "{count} نتيجة عن \"{query}\"",
+    "noResults": "لا نتائج لـ \"{query}\". جرّب كلمة أخرى أو تحقق من الإملاء."
   }
 }
