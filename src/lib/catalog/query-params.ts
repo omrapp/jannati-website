@@ -8,9 +8,18 @@
  * importing it from `queries.ts`.
  */
 
-export type ProductSort = 'newest' | 'price-asc' | 'price-desc';
+export type ProductSort = 'newest' | 'price-asc' | 'price-desc' | 'new' | 'best-selling';
 
+/** The sorts a shopper can pick from `SortSelect`'s dropdown. */
 export const SORT_OPTIONS: readonly ProductSort[] = ['newest', 'price-asc', 'price-desc'];
+
+/**
+ * `new` and `best-selling` aren't in `SORT_OPTIONS` — a shopper never picks
+ * them from the sort dropdown, they only ever arrive already set, via the
+ * "New Arrivals" / "Best Sellers" nav links. Still valid values to parse
+ * back out of a URL, so `isSortOption` checks against this wider set.
+ */
+const ALL_SORTS: readonly ProductSort[] = [...SORT_OPTIONS, 'new', 'best-selling'];
 
 export type ProductFilters = {
   brandSlug?: string;
@@ -46,7 +55,7 @@ export function parseDecimal(value: string | undefined): string | undefined {
 }
 
 function isSortOption(value: string | undefined): value is ProductSort {
-  return value !== undefined && (SORT_OPTIONS as string[]).includes(value);
+  return value !== undefined && (ALL_SORTS as string[]).includes(value);
 }
 
 /**

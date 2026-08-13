@@ -27,8 +27,9 @@ export default async function ProductsPage({
   const filters = parseProductFilters(rawQuery);
   const page = Number.parseInt(String(rawQuery.page ?? '1'), 10) || 1;
 
-  const [t, products, brandFacets, categoryFacets] = await Promise.all([
+  const [t, tNav, products, brandFacets, categoryFacets] = await Promise.all([
     getTranslations('catalog'),
+    getTranslations('nav'),
     listProducts({
       locale,
       page,
@@ -53,10 +54,17 @@ export default async function ProductsPage({
     }),
   ]);
 
+  const heading =
+    filters.sort === 'new'
+      ? tNav('newArrivals')
+      : filters.sort === 'best-selling'
+        ? tNav('bestSellers')
+        : t('allProducts');
+
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10">
       <header className="flex flex-col gap-1">
-        <h1 className="font-display text-3xl font-semibold">{t('allProducts')}</h1>
+        <h1 className="font-display text-3xl font-semibold">{heading}</h1>
         <p className="text-muted-foreground text-sm">{t('count', { count: products.total })}</p>
       </header>
 
