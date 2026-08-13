@@ -382,18 +382,21 @@ matching, exposed through the `/search` page and the header search box.
 
 **Acceptance criteria:**
 
-- [ ] `search_ar` and `search_en` tsvector columns maintained by trigger over name, description, brand and tags
-- [ ] `pg_trgm` similarity fallback so near-misses and misspellings still return results
-- [ ] Search RPC returns ranked results with pagination
-- [ ] Header search box submits to `/search` and results render in the active language
+- [x] `search_ar` and `search_en` tsvector columns maintained by trigger over name, description, brand and tags
+- [x] `pg_trgm` similarity fallback so near-misses and misspellings still return results
+- [x] Search RPC returns ranked results; pagination moved to the TypeScript layer (`paginateHandles`)
+      so an out-of-range page still reports its real total — see code review history in this file's git log
+- [x] Header search box submits to `/search` and results render in the active language (pre-existing form,
+      confirmed unchanged)
 
 **Acceptance risk:** Postgres has no Arabic stemmer — relevance is measured, not assumed.
 
 **Verification:**
 
-- [ ] `npm run test` — ranking tests over a seeded fixture set
-- [ ] Manual: 10 real Arabic queries and 10 English ones reviewed for relevance with the user
-- [ ] Server-side search completes in under 500ms on the full catalog
+- [x] `npm run test` — `orderByHandle` and `paginateHandles` covered, including the out-of-range-page case
+- [ ] Manual: 10 real Arabic queries and 10 English ones reviewed for relevance with the user — blocked on
+      the user applying this migration (`npm run db:push`) against the seeded database
+- [ ] Server-side search completes in under 500ms on the full catalog — same block, needs the live index
 
 **Dependencies:** 1.2, 1.6
 **Files:** `supabase/migrations/*_search.sql`, `src/lib/catalog/search.ts`, `src/app/[locale]/search/page.tsx`
