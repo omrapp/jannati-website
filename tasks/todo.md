@@ -461,17 +461,17 @@ by newest, best selling or price.
 
 ## Blocked / waiting on the user
 
-| Item                                                         | Blocks      |
-| ------------------------------------------------------------ | ----------- |
-| Hosted Supabase URL, anon key, service-role key, project ref | 1.2 onward  |
-| Approval of translation API spend                            | 1.5         |
-| One project for dev + production, or a separate prod project | launch prep |
-| Which countries go live day one                              | pricing QA  |
-| ~~Jannati logo and brand colours~~ — supplied, applied       | done        |
-| Thawani / Tap sandbox merchant credentials                   | 2.11, 2.12  |
-| Google + Facebook OAuth app credentials, Twilio account       | 2.10        |
-| Real per-country shipping rates + free-shipping thresholds   | checkout QA |
-| VAT registration number for invoices                          | 2.9 invoice copy |
+| Item                                                         | Blocks           |
+| ------------------------------------------------------------ | ---------------- |
+| Hosted Supabase URL, anon key, service-role key, project ref | 1.2 onward       |
+| Approval of translation API spend                            | 1.5              |
+| One project for dev + production, or a separate prod project | launch prep      |
+| Which countries go live day one                              | pricing QA       |
+| ~~Jannati logo and brand colours~~ — supplied, applied       | done             |
+| Thawani / Tap sandbox merchant credentials                   | 2.11, 2.12       |
+| Google + Facebook OAuth app credentials, Twilio account      | 2.10             |
+| Real per-country shipping rates + free-shipping thresholds   | checkout QA      |
+| VAT registration number for invoices                         | 2.9 invoice copy |
 
 ---
 
