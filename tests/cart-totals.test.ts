@@ -262,4 +262,42 @@ describe('calculateCartTotals', () => {
     expect(totals.vatMinor).toBe(0);
     expect(totals.totalMinor).toBe(2000); // shipping only, net subtotal is 0
   });
+
+  it('rejects a zero-value fixed coupon', () => {
+    expect(() =>
+      calculateCartTotals([{ unitPriceMinor: 100, qty: 1 }], countries.om, {
+        type: 'fixed',
+        value: 0,
+      }),
+    ).toThrow(RangeError);
+  });
+
+  it('rejects a negative-value fixed coupon', () => {
+    expect(() =>
+      calculateCartTotals([{ unitPriceMinor: 100, qty: 1 }], countries.om, {
+        type: 'fixed',
+        value: -1,
+      }),
+    ).toThrow(RangeError);
+  });
+
+  it('rejects a cart subtotal too large to stay an exact integer', () => {
+    // Number.MAX_SAFE_INTEGER / 100, so a 100% coupon's arithmetic on it would
+    // still be exact — pushing past it is the actual failure boundary.
+    const hugeLine = { unitPriceMinor: Number.MAX_SAFE_INTEGER, qty: 2 };
+    expect(() => calculateCartTotals([hugeLine], countries.om)).toThrow(RangeError);
+  });
+
+  it('returns a zero subtotal (plus flat shipping) for an empty cart, rather than throwing', () => {
+    // Deliberate: an empty cart is a valid (if unusual) state to price, e.g.
+    // a UI computing totals before the shopper has added anything.
+    const totals = calculateCartTotals([], countries.om);
+    expect(totals).toEqual({
+      subtotalMinor: 0,
+      discountMinor: 0,
+      shippingMinor: 2000,
+      vatMinor: 0,
+      totalMinor: 2000,
+    });
+  });
 });

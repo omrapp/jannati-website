@@ -36,7 +36,7 @@ export type CartTotals = {
 };
 
 function sumLines(lines: CartLine[]): number {
-  return lines.reduce((subtotal, line) => {
+  const subtotal = lines.reduce((subtotal, line) => {
     if (!Number.isSafeInteger(line.unitPriceMinor) || line.unitPriceMinor < 0) {
       throw new RangeError(
         `Expected a non-negative integer unit price, received ${line.unitPriceMinor}`,
@@ -48,6 +48,16 @@ function sumLines(lines: CartLine[]): number {
 
     return subtotal + line.unitPriceMinor * line.qty;
   }, 0);
+
+  // Each line is checked above, but the accumulated total isn't — a cart of
+  // enough huge lines could still overflow. Caught here, once, rather than
+  // trusting every downstream reader (`calculatePercentDiscount` included)
+  // to notice a subtotal that silently stopped being an exact integer.
+  if (!Number.isSafeInteger(subtotal)) {
+    throw new RangeError(`Cart subtotal exceeds a safe integer: ${subtotal}`);
+  }
+
+  return subtotal;
 }
 
 /** Never returns more than `subtotalMinor` — a coupon cannot take a cart below zero. */
@@ -56,6 +66,14 @@ function calculateDiscount(
   coupon: CartCoupon,
   country: CountryPricing,
 ): number {
+  if (coupon.type === 'fixed' && (!Number.isSafeInteger(coupon.value) || coupon.value <= 0)) {
+    // Mirrors calculatePercentDiscount's own >= 1 check below: a coupon that
+    // discounts nothing is not a valid coupon, whichever type it is.
+    throw new RangeError(
+      `Expected a positive integer fixed coupon value, received ${coupon.value}`,
+    );
+  }
+
   const rawDiscount =
     coupon.type === 'percent'
       ? calculatePercentDiscount(subtotalMinor, coupon.value)
