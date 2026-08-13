@@ -78,7 +78,20 @@
     "cartComingSoon": "الطلب عبر الموقع قريبًا. اتصل بالمتجر لحجز هذا المنتج.",
     "description": "الوصف",
     "allBrands": "جميع العلامات التجارية",
-    "brandCount": "{count} علامة تجارية"
+    "brandCount": "{count} علامة تجارية",
+    "allCategories": "جميع الفئات",
+    "filters": "الفلاتر",
+    "clearFilters": "مسح الفلاتر",
+    "availability": "التوفر",
+    "inStockOnly": "المتوفر فقط",
+    "price": "السعر",
+    "minPrice": "الأدنى",
+    "maxPrice": "الأعلى",
+    "sort": {
+      "newest": "الأحدث",
+      "price-asc": "السعر: من الأقل للأعلى",
+      "price-desc": "السعر: من الأعلى للأقل"
+    }
   },
   "search": {
     "heading": "نتائج البحث",
