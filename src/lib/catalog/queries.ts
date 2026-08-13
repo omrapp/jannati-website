@@ -129,15 +129,6 @@ function leadVariantRowToProductJoin(row: LeadVariantRow): ProductJoin {
  */
 const BEST_SELLER_CATEGORY_SLUG = 'best-seller';
 
-type BestSellerRow = {
-  position: number;
-  products: Omit<ProductJoin, 'description_ar' | 'description_en'>;
-};
-
-function bestSellerRowToProductJoin(row: BestSellerRow): ProductJoin {
-  return { ...row.products, description_ar: null, description_en: null };
-}
-
 export const DEFAULT_PAGE_SIZE = 24;
 
 export type Page<Item> = {
@@ -263,43 +254,46 @@ export async function listProducts(options: ListProductsOptions): Promise<Page<P
     };
   }
 
-  // Same "can't order parents by a child column" limitation as the price
-  // sort above: darbeauty's best-seller ranking lives on the
-  // `product_categories` join row, so this roots there instead of `products`.
-  // A dedicated, simpler branch — filters beyond pagination aren't wired
-  // through it, since the only way here is the "Best Sellers" nav link.
+  // Products-rooted, same as the default branch below, just with the
+  // category forced to darbeauty's seeded "best-seller" collection — a
+  // shopper picking a *different* category from `FilterPanel` while on this
+  // sort has no product in both, so that pick is a no-op here, but brand,
+  // price and in-stock still narrow the collection correctly.
+  //
+  // `position` on every `product_categories` row in this collection came
+  // back `0` in the live data (the scrape never captured a real rank), and
+  // ordering a `products`-rooted query by an embedded child's column doesn't
+  // work — see the price-sort branch above — so `handle` is what actually
+  // makes pagination deterministic here, not a best-seller ranking.
   if (options.sort === 'best-selling') {
-    const { data, error, count } = await supabase
-      .from('product_categories')
+    let query = supabase
+      .from('products')
       .select(
-        `
-          position,
-          categories!inner ( slug ),
-          products!inner (
-            handle, name_ar, name_en,
-            brands ( slug, name_en, name_ar, logo_path ),
-            product_variants ( id, sku, title_ar, title_en, base_price_minor, compare_at_minor, stock_qty, position ),
-            product_images ( storage_path, alt_ar, alt_en, position )
-          )
-        `,
+        summaryColumns({
+          brandSlug,
+          categorySlug: BEST_SELLER_CATEGORY_SLUG,
+          variantFilter: hasVariantFilter,
+        }),
         { count: 'exact' },
       )
-      .eq('categories.slug', BEST_SELLER_CATEGORY_SLUG)
-      .order('position', { ascending: true })
-      // The darbeauty scrape didn't capture a real per-collection rank —
-      // every row's `position` is 0 — so without a tiebreaker, offset
-      // pagination over ties has no guaranteed order across requests.
-      .order('handle', { ascending: true, referencedTable: 'products' })
+      .eq('product_categories.categories.slug', BEST_SELLER_CATEGORY_SLUG)
+      .order('handle', { ascending: true })
       .range(from, from + pageSize - 1);
+
+    if (brandSlug) query = query.eq('brands.slug', brandSlug);
+    if (hasVariantFilter) query = query.eq('product_variants.position', 1);
+    if (minPriceOmr !== undefined) query = query.gte('product_variants.base_price_minor', minPriceOmr);
+    if (maxPriceOmr !== undefined) query = query.lte('product_variants.base_price_minor', maxPriceOmr);
+    if (inStockOnly) query = query.gt('product_variants.stock_qty', 0);
+
+    const { data, error, count } = await query;
 
     if (error) throw new Error(`listing best sellers: ${error.message}`);
 
     const total = count ?? 0;
 
     return {
-      items: (data as unknown as BestSellerRow[]).map((row) =>
-        toProductSummary(bestSellerRowToProductJoin(row), country, locale),
-      ),
+      items: (data as unknown as ProductJoin[]).map((row) => toProductSummary(row, country, locale)),
       total,
       page,
       pageSize,

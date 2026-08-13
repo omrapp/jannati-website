@@ -39,6 +39,11 @@ describe('parseProductFilters', () => {
     expect(parseProductFilters({ sort: 'cheapest-first' }).sort).toBeUndefined();
   });
 
+  it('accepts the two nav-only sorts, though they never appear in SORT_OPTIONS', () => {
+    expect(parseProductFilters({ sort: 'new' }).sort).toBe('new');
+    expect(parseProductFilters({ sort: 'best-selling' }).sort).toBe('best-selling');
+  });
+
   it('takes the first value when a param repeats', () => {
     expect(parseProductFilters({ brand: ['abib', 'medicube'] }).brandSlug).toBe('abib');
   });
@@ -86,5 +91,13 @@ describe('serializeProductFilters', () => {
     };
 
     expect(parseProductFilters(serializeProductFilters(original))).toMatchObject(original);
+  });
+
+  it('round-trips the nav-only sorts — the entire mechanism the New Arrivals and Best Sellers links depend on', () => {
+    expect(serializeProductFilters({ sort: 'new' })).toEqual({ sort: 'new' });
+    expect(serializeProductFilters({ sort: 'best-selling' })).toEqual({ sort: 'best-selling' });
+    expect(parseProductFilters(serializeProductFilters({ sort: 'best-selling' })).sort).toBe(
+      'best-selling',
+    );
   });
 });
