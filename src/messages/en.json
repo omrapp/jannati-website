@@ -79,5 +79,11 @@
     "description": "Description",
     "allBrands": "All brands",
     "brandCount": "{count} brands"
+  },
+  "search": {
+    "heading": "Search results",
+    "prompt": "Search for a product or brand",
+    "resultsFor": "{count} results for \"{query}\"",
+    "noResults": "No results for \"{query}\". Try a different word or check the spelling."
   }
 }
