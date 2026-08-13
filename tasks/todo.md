@@ -468,3 +468,293 @@ by newest, best selling or price.
 | One project for dev + production, or a separate prod project | launch prep |
 | Which countries go live day one                              | pricing QA  |
 | ~~Jannati logo and brand colours~~ — supplied, applied       | done        |
+| Thawani / Tap sandbox merchant credentials                   | 2.11, 2.12  |
+| Google + Facebook OAuth app credentials, Twilio account       | 2.10        |
+| Real per-country shipping rates + free-shipping thresholds   | checkout QA |
+| VAT registration number for invoices                          | 2.9 invoice copy |
+
+---
+
+# Phase 2 — Auth, Cart, Checkout
+
+## Task 2.1: Cart, address, order schema migration
+
+**Description:** Migration adding `carts`, `cart_items`, `addresses`, `coupons`, `orders`, `order_items`,
+`order_events` — with RLS: guest carts scoped by signed `session_token`, everything else scoped to the
+owning `customer_id`, writes to orders/coupons restricted to `admin_users` (table itself lands in Phase 3).
+
+**Acceptance criteria:**
+
+- [ ] Tables match the data model in the spec; money columns are integer minor units, no floats
+- [ ] RLS: a customer can read/write only their own cart, addresses, orders; guest cart scoped by cookie token
+- [ ] `order_items` has no FK-only fields for name/sku/price — they're snapshotted columns, immune to later catalog edits
+- [ ] Foreign keys and indexes cover every join the data-access layer in 2.3/2.9 will need
+
+**Verification:**
+
+- [ ] Migration file reviewed; **not applied** — user runs `npm run db:push` manually per project rule
+- [ ] `npx supabase gen types typescript --linked` diff reviewed once applied (user-run)
+
+**Dependencies:** None
+**Files:** `supabase/migrations/<timestamp>_commerce.sql`
+**Scope:** M
+
+---
+
+## Task 2.2: VAT, shipping and cart-totals lib
+
+**Description:** Pure functions extending the money lib: VAT on a subtotal, flat/free-over-threshold
+shipping, and a cart-totals reducer combining line items + VAT + shipping + an optional coupon into one
+result. No database, no components — same shape as `1.1`.
+
+**Acceptance criteria:**
+
+- [ ] `calculateVat(subtotalMinor, country)`, `calculateShipping(subtotalMinor, country)`,
+      `calculateCartTotals(lines, country, coupon?)` — all integer-only, all pure
+- [ ] Free-shipping threshold and VAT-exempt countries (QA, KW at 0%) both covered
+- [ ] Coupon discount never takes the subtotal below zero; VAT computed on the post-discount subtotal
+
+**Verification:**
+
+- [ ] `npm run test` — unit tests across all 6 countries, with and without a coupon, at and either side of the free-shipping threshold
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+
+**Dependencies:** None
+**Files:** `src/lib/commerce/vat.ts`, `src/lib/commerce/shipping.ts`, `src/lib/commerce/cart-totals.ts`, `tests/cart-totals.test.ts`
+**Scope:** S
+
+---
+
+## Task 2.3: Guest cart data access layer
+
+**Description:** Server-side cart operations — get-or-create cart by session token or customer id, add/
+update/remove line item, read cart with resolved totals via 2.2. Signed cookie issued on first add.
+
+**Acceptance criteria:**
+
+- [ ] Cart survives a reload via the session cookie; no client-side cart state
+- [ ] Adding an out-of-stock or deleted variant is rejected, not silently accepted
+- [ ] Quantity is clamped to available stock server-side
+
+**Verification:**
+
+- [ ] `npm run test` — unit tests over the merge/clamp/rejection logic with a mocked Supabase client
+- [ ] Blocked on 2.1 being applied for a live-database check
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+
+**Dependencies:** 2.1, 2.2
+**Files:** `src/lib/commerce/cart.ts`, `src/lib/commerce/session.ts`
+**Scope:** M
+
+---
+
+## Task 2.4: Email/password auth
+
+**Description:** Supabase Auth email/password: register, login, logout, password reset request +
+confirm. No OAuth app or external account needed — unblocked today.
+
+**Acceptance criteria:**
+
+- [ ] Register, login, logout, reset-password-request, reset-password-confirm pages, ar + en
+- [ ] Session available in server components via `src/lib/supabase/server.ts`
+- [ ] Bad credentials show a translated error, not a raw Supabase error string
+
+**Verification:**
+
+- [ ] `npm run build` succeeds
+- [ ] E2E deferred — noted, not falsely checked off
+- [ ] `npm run typecheck`, `npm run lint`
+
+**Dependencies:** None
+**Files:** `src/app/[locale]/auth/{login,register,reset}/page.tsx`, `src/lib/supabase/server.ts` (extend), `src/messages/{ar,en}.json`
+**Scope:** M
+
+---
+
+## Task 2.5: Guest cart merge on login
+
+**Description:** On successful login, the guest cart (by cookie) is merged into the customer's cart —
+matching variants sum quantities (clamped to stock), the cookie is then cleared.
+
+**Acceptance criteria:**
+
+- [ ] Overlapping, disjoint, and empty-either-side merge cases all produce the correct resulting cart
+- [ ] Merge is idempotent — a second login with no new guest cart doesn't duplicate lines
+- [ ] Cookie cleared after a successful merge
+
+**Verification:**
+
+- [ ] `npm run test` — unit tests over the three merge cases above
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+
+**Dependencies:** 2.3, 2.4
+**Files:** `src/lib/commerce/cart.ts` (extend)
+**Scope:** S
+
+---
+
+## Task 2.6: Cart UI
+
+**Description:** Cart drawer (header icon, opens on add) and `/cart` page replacing the placeholder —
+line items, quantity controls, totals breakdown (subtotal, VAT, shipping, total), empty state.
+
+**Acceptance criteria:**
+
+- [ ] Drawer and page both read from 2.3's server-side cart, no divergent client total math
+- [ ] Quantity change and remove both round-trip through the server action, grid updates
+- [ ] Totals breakdown shows VAT and shipping as separate lines, matching 2.2
+
+**Verification:**
+
+- [ ] E2E deferred — noted
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+
+**Dependencies:** 2.2, 2.3
+**Files:** `src/app/[locale]/cart/page.tsx`, `src/components/commerce/{cart-drawer,cart-line-item,cart-totals}.tsx`
+**Scope:** M
+
+---
+
+## Task 2.7: Address book
+
+**Description:** Replace `/account` placeholder pieces needed for checkout: list/add/edit/delete
+addresses, one marked default per customer.
+
+**Acceptance criteria:**
+
+- [ ] CRUD scoped to the logged-in customer via RLS, never trusts a client-supplied `customer_id`
+- [ ] Exactly one address can be default at a time
+- [ ] Country field limited to the 6 enabled countries
+
+**Verification:**
+
+- [ ] E2E deferred — noted
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+
+**Dependencies:** 2.1, 2.4
+**Files:** `src/app/[locale]/account/addresses/page.tsx`, `src/lib/commerce/addresses.ts`
+**Scope:** M
+
+---
+
+## Task 2.8: Coupon validation
+
+**Description:** Server-side coupon lookup and validation — active window, usage limit, per-user limit,
+minimum order — wired into 2.2's cart-totals reducer and a "have a coupon?" field in the cart/checkout UI.
+
+**Acceptance criteria:**
+
+- [ ] Expired, exhausted, below-minimum, and invalid codes all rejected with a translated reason
+- [ ] Valid coupon reduces the total exactly once, never stacks with itself
+- [ ] Usage/per-user counters only increment on a completed order, not on validation
+
+**Verification:**
+
+- [ ] `npm run test` — unit tests over every rejection reason plus a valid-application case
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+
+**Dependencies:** 2.1, 2.2, 2.6
+**Files:** `src/lib/commerce/coupons.ts`, `tests/coupons.test.ts`
+**Scope:** S
+
+---
+
+## Task 2.9: Checkout flow, COD, order creation
+
+**Description:** The big vertical slice: multi-step checkout (address → shipping → payment method →
+review) culminating in an order. Payment provider interface plus the COD adapter (the only one that
+needs no external account). Confirmation page and guest order lookup by order number + email.
+
+**Acceptance criteria:**
+
+- [ ] Every total shown at review is recomputed server-side at order-creation time, not trusted from the client
+- [ ] Order, order_items (with price/name/sku snapshots), and an initial `order_events` row are created atomically
+- [ ] COD order completes end-to-end for both a guest and a logged-in customer
+- [ ] Confirmation page shows order number; guest lookup by order number + email works
+- [ ] Payment interface (`createPayment`/`handleWebhook`) is provider-agnostic — Thawani/Tap slot in without touching checkout UI
+
+**Verification:**
+
+- [ ] E2E deferred — noted; manually verified guest + logged-in COD checkout locally once 2.1 is applied
+- [ ] `npm run test` — unit tests over total recomputation and atomic order creation (mocked client)
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+
+**Dependencies:** 2.1, 2.2, 2.3, 2.6, 2.7, 2.8
+**Files:** `src/app/[locale]/checkout/*`, `src/app/[locale]/order-lookup/page.tsx`, `src/lib/payments/{provider,cod}.ts`, `src/lib/commerce/orders.ts`
+**Scope:** L — largest slice in the phase; split into sub-commits (checkout UI, order creation, COD adapter, confirmation/lookup) if it grows past ~8 files
+
+---
+
+## Task 2.10: OAuth + phone OTP
+
+**Description:** Google + Facebook login, phone OTP via Twilio, added to the auth pages from 2.4.
+**Blocked** — needs Google Cloud + Meta developer app credentials and a Twilio account/GCC sender ID,
+none of which exist yet (see Blocked table above).
+
+**Acceptance criteria:**
+
+- [ ] Google and Facebook OAuth buttons on login/register, callback handled
+- [ ] Phone OTP as an alternative to email/password
+- [ ] Any of the three can be linked to an existing email/password account, not just used standalone
+
+**Verification:**
+
+- [ ] E2E deferred — noted
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+
+**Dependencies:** 2.4
+**Files:** `src/app/[locale]/auth/oauth-callback/page.tsx`, `src/lib/notifications/twilio.ts`
+**Scope:** M
+**Status:** blocked on credentials — do not start until supplied
+
+---
+
+## Task 2.11: Thawani adapter
+
+**Description:** Real payment adapter behind 2.9's interface — create payment session, redirect, webhook
+handler verifying the signature and updating `payment_status`. **Blocked** — needs Oman CR + sandbox credentials.
+
+**Acceptance criteria:**
+
+- [ ] Webhook handler idempotent — replay of the same event doesn't double-fulfil or double-charge
+- [ ] Signature/secret verified before any order mutation
+- [ ] Sandbox order completes end-to-end
+
+**Verification:**
+
+- [ ] `npm run test` — webhook idempotency unit tested with a mocked payload before any live key is wired in
+- [ ] Manual sandbox order once credentials exist
+
+**Dependencies:** 2.9
+**Files:** `src/lib/payments/thawani.ts`, `src/app/api/webhooks/thawani/route.ts`
+**Scope:** S
+**Status:** blocked on credentials — do not start until supplied
+
+---
+
+## Task 2.12: Tap adapter
+
+**Description:** Same shape as 2.11, for Tap. **Blocked** — needs sandbox credentials.
+
+**Acceptance criteria:**
+
+- [ ] Same three criteria as 2.11, for Tap's webhook/signature scheme
+
+**Verification:**
+
+- [ ] Same as 2.11
+
+**Dependencies:** 2.9
+**Files:** `src/lib/payments/tap.ts`, `src/app/api/webhooks/tap/route.ts`
+**Scope:** S
+**Status:** blocked on credentials — do not start until supplied
+
+---
+
+## Checkpoint E — Phase 2 complete
+
+- [ ] Guest and logged-in checkout both complete an order via COD (Thawani/Tap once unblocked)
+- [ ] Every total verified against 2.2's unit tests in all 6 currencies
+- [ ] Webhook handlers idempotent (unit tested; live-verified once credentials exist)
+- [ ] Full suite green: build, lint, typecheck, unit — E2E deferred, same as Checkpoint D
+- [ ] Reviewed with the user

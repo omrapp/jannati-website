@@ -119,3 +119,74 @@ are still outstanding, and so the riskiest unknown (does the scrape parse cleanl
    one project for both dev and production, or a separate production project created before launch?
 3. Enable all 6 countries on day one, or start with Oman + UAE and switch the rest on later?
 4. Seed "best sellers" from darbeauty's `best-seller` collection, or start it empty and let real sales fill it?
+
+---
+
+# Phase 2 — Auth, Cart, Checkout
+
+## Architecture decisions
+
+- **Guest cart first, account cart second.** A cart is keyed by a signed `session_token` cookie
+  regardless of login state; `customer_id` is nullable on `carts`. Login doesn't create a cart, it
+  attaches one — the merge-on-login task folds the guest cart's lines into (or creates) the account's
+  cart, then the cookie stops being read. This is the only design that makes guest checkout and
+  logged-in checkout the same code path past the cart step.
+- **Server recomputes every total, always.** `cart_items` stores only `variant_id` and `qty`. Price,
+  VAT and shipping are looked up fresh from `product_variants` and `countries` on every read and, most
+  importantly, again at order-creation time — a client-supplied total is never trusted, per the spec's
+  non-negotiables. `order_items` then snapshots the resolved price so a later FX or VAT change never
+  reprices a placed order.
+- **VAT and shipping join the money lib as pure functions** (`vat.ts`, `shipping.ts`, `cart-totals.ts`),
+  same shape as `1.1`'s FX/rounding code: integer minor units in, integer minor units out, unit tested
+  without a database. This is the DB-free task and goes first, same reasoning as `1.1`/`1.3` in Phase 1.
+- **Payment providers sit behind one interface** (`src/lib/payments/provider.ts`): `createPayment(order)
+  -> { redirectUrl }` and `handleWebhook(request) -> { orderId, status }`. COD is the trivial adapter
+  (no redirect, no webhook, marks the order pending-on-delivery) and needs no external account, so it
+  ships first and unblocks the entire checkout-to-order-confirmation path. Thawani and Tap are real
+  adapters behind the same interface, added once sandbox credentials exist.
+- **Auth ships in two slices.** Email/password uses Supabase Auth directly, no external app registration
+  — unblocked today. Google, Facebook and phone OTP each need a developer app or a Twilio account the
+  user hasn't supplied yet, so they're one task, ordered last, and the storefront works fully on
+  email/password + guest checkout in the meantime.
+- **Coupons validate server-side only**, at cart-totals time and again at order creation: code lookup,
+  `active`/date-window/usage-limit/per-user-limit checks, `min_order_minor` against the pre-discount
+  subtotal. No coupon logic in a component.
+
+## Dependency graph
+
+```
+2.1 cart/order schema ──┬──→ 2.3 cart data layer ──→ 2.5 cart merge on login
+2.2 vat/shipping/totals ┘         │                        │
+                                   ├──→ 2.7 checkout flow ──┴──→ 2.9 payment iface + COD + order create
+2.4 email/password auth ──────────┘         │
+                                   2.6 addresses            │
+                                             └──→ 2.8 coupons
+
+2.9 ──→ 2.11 Thawani adapter
+2.9 ──→ 2.12 Tap adapter
+2.4 + accounts ──→ 2.10 OAuth + phone OTP
+```
+
+Tasks 2.1 and 2.2 need no live database access beyond the migration file itself — 2.2 is pure and unit
+tested standalone, same as `1.1`. Everything from 2.3 on needs the schema applied, which — per the
+project's standing rule — is the user's manual `db:push`, not something run automatically.
+
+## Risks
+
+| Risk                                                    | Impact | Mitigation                                                                                       |
+| -------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------- |
+| Thawani / Tap sandbox credentials not yet supplied        | High   | Both adapters isolated behind the payment interface and ordered last; COD ships the full checkout path without them |
+| Google/Meta OAuth apps, Twilio account not yet supplied   | Med    | Email/password + guest checkout cover the full flow meanwhile; OAuth/OTP is one late, isolated task |
+| Client-supplied cart/coupon/total values                 | High   | Every total recomputed server-side at checkout and again at order creation; never read from the client |
+| Webhook replay creating duplicate orders/payments         | High   | Webhook handlers upsert on the provider's payment reference, not insert; idempotency covered by unit tests before any live key is wired in |
+| Guest cart merge losing or duplicating lines on login     | Med    | Merge logic unit tested against overlapping/disjoint/empty cart combinations before UI wiring       |
+
+## Open questions
+
+1. Thawani / Tap: Oman CR registered, sandbox credentials available? (blocks 2.11, 2.12)
+2. Google Cloud + Meta developer apps for OAuth; Twilio account + GCC sender ID for phone OTP? (blocks 2.10)
+3. Actual shipping rates and free-shipping thresholds per country — `countries.shipping_flat_minor` /
+   `free_shipping_threshold_minor` currently hold Phase 1 placeholder values. Real figures needed before
+   checkout totals are correct, not just structurally present.
+4. Is the shop VAT-registered? A VAT number is needed on the order confirmation / invoice, not just the
+   `vat_rate` column already in place.
