@@ -140,7 +140,7 @@ are still outstanding, and so the riskiest unknown (does the scrape parse cleanl
   same shape as `1.1`'s FX/rounding code: integer minor units in, integer minor units out, unit tested
   without a database. This is the DB-free task and goes first, same reasoning as `1.1`/`1.3` in Phase 1.
 - **Payment providers sit behind one interface** (`src/lib/payments/provider.ts`): `createPayment(order)
-  -> { redirectUrl }` and `handleWebhook(request) -> { orderId, status }`. COD is the trivial adapter
+-> { redirectUrl }` and `handleWebhook(request) -> { orderId, status }`. COD is the trivial adapter
   (no redirect, no webhook, marks the order pending-on-delivery) and needs no external account, so it
   ships first and unblocks the entire checkout-to-order-confirmation path. Thawani and Tap are real
   adapters behind the same interface, added once sandbox credentials exist.
@@ -173,13 +173,13 @@ project's standing rule — is the user's manual `db:push`, not something run au
 
 ## Risks
 
-| Risk                                                    | Impact | Mitigation                                                                                       |
-| -------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------- |
-| Thawani / Tap sandbox credentials not yet supplied        | High   | Both adapters isolated behind the payment interface and ordered last; COD ships the full checkout path without them |
-| Google/Meta OAuth apps, Twilio account not yet supplied   | Med    | Email/password + guest checkout cover the full flow meanwhile; OAuth/OTP is one late, isolated task |
-| Client-supplied cart/coupon/total values                 | High   | Every total recomputed server-side at checkout and again at order creation; never read from the client |
-| Webhook replay creating duplicate orders/payments         | High   | Webhook handlers upsert on the provider's payment reference, not insert; idempotency covered by unit tests before any live key is wired in |
-| Guest cart merge losing or duplicating lines on login     | Med    | Merge logic unit tested against overlapping/disjoint/empty cart combinations before UI wiring       |
+| Risk                                                    | Impact | Mitigation                                                                                                                                 |
+| ------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Thawani / Tap sandbox credentials not yet supplied      | High   | Both adapters isolated behind the payment interface and ordered last; COD ships the full checkout path without them                        |
+| Google/Meta OAuth apps, Twilio account not yet supplied | Med    | Email/password + guest checkout cover the full flow meanwhile; OAuth/OTP is one late, isolated task                                        |
+| Client-supplied cart/coupon/total values                | High   | Every total recomputed server-side at checkout and again at order creation; never read from the client                                     |
+| Webhook replay creating duplicate orders/payments       | High   | Webhook handlers upsert on the provider's payment reference, not insert; idempotency covered by unit tests before any live key is wired in |
+| Guest cart merge losing or duplicating lines on login   | Med    | Merge logic unit tested against overlapping/disjoint/empty cart combinations before UI wiring                                              |
 
 ## Open questions
 

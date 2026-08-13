@@ -88,6 +88,16 @@ describe('calculateVat', () => {
   it('rejects a negative subtotal', () => {
     expect(() => calculateVat(-1, countries.om)).toThrow(RangeError);
   });
+
+  it('accepts a string-typed rate, same as PostgREST can serialise a numeric column', () => {
+    const stringRated: CartCountry = { ...countries.om, vatRate: '0.05' };
+    expect(calculateVat(6400, stringRated)).toBe(320);
+  });
+
+  it('rejects a malformed string rate', () => {
+    const badRate: CartCountry = { ...countries.om, vatRate: 'not-a-number' };
+    expect(() => calculateVat(100, badRate)).toThrow(RangeError);
+  });
 });
 
 describe('calculateShipping', () => {
@@ -106,6 +116,19 @@ describe('calculateShipping', () => {
       freeShippingThresholdMinor: null,
     };
     expect(calculateShipping(1_000_000, noThreshold)).toBe(2000);
+  });
+
+  it('rejects a negative subtotal', () => {
+    expect(() => calculateShipping(-1, countries.om)).toThrow(RangeError);
+  });
+
+  it('rejects a non-integer subtotal', () => {
+    expect(() => calculateShipping(19999.5, countries.om)).toThrow(RangeError);
+  });
+
+  it('rejects a negative flat fee on the country', () => {
+    const badFee: CartCountry = { ...countries.om, shippingFlatMinor: -1 };
+    expect(() => calculateShipping(0, badFee)).toThrow(RangeError);
   });
 });
 
@@ -189,9 +212,27 @@ describe('calculateCartTotals', () => {
   });
 
   it('rejects a non-positive quantity', () => {
-    expect(() =>
-      calculateCartTotals([{ unitPriceMinor: 100, qty: 0 }], countries.om),
-    ).toThrow(RangeError);
+    expect(() => calculateCartTotals([{ unitPriceMinor: 100, qty: 0 }], countries.om)).toThrow(
+      RangeError,
+    );
+  });
+
+  it('rejects a non-integer quantity', () => {
+    expect(() => calculateCartTotals([{ unitPriceMinor: 100, qty: 1.5 }], countries.om)).toThrow(
+      RangeError,
+    );
+  });
+
+  it('rejects a negative unit price', () => {
+    expect(() => calculateCartTotals([{ unitPriceMinor: -1, qty: 1 }], countries.om)).toThrow(
+      RangeError,
+    );
+  });
+
+  it('rejects a non-integer unit price', () => {
+    expect(() => calculateCartTotals([{ unitPriceMinor: 100.5, qty: 1 }], countries.om)).toThrow(
+      RangeError,
+    );
   });
 
   it('rejects an out-of-range percent coupon', () => {
@@ -201,5 +242,24 @@ describe('calculateCartTotals', () => {
         value: 101,
       }),
     ).toThrow(RangeError);
+  });
+
+  it('rejects a zero-percent coupon — a coupon that discounts nothing is not a valid coupon', () => {
+    expect(() =>
+      calculateCartTotals([{ unitPriceMinor: 100, qty: 1 }], countries.om, {
+        type: 'percent',
+        value: 0,
+      }),
+    ).toThrow(RangeError);
+  });
+
+  it('a 100% coupon discounts the full subtotal, leaving only shipping and (zero) VAT', () => {
+    const totals = calculateCartTotals([{ unitPriceMinor: 6400, qty: 1 }], countries.om, {
+      type: 'percent',
+      value: 100,
+    });
+    expect(totals.discountMinor).toBe(6400);
+    expect(totals.vatMinor).toBe(0);
+    expect(totals.totalMinor).toBe(2000); // shipping only, net subtotal is 0
   });
 });

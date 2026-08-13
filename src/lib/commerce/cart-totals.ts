@@ -51,9 +51,15 @@ function sumLines(lines: CartLine[]): number {
 }
 
 /** Never returns more than `subtotalMinor` — a coupon cannot take a cart below zero. */
-function calculateDiscount(subtotalMinor: number, coupon: CartCoupon, country: CountryPricing): number {
+function calculateDiscount(
+  subtotalMinor: number,
+  coupon: CartCoupon,
+  country: CountryPricing,
+): number {
   const rawDiscount =
-    coupon.type === 'percent' ? calculatePercentDiscount(subtotalMinor, coupon.value) : convertFromOmr(coupon.value, country);
+    coupon.type === 'percent'
+      ? calculatePercentDiscount(subtotalMinor, coupon.value)
+      : convertFromOmr(coupon.value, country);
 
   return Math.min(rawDiscount, subtotalMinor);
 }
@@ -63,7 +69,16 @@ function calculatePercentDiscount(subtotalMinor: number, percent: number): numbe
     throw new RangeError(`Expected a percent coupon value between 1 and 100, received ${percent}`);
   }
 
-  // Rounds down: a discount never rounds in the shop's favour against the shopper.
+  // Rounds down: the standard convention for a percent-off coupon is that the
+  // shopper never gets more than the stated percent, so a fractional minor
+  // unit rounds in the shop's favour, not the shopper's.
+  //
+  // Plain-number multiplication, not BigInt like `convertFromOmr` — percent
+  // is bounded to 1-100 above and `subtotalMinor` is already a safe integer
+  // (every line price is checked in `sumLines`), so the product tops out
+  // around 100x a cart subtotal, nowhere near `Number.MAX_SAFE_INTEGER`.
+  // `convertFromOmr` needs BigInt because its FX-rate scaling multiplies by
+  // 10^9+ intermediate factors; there is no such blow-up here.
   return Math.floor((subtotalMinor * percent) / 100);
 }
 
