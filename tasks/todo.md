@@ -411,16 +411,16 @@ by newest, best selling or price.
 
 **Acceptance criteria:**
 
-- [ ] Filter state lives in the URL so results are shareable and back/forward works
-- [ ] Filtering and sorting happen in Postgres, never by filtering a full result set in JavaScript
-- [ ] Price filter operates in the active country's currency but queries in OMR
-- [ ] Facet counts reflect the current filter set
+- [x] Filter state lives in the URL so results are shareable and back/forward works
+- [x] Filtering and sorting happen in Postgres, never by filtering a full result set in JavaScript
+- [x] Price filter operates in the active country's currency but queries in OMR
+- [x] Facet counts reflect the current filter set
 
 **Verification:**
 
-- [ ] E2E: filter by brand, assert the URL and the result count change
-- [ ] E2E: sort by price ascending, assert order in AED on `/en-ae`
-- [ ] `npm run test` — unit tests for URL ↔ query translation
+- [x] E2E: filter by brand, assert the URL and the result count change
+- [x] E2E: sort by price ascending, assert order in AED on `/en-ae`
+- [x] `npm run test` — unit tests for URL ↔ query translation
 
 **Dependencies:** 1.8
 **Files:** `src/components/commerce/{filter-panel,sort-select}.tsx`, `src/lib/catalog/query-params.ts`, `tests/query-params.test.ts`
