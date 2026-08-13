@@ -434,14 +434,14 @@ by newest, best selling or price.
 
 **Acceptance criteria:**
 
-- [ ] `/products?sort=new` and `/products?sort=best-selling` (already linked from the nav) return correctly ordered results
-- [ ] "New" derives from a product's `is_new` flag or creation date; "best selling" from order counts, seeded from darbeauty's best-seller collection until real sales exist
-- [ ] Both are reachable from the header and footer links already in place
+- [x] `/products?sort=new` and `/products?sort=best-selling` (already linked from the nav) return correctly ordered results
+- [x] "New" derives from a product's `is_new` flag or creation date; "best selling" from order counts, seeded from darbeauty's best-seller collection until real sales exist — no real order data yet, so "best selling" is membership in the seeded `best-seller` category, ordered deterministically by `handle` (the collection's `position` column is uniformly 0 in seed data and can't drive real ranking; documented in `queries.ts`). Revisit once real order volume exists.
+- [x] Both are reachable from the header and footer links already in place
 
 **Verification:**
 
-- [ ] E2E: both nav links land on populated, correctly ordered pages
-- [ ] `npm run build` succeeds
+- [ ] E2E: both nav links land on populated, correctly ordered pages — **deferred**, per steer to build out remaining pages before a dedicated testing pass. Manually/live-probed instead: pagination is deterministic and non-duplicating, filters compose correctly, translations render.
+- [x] `npm run build` succeeds (typecheck/lint/test/build all green on `main`)
 
 **Dependencies:** 1.12
 **Files:** `src/lib/catalog/queries.ts`, `src/app/[locale]/products/page.tsx`
