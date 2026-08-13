@@ -36,7 +36,12 @@ function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function parseDecimal(value: string | undefined): string | undefined {
+/**
+ * Exported so `filter-panel.tsx` validates a typed price against the exact
+ * same rule this module uses on a URL param — one regex, not two copies that
+ * can drift.
+ */
+export function parseDecimal(value: string | undefined): string | undefined {
   return value !== undefined && DECIMAL.test(value) ? value : undefined;
 }
 

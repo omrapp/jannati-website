@@ -389,6 +389,10 @@ async function resolveFilteredProductIds(
     let query = supabase
       .from('products')
       .select(idFilterColumns({ brandSlug: options.brandSlug, categorySlug: options.categorySlug, variantFilter }))
+      // Offset pagination is only stable across requests with an explicit
+      // order — without one, Postgres is free to return rows in a different
+      // sequence per call, which would duplicate or drop ids across pages.
+      .order('id', { ascending: true })
       .range(from, to);
 
     if (options.brandSlug) query = query.eq('brands.slug', options.brandSlug);

@@ -16,14 +16,13 @@ import {
 } from '@/components/ui/sheet';
 import { parseLocale, textDirection, type Locale } from '@/i18n/config';
 import { usePathname, useRouter } from '@/i18n/navigation';
-import { serializeProductFilters, type ProductFilters } from '@/lib/catalog/query-params';
+import {
+  parseDecimal,
+  serializeProductFilters,
+  type ProductFilters,
+} from '@/lib/catalog/query-params';
 import type { FacetCount } from '@/lib/catalog/queries';
 import { cn } from '@/lib/utils';
-
-// Mirrors query-params.ts's own DECIMAL check — a price typed here must pass
-// the same validation it would if it arrived via a hand-edited URL, so a
-// stray "12abc" degrades to "no filter" rather than reaching the server.
-const DECIMAL = /^\d+(\.\d+)?$/;
 
 type FilterPanelProps = {
   filters: ProductFilters;
@@ -48,6 +47,18 @@ export function FilterPanel({ filters, brands, categories }: FilterPanelProps) {
   // on blur ever reaches the URL.
   const [minPrice, setMinPrice] = useState(filters.minPrice ?? '');
   const [maxPrice, setMaxPrice] = useState(filters.maxPrice ?? '');
+  // Tracks the last `filters` these inputs were seeded from, so a change
+  // coming from *outside* this component (a browser back/forward, a shared
+  // link) can be noticed and re-synced during render — the React-recommended
+  // way to adjust state from props, rather than an effect that would commit
+  // one render late and let a stale blur resurrect a filter that was just
+  // removed. See https://react.dev/learn/you-might-not-need-an-effect.
+  const [syncedFrom, setSyncedFrom] = useState(filters);
+  if (filters.minPrice !== syncedFrom.minPrice || filters.maxPrice !== syncedFrom.maxPrice) {
+    setSyncedFrom(filters);
+    setMinPrice(filters.minPrice ?? '');
+    setMaxPrice(filters.maxPrice ?? '');
+  }
 
   // The drawer opens from the side the page starts on: right in Arabic, left in English.
   const side = textDirection(parseLocale(locale).language) === 'rtl' ? 'right' : 'left';
@@ -73,11 +84,7 @@ export function FilterPanel({ filters, brands, categories }: FilterPanelProps) {
   }
 
   function applyPrice() {
-    apply({
-      ...filters,
-      minPrice: DECIMAL.test(minPrice) ? minPrice : undefined,
-      maxPrice: DECIMAL.test(maxPrice) ? maxPrice : undefined,
-    });
+    apply({ ...filters, minPrice: parseDecimal(minPrice), maxPrice: parseDecimal(maxPrice) });
   }
 
   function clearAll() {

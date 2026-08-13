@@ -127,8 +127,11 @@ export function convertToOmrBound(
  * e.g. `"10.5"` at exponent 2 -> `1050`. For user-entered filter bounds, not
  * a computed price — same no-float rule applies, so a typed "9.999" is never
  * silently mangled by a `parseFloat` round-trip on the way into a query.
- * Returns `null` for anything not a plain non-negative decimal, or one with
- * more fractional digits than the currency has minor units for.
+ * Returns `null` for anything not a plain non-negative decimal, one with more
+ * fractional digits than the currency has minor units for, or one so large
+ * the minor-unit amount would not be a safe integer — a shopper-typed value,
+ * so a wildly oversized one degrades to "no filter" rather than reaching
+ * `convertToOmrBound`'s stricter bounds check and throwing.
  */
 export function majorDecimalToMinor(value: string, exponent: number): number | null {
   const trimmed = value.trim();
@@ -137,7 +140,9 @@ export function majorDecimalToMinor(value: string, exponent: number): number | n
   const [whole, fraction = ''] = trimmed.split('.');
   if (fraction.length > exponent) return null;
 
-  return Number(`${whole}${fraction.padEnd(exponent, '0')}`);
+  const minor = Number(`${whole}${fraction.padEnd(exponent, '0')}`);
+
+  return Number.isSafeInteger(minor) ? minor : null;
 }
 
 /**
