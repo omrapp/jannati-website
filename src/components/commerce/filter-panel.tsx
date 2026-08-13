@@ -94,9 +94,15 @@ export function FilterPanel({ filters, brands, categories }: FilterPanelProps) {
     apply({ sort: filters.sort });
   }
 
+  // 'best-selling' is a fixed, hardcoded category collection server-side
+  // (see BEST_SELLER_CATEGORY_SLUG in queries.ts) — categorySlug has no
+  // effect on that branch, so it's hidden here rather than shown as an
+  // active-but-inert filter.
+  const categoryFilterUsable = filters.sort !== 'best-selling';
+
   const activeCount = [
     filters.brandSlug,
-    filters.categorySlug,
+    categoryFilterUsable ? filters.categorySlug : undefined,
     filters.minPrice,
     filters.maxPrice,
     filters.inStockOnly ? true : undefined,
@@ -160,14 +166,16 @@ export function FilterPanel({ filters, brands, categories }: FilterPanelProps) {
             <FacetList options={brands} activeSlug={filters.brandSlug} onSelect={toggleBrand} />
           </section>
 
-          <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">{t('allCategories')}</h3>
-            <FacetList
-              options={categories}
-              activeSlug={filters.categorySlug}
-              onSelect={toggleCategory}
-            />
-          </section>
+          {categoryFilterUsable && (
+            <section className="flex flex-col gap-2">
+              <h3 className="text-sm font-medium">{t('allCategories')}</h3>
+              <FacetList
+                options={categories}
+                activeSlug={filters.categorySlug}
+                onSelect={toggleCategory}
+              />
+            </section>
+          )}
         </div>
 
         <SheetFooter>

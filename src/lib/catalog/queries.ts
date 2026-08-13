@@ -121,6 +121,14 @@ function leadVariantRowToProductJoin(row: LeadVariantRow): ProductJoin {
   };
 }
 
+/**
+ * The darbeauty scrape's "Best sellers" collection, seeded as an ordinary
+ * category. Its `product_categories.position` came back 0 for every row —
+ * the scrape didn't capture a real per-collection rank — so this is really
+ * just membership, not a ranking, until real order history exists to sort by.
+ */
+const BEST_SELLER_CATEGORY_SLUG = 'best-seller';
+
 export const DEFAULT_PAGE_SIZE = 24;
 
 export type Page<Item> = {
@@ -246,6 +254,53 @@ export async function listProducts(options: ListProductsOptions): Promise<Page<P
     };
   }
 
+  // Products-rooted, same as the default branch below, just with the
+  // category forced to darbeauty's seeded "best-seller" collection — a
+  // shopper picking a *different* category from `FilterPanel` while on this
+  // sort has no product in both, so that pick is a no-op here, but brand,
+  // price and in-stock still narrow the collection correctly.
+  //
+  // `position` on every `product_categories` row in this collection came
+  // back `0` in the live data (the scrape never captured a real rank), and
+  // ordering a `products`-rooted query by an embedded child's column doesn't
+  // work — see the price-sort branch above — so `handle` is what actually
+  // makes pagination deterministic here, not a best-seller ranking.
+  if (options.sort === 'best-selling') {
+    let query = supabase
+      .from('products')
+      .select(
+        summaryColumns({
+          brandSlug,
+          categorySlug: BEST_SELLER_CATEGORY_SLUG,
+          variantFilter: hasVariantFilter,
+        }),
+        { count: 'exact' },
+      )
+      .eq('product_categories.categories.slug', BEST_SELLER_CATEGORY_SLUG)
+      .order('handle', { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (brandSlug) query = query.eq('brands.slug', brandSlug);
+    if (hasVariantFilter) query = query.eq('product_variants.position', 1);
+    if (minPriceOmr !== undefined) query = query.gte('product_variants.base_price_minor', minPriceOmr);
+    if (maxPriceOmr !== undefined) query = query.lte('product_variants.base_price_minor', maxPriceOmr);
+    if (inStockOnly) query = query.gt('product_variants.stock_qty', 0);
+
+    const { data, error, count } = await query;
+
+    if (error) throw new Error(`listing best sellers: ${error.message}`);
+
+    const total = count ?? 0;
+
+    return {
+      items: (data as unknown as ProductJoin[]).map((row) => toProductSummary(row, country, locale)),
+      total,
+      page,
+      pageSize,
+      pageCount: Math.max(1, Math.ceil(total / pageSize)),
+    };
+  }
+
   // The count is exact and the range is bounded: the catalog is never fetched
   // whole, whatever a caller passes.
   let query = supabase
@@ -253,7 +308,14 @@ export async function listProducts(options: ListProductsOptions): Promise<Page<P
     .select(
       summaryColumns({ brandSlug, categorySlug, variantFilter: hasVariantFilter }),
       { count: 'exact' },
-    )
+    );
+
+  // `is_new` only breaks the tie ahead of recency for the "New Arrivals" nav
+  // link — the default listing (and a shopper's own "Newest" sort pick)
+  // stays purely chronological.
+  if (options.sort === 'new') query = query.order('is_new', { ascending: false });
+
+  query = query
     .order('published_at', { ascending: false, nullsFirst: false })
     .order('handle', { ascending: true })
     .range(from, from + pageSize - 1);

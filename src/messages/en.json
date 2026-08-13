@@ -90,7 +90,9 @@
     "sort": {
       "newest": "Newest",
       "price-asc": "Price: low to high",
-      "price-desc": "Price: high to low"
+      "price-desc": "Price: high to low",
+      "new": "New Arrivals",
+      "best-selling": "Best Sellers"
     }
   },
   "search": {
