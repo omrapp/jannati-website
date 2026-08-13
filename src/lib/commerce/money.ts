@@ -85,6 +85,67 @@ export function convertFromOmr(baseMinorOmr: number, country: CountryPricing): n
 }
 
 /**
+ * Inverts `convertFromOmr` for a price-range filter bound: given a bound
+ * already expressed in the country's minor units, returns the OMR minor
+ * bound to query `product_variants.base_price_minor` against.
+ *
+ * `convertFromOmr` always rounds *up* to the country's rounding step, so many
+ * OMR prices share one displayed value — e.g. every AED price from 61.01 up
+ * to 61.25 displays as "61.25". A plain inverse of the linear conversion
+ * lands inside that bucket, not at its edge, and can sit on the wrong side of
+ * a product priced at the bucket's low end. Padding the target by one
+ * rounding step before inverting — down for a minimum, up for a maximum —
+ * covers the whole bucket, so a product priced right at the edge of the
+ * shopper's range is never wrongly excluded. The cost is a filter that is
+ * occasionally a shade more permissive than the shopper's exact numbers,
+ * which is the safe direction for a browse-time filter to err in.
+ */
+export function convertToOmrBound(
+  targetMinor: number,
+  country: CountryPricing,
+  direction: 'floor' | 'ceil',
+): number {
+  assertMinorUnits(targetMinor);
+
+  const padded =
+    direction === 'floor'
+      ? Math.max(0, targetMinor - country.roundingStepMinor)
+      : targetMinor + country.roundingStepMinor;
+
+  // Inverse of convertFromOmr's numerator/denominator: solve for omrMinor.
+  const numerator = BigInt(padded) * 10n ** BigInt(OMR_EXPONENT) * 10n ** BigInt(RATE_SCALE);
+  const denominator =
+    rateToScaledInt(country.fxRateFromOmr) * 10n ** BigInt(country.currencyExponent);
+
+  const omrMinor = direction === 'ceil' ? ceilDiv(numerator, denominator) : numerator / denominator;
+
+  return Number(omrMinor);
+}
+
+/**
+ * Parses a decimal string already expressed in a currency's minor units,
+ * e.g. `"10.5"` at exponent 2 -> `1050`. For user-entered filter bounds, not
+ * a computed price — same no-float rule applies, so a typed "9.999" is never
+ * silently mangled by a `parseFloat` round-trip on the way into a query.
+ * Returns `null` for anything not a plain non-negative decimal, one with more
+ * fractional digits than the currency has minor units for, or one so large
+ * the minor-unit amount would not be a safe integer — a shopper-typed value,
+ * so a wildly oversized one degrades to "no filter" rather than reaching
+ * `convertToOmrBound`'s stricter bounds check and throwing.
+ */
+export function majorDecimalToMinor(value: string, exponent: number): number | null {
+  const trimmed = value.trim();
+  if (!/^\d+(\.\d+)?$/.test(trimmed)) return null;
+
+  const [whole, fraction = ''] = trimmed.split('.');
+  if (fraction.length > exponent) return null;
+
+  const minor = Number(`${whole}${fraction.padEnd(exponent, '0')}`);
+
+  return Number.isSafeInteger(minor) ? minor : null;
+}
+
+/**
  * Renders minor units as an exact decimal string, e.g. `6400` -> `"6.400"`.
  * Used for display formatting and for the `price` field of product JSON-LD,
  * which must not be a rounded float.

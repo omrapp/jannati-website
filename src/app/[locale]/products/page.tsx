@@ -1,12 +1,15 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
+import { FilterPanel } from '@/components/commerce/filter-panel';
 import { Pagination } from '@/components/commerce/pagination';
 import { ProductGrid } from '@/components/commerce/product-grid';
+import { SortSelect } from '@/components/commerce/sort-select';
 import { isLocale } from '@/i18n/config';
-import { listProducts } from '@/lib/catalog/queries';
+import { parseProductFilters, serializeProductFilters } from '@/lib/catalog/query-params';
+import { listBrandFacets, listCategoryFacets, listProducts } from '@/lib/catalog/queries';
 
-type Search = Promise<{ page?: string }>;
+type Search = Promise<Record<string, string | string[] | undefined>>;
 
 export default async function ProductsPage({
   params,
@@ -20,12 +23,34 @@ export default async function ProductsPage({
 
   setRequestLocale(locale);
 
-  const { page: pageParam } = await searchParams;
-  const page = Number.parseInt(pageParam ?? '1', 10) || 1;
+  const rawQuery = await searchParams;
+  const filters = parseProductFilters(rawQuery);
+  const page = Number.parseInt(String(rawQuery.page ?? '1'), 10) || 1;
 
-  const [t, products] = await Promise.all([
+  const [t, products, brandFacets, categoryFacets] = await Promise.all([
     getTranslations('catalog'),
-    listProducts({ locale, page }),
+    listProducts({
+      locale,
+      page,
+      brandSlug: filters.brandSlug,
+      categorySlug: filters.categorySlug,
+      minPriceMajor: filters.minPrice,
+      maxPriceMajor: filters.maxPrice,
+      inStockOnly: filters.inStockOnly,
+      sort: filters.sort,
+    }),
+    listBrandFacets(locale, {
+      categorySlug: filters.categorySlug,
+      minPriceMajor: filters.minPrice,
+      maxPriceMajor: filters.maxPrice,
+      inStockOnly: filters.inStockOnly,
+    }),
+    listCategoryFacets(locale, {
+      brandSlug: filters.brandSlug,
+      minPriceMajor: filters.minPrice,
+      maxPriceMajor: filters.maxPrice,
+      inStockOnly: filters.inStockOnly,
+    }),
   ]);
 
   return (
@@ -35,12 +60,21 @@ export default async function ProductsPage({
         <p className="text-muted-foreground text-sm">{t('count', { count: products.total })}</p>
       </header>
 
+      <div className="flex items-center gap-3">
+        <FilterPanel filters={filters} brands={brandFacets} categories={categoryFacets} />
+        <SortSelect filters={filters} />
+      </div>
+
       <ProductGrid products={products.items} />
 
       <Pagination
         page={products.page}
         pageCount={products.pageCount}
-        hrefFor={(next) => (next === 1 ? '/products' : `/products?page=${next}`)}
+        hrefFor={(next) => {
+          const query = serializeProductFilters(filters, next);
+          const qs = new URLSearchParams(query).toString();
+          return qs ? `/products?${qs}` : '/products';
+        }}
       />
     </div>
   );

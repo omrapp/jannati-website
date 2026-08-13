@@ -78,7 +78,20 @@
     "cartComingSoon": "Online ordering opens soon. Call the shop to reserve this item.",
     "description": "Description",
     "allBrands": "All brands",
-    "brandCount": "{count} brands"
+    "brandCount": "{count} brands",
+    "allCategories": "All categories",
+    "filters": "Filters",
+    "clearFilters": "Clear filters",
+    "availability": "Availability",
+    "inStockOnly": "In stock only",
+    "price": "Price",
+    "minPrice": "Min",
+    "maxPrice": "Max",
+    "sort": {
+      "newest": "Newest",
+      "price-asc": "Price: low to high",
+      "price-desc": "Price: high to low"
+    }
   },
   "search": {
     "heading": "Search results",

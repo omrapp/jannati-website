@@ -111,7 +111,7 @@ export function toCountryPricing(country: CountryRow): CountryPricing {
  * no English copy until the translation pass runs, and an Arabic name on an
  * English page beats a blank one.
  */
-function text(ar: string | null, en: string | null, locale: Locale): string | null {
+export function text(ar: string | null, en: string | null, locale: Locale): string | null {
   const { language } = parseLocale(locale);
 
   return language === 'en' ? (en ?? ar) : (ar ?? en);

@@ -52,6 +52,49 @@ test.describe('product detail page', () => {
   });
 });
 
+test.describe('filters and sorting', () => {
+  test('filtering by brand narrows the grid and updates the shareable URL', async ({ page }) => {
+    await page.goto('/en-ae/products');
+
+    await page.getByRole('button', { name: 'Filters' }).click();
+    // Fixture: brand "abib" carries 9 active products in the seed.
+    await page.getByRole('button', { name: /^Abib/ }).click();
+    // Close the drawer — while a Radix Dialog is open, everything behind it
+    // is aria-hidden, so the grid below is invisible to role-based locators.
+    await page.keyboard.press('Escape');
+
+    await expect(page).toHaveURL(/[?&]brand=abib\b/);
+    await expect(page.getByText('9 products')).toBeVisible();
+
+    const cards = page.getByRole('link').filter({ has: page.getByRole('heading', { level: 3 }) });
+    await expect(cards).toHaveCount(9);
+  });
+
+  test('sorting by price ascending on /en-ae orders cards low to high and updates the URL', async ({
+    page,
+  }) => {
+    await page.goto('/en-ae/products');
+
+    await page.getByRole('button', { name: 'Newest' }).click();
+    await page.getByRole('menuitem', { name: 'Price: low to high' }).click();
+
+    await expect(page).toHaveURL(/[?&]sort=price-asc\b/);
+    await expect(page.getByRole('button', { name: 'Price: low to high' })).toBeVisible();
+
+    const cards = page.getByRole('link').filter({ has: page.getByRole('heading', { level: 3 }) });
+    const prices = await cards.evaluateAll((links) =>
+      links.map((link) => {
+        // The lead (current) price, not a struck-through compare-at price.
+        const match = link.textContent?.match(/AED\s?([\d.]+)/);
+        return match ? Number.parseFloat(match[1]) : NaN;
+      }),
+    );
+
+    expect(prices.length).toBeGreaterThan(1);
+    expect(prices).toEqual([...prices].sort((a, b) => a - b));
+  });
+});
+
 test.describe('brand pages', () => {
   test('/ar-om/brands lists brands and links through to a brand page', async ({ page }) => {
     await page.goto('/ar-om/brands');

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   convertFromOmr,
+  convertToOmrBound,
   formatFromOmr,
   formatMoney,
+  majorDecimalToMinor,
   minorToDecimalString,
 } from '@/lib/commerce/money';
 import type { CountryPricing } from '@/lib/commerce/types';
@@ -142,5 +144,70 @@ describe('formatMoney', () => {
     expect(formatFromOmr(HAND_CREME, pricing.ae, 'en-ae')).toBe(
       formatMoney(6125, pricing.ae, 'en-ae'),
     );
+  });
+});
+
+describe('convertToOmrBound', () => {
+  // Forward reference from the `convertFromOmr` suite above: 6.400 OMR displays
+  // as these amounts per currency.
+  const displayed: Record<keyof typeof pricing, number> = {
+    om: 6400,
+    ae: 6125,
+    sa: 6250,
+    kw: 5110,
+    qa: 6075,
+    bh: 6275,
+  };
+
+  it('never excludes a product priced exactly at the filter boundary', () => {
+    // The property that matters for a price-range filter: setting min or max
+    // to a product's own displayed price must still include that product,
+    // whichever way the reverse conversion happens to round.
+    for (const [code, country] of Object.entries(pricing)) {
+      const target = displayed[code as keyof typeof pricing];
+
+      const minBound = convertToOmrBound(target, country, 'floor');
+      const maxBound = convertToOmrBound(target, country, 'ceil');
+
+      expect(HAND_CREME).toBeGreaterThanOrEqual(minBound);
+      expect(HAND_CREME).toBeLessThanOrEqual(maxBound);
+    }
+  });
+
+  it('never floors a minimum bound below zero', () => {
+    expect(convertToOmrBound(0, pricing.ae, 'floor')).toBe(0);
+  });
+
+  it('floor never rounds above ceil for the same bound', () => {
+    for (const country of Object.values(pricing)) {
+      const floor = convertToOmrBound(12345, country, 'floor');
+      const ceil = convertToOmrBound(12345, country, 'ceil');
+
+      expect(floor).toBeLessThanOrEqual(ceil);
+    }
+  });
+});
+
+describe('majorDecimalToMinor', () => {
+  it('parses a whole number at any exponent', () => {
+    expect(majorDecimalToMinor('10', 2)).toBe(1000);
+    expect(majorDecimalToMinor('0', 3)).toBe(0);
+  });
+
+  it('parses a fractional decimal, padded to the exponent', () => {
+    expect(majorDecimalToMinor('10.5', 2)).toBe(1050);
+    expect(majorDecimalToMinor('10.50', 2)).toBe(1050);
+    expect(majorDecimalToMinor('6.400', 3)).toBe(6400);
+  });
+
+  it('rejects more fractional digits than the currency supports', () => {
+    expect(majorDecimalToMinor('10.999', 2)).toBeNull();
+  });
+
+  it('rejects anything that is not a plain non-negative decimal', () => {
+    expect(majorDecimalToMinor('abc', 2)).toBeNull();
+    expect(majorDecimalToMinor('-5', 2)).toBeNull();
+    expect(majorDecimalToMinor('5-', 2)).toBeNull();
+    expect(majorDecimalToMinor('', 2)).toBeNull();
   });
 });
