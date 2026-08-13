@@ -294,9 +294,8 @@ category listing pages sharing the same components.
 
 **Verification:**
 
-- [ ] E2E: open `/ar-om/products`, assert cards render with prices in OMR — blocked until the
-      database is seeded (`npm run db:push` + `npm run seed:load`)
-- [ ] E2E: same page in `/en-ae` shows AED prices — same blocker
+- [x] E2E: open `/ar-om/products`, assert cards render with prices in OMR
+- [x] E2E: same page in `/en-ae` shows AED prices
 - [x] `npm run build` succeeds
 - [x] `paginationItems` unit tested (`tests/pagination.test.ts`, 5 cases); 85 tests green
 
@@ -320,9 +319,8 @@ structured data for search engines.
 
 **Verification:**
 
-- [ ] E2E: `/ar-om/products/abib-hand-creme-type-g` shows the Arabic name and a 6.400 ر.ع. price —
-      blocked until the database is seeded
-- [ ] Switching country changes the displayed currency — same blocker
+- [x] E2E: `/ar-om/products/abib-hand-creme-type-g` shows the Arabic name and a 6.400 ر.ع. price
+- [x] Switching country changes the displayed currency
 - [x] `npm run build` succeeds
 - [x] `productJsonLd` / `jsonLdScript` unit tested (12 cases); 97 tests green
 
@@ -357,8 +355,7 @@ structured data for search engines.
 
 **Verification:**
 
-- [ ] E2E: `/ar-om/brands` lists brands and one links through to its products — blocked until the
-      database is seeded
+- [x] E2E: `/ar-om/brands` lists brands and one links through to its products
 - [x] `npm run build` succeeds
 - [x] `groupBrandsByInitial` unit tested (6 cases); 103 tests green
 
@@ -370,9 +367,11 @@ structured data for search engines.
 
 ## Checkpoint C — after 1.10
 
-- [ ] A shopper can browse from home → category → product → brand entirely in Arabic
-- [ ] Prices correct in all 6 countries on the same product
-- [ ] Review the browsing experience with the user before search and filters
+- [x] A shopper can browse from home → category → product → brand entirely in Arabic
+- [x] Prices correct in all 6 countries on the same product — verified for OM/AE by e2e;
+      the other 4 share the same `convertFromOmr` path and are covered by its unit tests
+- [x] Review the browsing experience with the user before search and filters — skipped at
+      the user's direction ("Move to 1.11")
 
 ---
 
