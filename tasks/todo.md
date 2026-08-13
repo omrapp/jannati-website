@@ -475,6 +475,14 @@ by newest, best selling or price.
 
 ---
 
+## Known issues (non-blocking)
+
+| Item                                                                                                                                                         | Found in |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| `npm run format:check` fails on `src/lib/catalog/queries.ts`, `search.ts`, `e2e/catalog.spec.ts` — pre-existing, not touched since to keep task diffs scoped | 2.2      |
+
+---
+
 # Phase 2 — Auth, Cart, Checkout
 
 ## Task 2.1: Cart, address, order schema migration
@@ -509,15 +517,21 @@ result. No database, no components — same shape as `1.1`.
 
 **Acceptance criteria:**
 
-- [ ] `calculateVat(subtotalMinor, country)`, `calculateShipping(subtotalMinor, country)`,
+- [x] `calculateVat(subtotalMinor, country)`, `calculateShipping(subtotalMinor, country)`,
       `calculateCartTotals(lines, country, coupon?)` — all integer-only, all pure
-- [ ] Free-shipping threshold and VAT-exempt countries (QA, KW at 0%) both covered
-- [ ] Coupon discount never takes the subtotal below zero; VAT computed on the post-discount subtotal
+- [x] Free-shipping threshold and VAT-exempt countries (QA, KW at 0%) both covered
+- [x] Coupon discount never takes the subtotal below zero; VAT computed on the post-discount subtotal
 
 **Verification:**
 
-- [ ] `npm run test` — unit tests across all 6 countries, with and without a coupon, at and either side of the free-shipping threshold
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] `npm run test` — unit tests across all 6 countries, with and without a coupon, at and either side of the free-shipping threshold
+- [x] `npm run typecheck`, `npm run lint`, `npm run build`, `npm run format:check` (scoped to this task's files — see below)
+
+**Done:** merged into `main` via `feat/cart-totals-lib`, two review rounds. Second round closed a
+subtotal-overflow gap in `sumLines` and a zero/negative fixed-coupon gap in `calculateDiscount`, both
+with tests. `npm run format:check` on the _whole_ repo still fails — pre-existing debt in
+`src/lib/catalog/queries.ts`, `search.ts`, and `e2e/catalog.spec.ts` from an earlier merged task,
+deliberately left untouched here rather than bundled into this task's diff. Needs its own cleanup task.
 
 **Dependencies:** None
 **Files:** `src/lib/commerce/vat.ts`, `src/lib/commerce/shipping.ts`, `src/lib/commerce/cart-totals.ts`, `tests/cart-totals.test.ts`
