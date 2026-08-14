@@ -100,5 +100,56 @@
     "prompt": "Search for a product or brand",
     "resultsFor": "{count} results for \"{query}\"",
     "noResults": "No results for \"{query}\". Try a different word or check the spelling."
+  },
+  "auth": {
+    "login": {
+      "heading": "Sign in",
+      "subheading": "Sign in to your Jannati account",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "submit": "Sign in",
+      "forgotPassword": "Forgot your password?",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Create one",
+      "resetSuccess": "Password updated. Sign in with your new password."
+    },
+    "register": {
+      "heading": "Create account",
+      "subheading": "Join Jannati for faster checkout and order tracking",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "confirmPasswordLabel": "Confirm password",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Sign in",
+      "checkEmail": "We've sent a confirmation link to {email}. Verify your email to finish creating your account."
+    },
+    "reset": {
+      "requestHeading": "Reset your password",
+      "requestSubheading": "Enter your email and we'll send you a reset link",
+      "emailLabel": "Email",
+      "submit": "Send reset link",
+      "backToLogin": "Back to sign in",
+      "emailSent": "If an account exists for {email}, a reset link is on its way.",
+      "confirmHeading": "Set a new password",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm password",
+      "confirmSubmit": "Set new password",
+      "invalidLink": "This reset link is invalid or has expired.",
+      "requestNewLink": "Request a new link"
+    },
+    "errors": {
+      "invalidCredentials": "Incorrect email or password.",
+      "emailTaken": "An account with this email already exists.",
+      "weakPassword": "Choose a stronger password (at least 8 characters).",
+      "rateLimited": "Too many attempts. Try again in a few minutes.",
+      "samePassword": "Your new password must be different from your current one.",
+      "passwordMismatch": "Passwords don't match.",
+      "generic": "Something went wrong. Please try again."
+    },
+    "account": {
+      "signedInAs": "Signed in as {email}",
+      "signOut": "Sign out"
+    }
   }
 }
