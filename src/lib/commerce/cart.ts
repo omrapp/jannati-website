@@ -281,6 +281,128 @@ export async function removeCartItem(
   if (error) throw new Error(`removing cart item: ${error.message}`);
 }
 
+export type CartLineQty = { variantId: string; qty: number };
+
+/**
+ * Pure merge decision for 2.5: folds a guest cart's lines into a customer's
+ * existing lines. Each overlapping variant reuses `resolveAddQty` — the same
+ * sum-and-clamp rule that governs "add to cart" governs a merge, so there is
+ * one definition of "how much of this fits" instead of two that could drift.
+ * A guest line whose variant no longer exists or has no stock is dropped
+ * rather than failing the whole merge — the shopper still gets everything
+ * else. Map-keyed by variant, so a duplicate merge over the same guest lines
+ * (see `mergeGuestCartIntoCustomer`'s idempotency note) can never double a
+ * quantity — it would simply resolve the same target again.
+ */
+export function resolveCartMerge(
+  customerLines: readonly CartLineQty[],
+  guestLines: readonly CartLineQty[],
+  stockByVariant: ReadonlyMap<string, number>,
+): CartLineQty[] {
+  const qtyByVariant = new Map(customerLines.map((line) => [line.variantId, line.qty]));
+
+  for (const guestLine of guestLines) {
+    const stockQty = stockByVariant.get(guestLine.variantId);
+    if (stockQty === undefined) continue; // variant deleted since the guest added it
+
+    const existingQty = qtyByVariant.get(guestLine.variantId) ?? 0;
+    let resolution: QtyResolution;
+    try {
+      resolution = resolveAddQty(existingQty, guestLine.qty, stockQty);
+    } catch (err) {
+      if (err instanceof CartOperationError) continue; // out of stock — drop this line
+      throw err;
+    }
+    qtyByVariant.set(guestLine.variantId, resolution.qty);
+  }
+
+  return [...qtyByVariant.entries()].map(([variantId, qty]) => ({ variantId, qty }));
+}
+
+/**
+ * Merges a guest's cart into the just-authenticated customer's cart — called
+ * once, right after `signInWithPassword` succeeds. Reads both carts' lines
+ * and current stock, resolves the merge purely via `resolveCartMerge`,
+ * writes the result, then deletes the now-fully-consumed guest cart row
+ * (cascading its `cart_items`). Deleting rather than emptying the row is
+ * what makes a second call over the same guest token a safe no-op: an absent
+ * guest token — `session_token` is unique, and `getActiveCart` reads by it —
+ * simply has nothing left to merge, without needing a separate "already
+ * merged" flag.
+ *
+ * The guest cart has no RLS policy at all (see the file header) — callers
+ * must pass the service-role client. Callers must also clear the guest
+ * session cookie afterwards (`src/lib/commerce/session.ts`); this function
+ * only touches the database.
+ */
+export async function mergeGuestCartIntoCustomer(
+  client: Client,
+  customerId: string,
+  guestSessionToken: string,
+): Promise<void> {
+  const guestCart = await getActiveCart(client, { sessionToken: guestSessionToken });
+  if (!guestCart) return;
+
+  const { data: guestItems, error: guestItemsError } = await client
+    .from('cart_items')
+    .select('variant_id, qty')
+    .eq('cart_id', guestCart.id);
+  if (guestItemsError) throw new Error(`reading guest cart items: ${guestItemsError.message}`);
+
+  const guestLines: CartLineQty[] = (guestItems ?? []).map((row) => ({
+    variantId: row.variant_id,
+    qty: row.qty,
+  }));
+
+  if (guestLines.length > 0) {
+    const customerCart = await getOrCreateActiveCart(
+      client,
+      { customerId },
+      guestCart.country_code as CountryCode,
+      guestCart.currency,
+    );
+
+    const { data: customerItems, error: customerItemsError } = await client
+      .from('cart_items')
+      .select('variant_id, qty')
+      .eq('cart_id', customerCart.id);
+    if (customerItemsError) {
+      throw new Error(`reading customer cart items: ${customerItemsError.message}`);
+    }
+
+    const customerLines: CartLineQty[] = (customerItems ?? []).map((row) => ({
+      variantId: row.variant_id,
+      qty: row.qty,
+    }));
+
+    const variantIds = [...new Set(guestLines.map((line) => line.variantId))];
+    const { data: variantRows, error: variantError } = await client
+      .from('product_variants')
+      .select('id, stock_qty')
+      .in('id', variantIds);
+    if (variantError) throw new Error(`reading variant stock: ${variantError.message}`);
+
+    const stockByVariant = new Map((variantRows ?? []).map((row) => [row.id, row.stock_qty]));
+    const merged = resolveCartMerge(customerLines, guestLines, stockByVariant);
+
+    if (merged.length > 0) {
+      const { error: upsertError } = await client
+        .from('cart_items')
+        .upsert(
+          merged.map((line) => ({
+            cart_id: customerCart.id,
+            variant_id: line.variantId,
+            qty: line.qty,
+          })),
+        );
+      if (upsertError) throw new Error(`writing merged cart items: ${upsertError.message}`);
+    }
+  }
+
+  const { error: deleteError } = await client.from('carts').delete().eq('id', guestCart.id);
+  if (deleteError) throw new Error(`deleting merged guest cart: ${deleteError.message}`);
+}
+
 function toCartCountry(row: CountryRow): CartCountry {
   return {
     code: row.code as CartCountry['code'],

@@ -7,6 +7,9 @@ import { redirect } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/config';
 import type { AuthActionState } from '@/lib/auth/action-state';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect';
+import { mergeGuestCartIntoCustomer } from '@/lib/commerce/cart';
+import { clearGuestSessionCookie, getGuestSessionToken } from '@/lib/commerce/session';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { authErrorKey } from '@/lib/supabase/auth-errors';
 import { createClient } from '@/lib/supabase/server';
 
@@ -32,9 +35,18 @@ export async function login(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
     return { status: 'error', message: t(authErrorKey(error.code)) };
+  }
+
+  // Fold the guest cart (if any) into the account the shopper just proved
+  // ownership of. Guest carts have no RLS policy, so this needs the
+  // service-role client — see the file header in `src/lib/commerce/cart.ts`.
+  const guestToken = await getGuestSessionToken();
+  if (guestToken) {
+    await mergeGuestCartIntoCustomer(createAdminClient(), data.user.id, guestToken);
+    await clearGuestSessionCookie();
   }
 
   return redirect({ href: safeRedirectPath(next), locale });

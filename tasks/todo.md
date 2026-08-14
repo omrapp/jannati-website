@@ -584,22 +584,23 @@ Notes from implementation:
 
 ---
 
-## Task 2.4: Email/password auth
+## Task 2.4: Email/password auth ✅
 
 **Description:** Supabase Auth email/password: register, login, logout, password reset request +
 confirm. No OAuth app or external account needed — unblocked today.
 
 **Acceptance criteria:**
 
-- [ ] Register, login, logout, reset-password-request, reset-password-confirm pages, ar + en
-- [ ] Session available in server components via `src/lib/supabase/server.ts`
-- [ ] Bad credentials show a translated error, not a raw Supabase error string
+- [x] Register, login, logout, reset-password-request, reset-password-confirm pages, ar + en
+- [x] Session available in server components via `src/lib/supabase/server.ts`
+- [x] Bad credentials show a translated error, not a raw Supabase error string
 
 **Verification:**
 
-- [ ] `npm run build` succeeds
-- [ ] E2E deferred — noted, not falsely checked off
-- [ ] `npm run typecheck`, `npm run lint`
+- [x] `npm run build` succeeds
+- [x] E2E deferred — noted, not falsely checked off
+- [x] `npm run typecheck`, `npm run lint`
+- [x] Code review: open-redirect in `safeRedirectPath` found + fixed (URL-origin-based guard, `src/lib/auth/safe-redirect.ts`), 198/198 tests green
 
 **Dependencies:** None
 **Files:** `src/app/[locale]/auth/{login,register,reset}/page.tsx`, `src/lib/supabase/server.ts` (extend), `src/messages/{ar,en}.json`
@@ -607,21 +608,22 @@ confirm. No OAuth app or external account needed — unblocked today.
 
 ---
 
-## Task 2.5: Guest cart merge on login
+## Task 2.5: Guest cart merge on login ✅
 
 **Description:** On successful login, the guest cart (by cookie) is merged into the customer's cart —
 matching variants sum quantities (clamped to stock), the cookie is then cleared.
 
 **Acceptance criteria:**
 
-- [ ] Overlapping, disjoint, and empty-either-side merge cases all produce the correct resulting cart
-- [ ] Merge is idempotent — a second login with no new guest cart doesn't duplicate lines
-- [ ] Cookie cleared after a successful merge
+- [x] Overlapping, disjoint, and empty-either-side merge cases all produce the correct resulting cart
+- [x] Merge is idempotent — a second login with no new guest cart doesn't duplicate lines (guest cart row
+      deleted after merge, so a repeat login has nothing to merge)
+- [x] Cookie cleared after a successful merge
 
 **Verification:**
 
-- [ ] `npm run test` — unit tests over the three merge cases above
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] `npm run test` — 29 tests over `resolveCartMerge` covering the three merge cases above
+- [x] `npm run typecheck`, `npm run lint`, `npm run build` — all clean, 206/206 tests
 
 **Dependencies:** 2.3, 2.4
 **Files:** `src/lib/commerce/cart.ts` (extend)
