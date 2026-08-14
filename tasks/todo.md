@@ -540,26 +540,47 @@ deliberately left untouched here rather than bundled into this task's diff. Need
 
 ---
 
-## Task 2.3: Guest cart data access layer
+## Task 2.3: Guest cart data access layer ✅ (lib only — not yet wired to a page/action)
 
 **Description:** Server-side cart operations — get-or-create cart by session token or customer id, add/
 update/remove line item, read cart with resolved totals via 2.2. Signed cookie issued on first add.
 
 **Acceptance criteria:**
 
-- [ ] Cart survives a reload via the session cookie; no client-side cart state
-- [ ] Adding an out-of-stock or deleted variant is rejected, not silently accepted
-- [ ] Quantity is clamped to available stock server-side
+- [ ] Cart survives a reload via the session cookie; no client-side cart state — **the cookie
+      signing (`session.ts`) and the cart read/write functions both exist, but nothing calls
+      `setGuestSessionCookie` from a page or server action yet; that wiring lands with 2.4/2.6.
+      Not falsely checked off.**
+- [x] Adding an out-of-stock or deleted variant is rejected, not silently accepted — `addCartItem`
+      throws `CartOperationError('not_found' | 'out_of_stock')`
+- [x] Quantity is clamped to available stock server-side — `resolveAddQty`/`resolveSetQty`
 
 **Verification:**
 
-- [ ] `npm run test` — unit tests over the merge/clamp/rejection logic with a mocked Supabase client
-- [ ] Blocked on 2.1 being applied for a live-database check
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] `npm run test` — 182/182 passing. **Not** a mocked-Supabase-client test as originally scoped:
+      no `vi.mock`/`vi.fn` Supabase-mocking pattern exists anywhere in this codebase, so the
+      merge/clamp/rejection decision logic was factored out into pure, DB-free functions
+      (`resolveAddQty`, `resolveSetQty`) and tested exhaustively instead; the thin Supabase-facing
+      wrappers stay untested, matching the existing convention in `src/lib/catalog/queries.ts`.
+- [ ] Blocked on 2.1 being applied for a live-database check — still blocked
+- [x] `npm run typecheck`, `npm run lint`, `npm run build`
 
 **Dependencies:** 2.1, 2.2
 **Files:** `src/lib/commerce/cart.ts`, `src/lib/commerce/session.ts`
 **Scope:** M
+**Merged:** `feat/guest-cart-lib` → `main`
+
+Notes from implementation:
+
+- `src/lib/supabase/types.ts` hand-extended with `customers`/`carts`/`cart_items` (same precedent as
+  1.2 — not yet in the generated types, no live migration applied against the type generator).
+- Guest carts have no RLS policy at all — callers must pass the service-role client for a guest
+  identity, or reads silently return nothing and writes hard-fail. Documented in `cart.ts`'s header.
+- Code review (second pass) found `getOrCreateActiveCart` had a real create-race (two concurrent
+  first-adds could both pass the existence check before either inserts); fixed by re-reading on a
+  unique-violation instead of surfacing a raw Postgres error. `addCartItem`/`setCartItemQty` remain
+  read-then-write, not atomic — a real fix needs a Postgres function, which is a schema change
+  (ask-first). Logged in "Known issues" below; revisit before 2.4/2.9 exposes it to a real action.
 
 ---
 
