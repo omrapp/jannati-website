@@ -324,89 +324,34 @@ export function resolveCartMerge(
 
 /**
  * Merges a guest's cart into the just-authenticated customer's cart — called
- * once, right after `signInWithPassword` succeeds. Reads both carts' lines
- * and current stock, resolves the merge purely via `resolveCartMerge`,
- * writes the result, then deletes the now-fully-consumed guest cart row
- * (cascading its `cart_items`). Deleting rather than emptying the row is
- * what makes a second call over the same guest token a safe no-op: an absent
- * guest token — `session_token` is unique, and `getActiveCart` reads by it —
- * simply has nothing left to merge, without needing a separate "already
- * merged" flag.
+ * once, right after `signInWithPassword` succeeds.
  *
- * The guest cart has no RLS policy at all (see the file header) — callers
- * must pass the service-role client. Callers must also clear the guest
- * session cookie afterwards (`src/lib/commerce/session.ts`); this function
- * only touches the database.
+ * This is a thin wrapper over the `merge_guest_cart_into_customer` Postgres
+ * function (`supabase/migrations/20260814000001_merge_guest_cart_rpc.sql`),
+ * not a JS-side read/compute/write sequence: the read, the merge, and the
+ * guest-cart delete all need to happen inside one transaction with row locks
+ * to be race-safe against a concurrent add-to-cart on the guest session or a
+ * concurrent merge into the same customer cart — four separate PostgREST
+ * round trips can't give that guarantee. `resolveCartMerge` above stays the
+ * unit-tested spec for the merge decision the SQL function implements; keep
+ * them in sync if either changes.
+ *
+ * The guest cart has no RLS policy at all (see the file header), and this
+ * RPC is granted to `service_role` only — callers must pass the
+ * service-role client. Callers must also clear the guest session cookie
+ * afterwards (`src/lib/commerce/session.ts`); this function only touches
+ * the database.
  */
 export async function mergeGuestCartIntoCustomer(
   client: Client,
   customerId: string,
   guestSessionToken: string,
 ): Promise<void> {
-  const guestCart = await getActiveCart(client, { sessionToken: guestSessionToken });
-  if (!guestCart) return;
-
-  const { data: guestItems, error: guestItemsError } = await client
-    .from('cart_items')
-    .select('variant_id, qty')
-    .eq('cart_id', guestCart.id);
-  if (guestItemsError) throw new Error(`reading guest cart items: ${guestItemsError.message}`);
-
-  const guestLines: CartLineQty[] = (guestItems ?? []).map((row) => ({
-    variantId: row.variant_id,
-    qty: row.qty,
-  }));
-
-  if (guestLines.length > 0) {
-    const customerCart = await getOrCreateActiveCart(
-      client,
-      { customerId },
-      guestCart.country_code as CountryCode,
-      guestCart.currency,
-    );
-
-    const { data: customerItems, error: customerItemsError } = await client
-      .from('cart_items')
-      .select('variant_id, qty')
-      .eq('cart_id', customerCart.id);
-    if (customerItemsError) {
-      throw new Error(`reading customer cart items: ${customerItemsError.message}`);
-    }
-
-    const customerLines: CartLineQty[] = (customerItems ?? []).map((row) => ({
-      variantId: row.variant_id,
-      qty: row.qty,
-    }));
-
-    const variantIds = [...new Set(guestLines.map((line) => line.variantId))];
-    const { data: variantRows, error: variantError } = await client
-      .from('product_variants')
-      .select('id, stock_qty')
-      .in('id', variantIds);
-    if (variantError) throw new Error(`reading variant stock: ${variantError.message}`);
-
-    const stockByVariant = new Map((variantRows ?? []).map((row) => [row.id, row.stock_qty]));
-    const merged = resolveCartMerge(customerLines, guestLines, stockByVariant);
-
-    // Stock is snapshotted above, then written below — a variant deleted in
-    // that narrow window fails the whole upsert on the `cart_items` FK
-    // (unlike `resolveCartMerge`'s own missing-variant handling, which only
-    // drops that one line). Accepted as a rare-enough race for now; revisit
-    // if it ever shows up in practice.
-    if (merged.length > 0) {
-      const { error: upsertError } = await client.from('cart_items').upsert(
-        merged.map((line) => ({
-          cart_id: customerCart.id,
-          variant_id: line.variantId,
-          qty: line.qty,
-        })),
-      );
-      if (upsertError) throw new Error(`writing merged cart items: ${upsertError.message}`);
-    }
-  }
-
-  const { error: deleteError } = await client.from('carts').delete().eq('id', guestCart.id);
-  if (deleteError) throw new Error(`deleting merged guest cart: ${deleteError.message}`);
+  const { error } = await client.rpc('merge_guest_cart_into_customer', {
+    p_customer_id: customerId,
+    p_guest_session_token: guestSessionToken,
+  });
+  if (error) throw new Error(`merging guest cart: ${error.message}`);
 }
 
 function toCartCountry(row: CountryRow): CartCountry {

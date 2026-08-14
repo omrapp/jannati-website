@@ -624,9 +624,16 @@ matching variants sum quantities (clamped to stock), the cookie is then cleared.
 
 - [x] `npm run test` — 29 tests over `resolveCartMerge` covering the three merge cases above
 - [x] `npm run typecheck`, `npm run lint`, `npm run build` — all clean, 206/206 tests
+- [x] Code review found two races in the first pass (silent item loss on a concurrent guest write,
+      lost-update on concurrent merges) — fixed by moving the read/compute/write/delete into one
+      atomic Postgres function (`merge_guest_cart_into_customer`, migrations 20260814000001/2) with row
+      locks; verified live against the real Supabase project: anon/authenticated denied execute, overlap
+      clamp + disjoint carry-over + guest-cart deletion + repeat-call idempotency all correct
 
 **Dependencies:** 2.3, 2.4
-**Files:** `src/lib/commerce/cart.ts` (extend)
+**Files:** `src/lib/commerce/cart.ts` (extend), `src/app/[locale]/auth/login/actions.ts` (extend),
+`supabase/migrations/20260814000001_merge_guest_cart_rpc.sql`,
+`supabase/migrations/20260814000002_fix_merge_guest_cart_grants.sql`
 **Scope:** S
 
 ---
