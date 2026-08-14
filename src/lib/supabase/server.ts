@@ -28,3 +28,17 @@ export async function createClient() {
     },
   });
 }
+
+/**
+ * The signed-in user, or `null` for a guest. Safe to call from a Server
+ * Component — unlike `getSession()`, this round-trips through Supabase Auth
+ * so a stale or forged cookie can't pass as a valid session.
+ */
+export async function getAuthUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return user;
+}
