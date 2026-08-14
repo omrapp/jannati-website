@@ -290,9 +290,12 @@ export type CartLineQty = { variantId: string; qty: number };
  * one definition of "how much of this fits" instead of two that could drift.
  * A guest line whose variant no longer exists or has no stock is dropped
  * rather than failing the whole merge — the shopper still gets everything
- * else. Map-keyed by variant, so a duplicate merge over the same guest lines
- * (see `mergeGuestCartIntoCustomer`'s idempotency note) can never double a
- * quantity — it would simply resolve the same target again.
+ * else.
+ *
+ * This function is *not* itself safe to re-apply — feeding its own output
+ * back in as `customerLines` alongside the same `guestLines` sums a second
+ * time. Idempotency is owned entirely by the caller (`mergeGuestCartIntoCustomer`
+ * deletes the guest cart row once merged), not by this function.
  */
 export function resolveCartMerge(
   customerLines: readonly CartLineQty[],
@@ -385,16 +388,19 @@ export async function mergeGuestCartIntoCustomer(
     const stockByVariant = new Map((variantRows ?? []).map((row) => [row.id, row.stock_qty]));
     const merged = resolveCartMerge(customerLines, guestLines, stockByVariant);
 
+    // Stock is snapshotted above, then written below — a variant deleted in
+    // that narrow window fails the whole upsert on the `cart_items` FK
+    // (unlike `resolveCartMerge`'s own missing-variant handling, which only
+    // drops that one line). Accepted as a rare-enough race for now; revisit
+    // if it ever shows up in practice.
     if (merged.length > 0) {
-      const { error: upsertError } = await client
-        .from('cart_items')
-        .upsert(
-          merged.map((line) => ({
-            cart_id: customerCart.id,
-            variant_id: line.variantId,
-            qty: line.qty,
-          })),
-        );
+      const { error: upsertError } = await client.from('cart_items').upsert(
+        merged.map((line) => ({
+          cart_id: customerCart.id,
+          variant_id: line.variantId,
+          qty: line.qty,
+        })),
+      );
       if (upsertError) throw new Error(`writing merged cart items: ${upsertError.message}`);
     }
   }

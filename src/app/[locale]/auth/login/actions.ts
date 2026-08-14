@@ -43,10 +43,19 @@ export async function login(
   // Fold the guest cart (if any) into the account the shopper just proved
   // ownership of. Guest carts have no RLS policy, so this needs the
   // service-role client — see the file header in `src/lib/commerce/cart.ts`.
+  // `signInWithPassword` has already set the auth session by this point, so
+  // a merge failure must never block the redirect — the shopper is logged
+  // in either way. Leave the guest cookie in place on failure so the merge
+  // has something to retry against on their next login, instead of quietly
+  // orphaning the guest cart.
   const guestToken = await getGuestSessionToken();
   if (guestToken) {
-    await mergeGuestCartIntoCustomer(createAdminClient(), data.user.id, guestToken);
-    await clearGuestSessionCookie();
+    try {
+      await mergeGuestCartIntoCustomer(createAdminClient(), data.user.id, guestToken);
+      await clearGuestSessionCookie();
+    } catch (mergeError) {
+      console.error('guest cart merge failed on login', mergeError);
+    }
   }
 
   return redirect({ href: safeRedirectPath(next), locale });

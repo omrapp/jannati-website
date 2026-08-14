@@ -100,13 +100,21 @@ describe('resolveSetQty', () => {
 describe('resolveCartMerge', () => {
   it('sums quantities on an overlapping line, clamped to stock', () => {
     const stock = new Map([['v1', 10]]);
-    const result = resolveCartMerge([{ variantId: 'v1', qty: 4 }], [{ variantId: 'v1', qty: 3 }], stock);
+    const result = resolveCartMerge(
+      [{ variantId: 'v1', qty: 4 }],
+      [{ variantId: 'v1', qty: 3 }],
+      stock,
+    );
     expect(result).toEqual([{ variantId: 'v1', qty: 7 }]);
   });
 
   it('clamps an overlapping line that would exceed stock', () => {
     const stock = new Map([['v1', 10]]);
-    const result = resolveCartMerge([{ variantId: 'v1', qty: 8 }], [{ variantId: 'v1', qty: 5 }], stock);
+    const result = resolveCartMerge(
+      [{ variantId: 'v1', qty: 8 }],
+      [{ variantId: 'v1', qty: 5 }],
+      stock,
+    );
     expect(result).toEqual([{ variantId: 'v1', qty: 10 }]);
   });
 
@@ -115,7 +123,11 @@ describe('resolveCartMerge', () => {
       ['v1', 10],
       ['v2', 5],
     ]);
-    const result = resolveCartMerge([{ variantId: 'v1', qty: 2 }], [{ variantId: 'v2', qty: 3 }], stock);
+    const result = resolveCartMerge(
+      [{ variantId: 'v1', qty: 2 }],
+      [{ variantId: 'v2', qty: 3 }],
+      stock,
+    );
     expect(result).toEqual(
       expect.arrayContaining([
         { variantId: 'v1', qty: 2 },
