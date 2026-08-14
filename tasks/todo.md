@@ -477,9 +477,10 @@ by newest, best selling or price.
 
 ## Known issues (non-blocking)
 
-| Item                                                                                                                                                         | Found in |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
-| `npm run format:check` fails on `src/lib/catalog/queries.ts`, `search.ts`, `e2e/catalog.spec.ts` — pre-existing, not touched since to keep task diffs scoped | 2.2      |
+| Item                                                                                                                                                                                                                                                                                                                                                                                                                  | Found in |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `npm run format:check` fails on `src/lib/catalog/queries.ts`, `search.ts`, `e2e/catalog.spec.ts` — pre-existing, not touched since to keep task diffs scoped                                                                                                                                                                                                                                                          | 2.2      |
+| `addCartItem`/`setCartItemQty` in `src/lib/commerce/cart.ts` are read-then-write, not atomic — two concurrent adds for the same cart/variant can race and one silently clobbers the other. A real fix needs an atomic upsert expression (Postgres function/RPC), which is a schema change — ask-first per project boundaries, not slipped into 2.3. Revisit before 2.4/2.9 exposes this to a real add-to-cart action. | 2.3      |
 
 ---
 

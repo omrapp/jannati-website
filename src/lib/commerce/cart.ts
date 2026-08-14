@@ -4,6 +4,16 @@
  * `auth.uid()` (RLS-scoped) or a guest's signed session cookie (2.5 merges
  * the guest cart into the customer's on login).
  *
+ * A guest cart (`session_token` identity) has no RLS policy at all —
+ * `supabase/migrations/20260813000002_commerce.sql` is explicit that these
+ * rows are only ever touched by server actions using the service-role
+ * client. Every function below takes whatever `Client` a caller passes, so
+ * calling one with the anon/RLS-bound client for a guest identity doesn't
+ * fail loudly: a read silently returns nothing (`customer_id = auth.uid()`
+ * never matches a guest row) and a write hard-fails on the missing policy.
+ * Callers building on this in 2.4+ must pass the service-role client
+ * (`src/lib/supabase/admin.ts`) for guest identities.
+ *
  * The DB-facing functions here are thin and intentionally not unit tested —
  * same posture as `src/lib/catalog/queries.ts` — because there is nothing to
  * unit test in "call PostgREST, return what it returns" beyond a live
@@ -126,11 +136,23 @@ export async function getActiveCart(
   return data;
 }
 
+/** Postgres unique-violation code — see the race note in `getOrCreateActiveCart`. */
+const UNIQUE_VIOLATION = '23505';
+
 /**
  * The shopper's active cart, creating one if they don't have one yet. Called
  * only from a write path (adding the first item) — a page that merely
  * *renders* a cart should use `getActiveCart` and show an empty state
  * instead of creating a row nobody has put anything in.
+ *
+ * Two concurrent first-adds (a double click, two open tabs) can both pass
+ * the `getActiveCart` check above before either has inserted, and race each
+ * other into `carts_one_active_per_customer_idx` (customers) or the
+ * `session_token` unique constraint (guests) — see
+ * `supabase/migrations/20260813000002_commerce.sql`. The loser's insert
+ * fails with a unique violation rather than a made-up second cart; re-reading
+ * `getActiveCart` at that point returns the winner's row instead of
+ * surfacing the race as an error to the shopper.
  */
 export async function getOrCreateActiveCart(
   client: Client,
@@ -152,26 +174,32 @@ export async function getOrCreateActiveCart(
     .select('*')
     .single();
 
-  if (error) throw new Error(`creating cart: ${error.message}`);
+  if (error) {
+    if (error.code === UNIQUE_VIOLATION) {
+      const winner = await getActiveCart(client, identity);
+      if (winner) return winner;
+    }
+    throw new Error(`creating cart: ${error.message}`);
+  }
 
   return data;
 }
 
-/** Stock and price for one variant — the only columns a cart write needs to decide anything. */
+/** Stock for one variant — the only column a cart write needs to decide anything. */
 async function getVariantStock(
   client: Client,
   variantId: string,
-): Promise<{ stockQty: number; basePriceMinor: number } | null> {
+): Promise<{ stockQty: number } | null> {
   const { data, error } = await client
     .from('product_variants')
-    .select('stock_qty, base_price_minor')
+    .select('stock_qty')
     .eq('id', variantId)
     .maybeSingle();
 
   if (error) throw new Error(`reading variant ${variantId}: ${error.message}`);
   if (!data) return null;
 
-  return { stockQty: data.stock_qty, basePriceMinor: data.base_price_minor };
+  return { stockQty: data.stock_qty };
 }
 
 async function getExistingQty(client: Client, cartId: string, variantId: string): Promise<number> {
@@ -296,6 +324,11 @@ export async function getCartWithTotals(
 
   const [{ data: items, error: itemsError }, { data: countryRow, error: countryError }] =
     await Promise.all([
+      // `!inner` means a line whose variant (or its product) got deleted or
+      // set inactive since it was added just drops out of `rows` below —
+      // it reads as "never added," not "no longer available." Fine for now;
+      // worth revisiting in 2.6/2.9 if that distinction needs to reach the
+      // shopper.
       client
         .from('cart_items')
         .select(`qty, product_variants!inner ( ${leadVariantColumns({})} )`)

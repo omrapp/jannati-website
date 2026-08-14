@@ -15,6 +15,10 @@ describe('resolveAddQty', () => {
     expect(resolveAddQty(8, 5, 10)).toEqual({ status: 'clamped', qty: 10 });
   });
 
+  it('lands exactly on stock without clamping when the sum matches it exactly', () => {
+    expect(resolveAddQty(6, 4, 10)).toEqual({ status: 'ok', qty: 10 });
+  });
+
   it('clamps even when the existing qty alone already fills stock', () => {
     expect(resolveAddQty(10, 1, 10)).toEqual({ status: 'clamped', qty: 10 });
   });
@@ -56,6 +60,10 @@ describe('resolveSetQty', () => {
 
   it('clamps to stock when the request exceeds it', () => {
     expect(resolveSetQty(15, 10)).toEqual({ status: 'clamped', qty: 10 });
+  });
+
+  it('does not clamp when the request lands exactly on stock', () => {
+    expect(resolveSetQty(10, 10)).toEqual({ status: 'ok', qty: 10 });
   });
 
   it('setting to zero always succeeds, regardless of stock', () => {
