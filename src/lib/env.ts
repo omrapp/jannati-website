@@ -10,6 +10,10 @@ const schema = z.object({
   supabaseAnonKey: z.string().min(1),
   supabaseServiceRoleKey: z.string().min(1).optional(),
   siteUrl: z.url(),
+  // Signs the guest cart session cookie (`src/lib/commerce/session.ts`).
+  // Optional here, same as the service-role key — required only where it's
+  // actually used, so pages that never touch a cart still build without it.
+  cartSessionSecret: z.string().min(32).optional(),
 });
 
 export const env = schema.parse({
@@ -17,4 +21,5 @@ export const env = schema.parse({
   supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
+  cartSessionSecret: process.env.CART_SESSION_SECRET,
 });
