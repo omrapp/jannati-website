@@ -24,4 +24,36 @@ describe('safeRedirectPath', () => {
   it('rejects a path with no leading slash', () => {
     expect(safeRedirectPath('evil.example')).toBe('/');
   });
+
+  // `new URL()` — what actually consumes this value downstream in the auth
+  // callback route — normalizes backslashes to forward slashes and strips
+  // tabs/newlines before parsing. `/\evil.example` therefore resolves to the
+  // protocol-relative `//evil.example`, jumping origin. A naive
+  // `startsWith('/')` check misses this; guard against regressing on it.
+  it('rejects a backslash-prefixed host bypass', () => {
+    expect(safeRedirectPath('/\\evil.example/phish')).toBe('/');
+  });
+
+  it('rejects a tab-smuggled host bypass', () => {
+    expect(safeRedirectPath('/\t/evil.example')).toBe('/');
+  });
+
+  it('rejects a newline-smuggled host bypass', () => {
+    expect(safeRedirectPath('/\n/evil.example')).toBe('/');
+  });
+
+  it('never returns a value whose origin differs when re-parsed', () => {
+    const inputs = [
+      '/account',
+      '/\\evil.example/phish',
+      '/\t/evil.example',
+      '/\n/evil.example',
+      '//evil.example',
+      'https://evil.example',
+    ];
+    for (const input of inputs) {
+      const result = safeRedirectPath(input);
+      expect(new URL(result, 'https://real-site.example').origin).toBe('https://real-site.example');
+    }
+  });
 });
