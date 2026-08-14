@@ -72,6 +72,93 @@ export type Database = {
         };
         Relationships: [];
       };
+      cart_items: {
+        Row: {
+          cart_id: string;
+          created_at: string;
+          qty: number;
+          updated_at: string;
+          variant_id: string;
+        };
+        Insert: {
+          cart_id: string;
+          created_at?: string;
+          qty: number;
+          updated_at?: string;
+          variant_id: string;
+        };
+        Update: {
+          cart_id?: string;
+          created_at?: string;
+          qty?: number;
+          updated_at?: string;
+          variant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'cart_items_cart_id_fkey';
+            columns: ['cart_id'];
+            isOneToOne: false;
+            referencedRelation: 'carts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'cart_items_variant_id_fkey';
+            columns: ['variant_id'];
+            isOneToOne: false;
+            referencedRelation: 'product_variants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      carts: {
+        Row: {
+          converted_at: string | null;
+          country_code: string;
+          created_at: string;
+          currency: string;
+          customer_id: string | null;
+          id: string;
+          session_token: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          converted_at?: string | null;
+          country_code: string;
+          created_at?: string;
+          currency: string;
+          customer_id?: string | null;
+          id?: string;
+          session_token?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          converted_at?: string | null;
+          country_code?: string;
+          created_at?: string;
+          currency?: string;
+          customer_id?: string | null;
+          id?: string;
+          session_token?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'carts_country_code_fkey';
+            columns: ['country_code'];
+            isOneToOne: false;
+            referencedRelation: 'countries';
+            referencedColumns: ['code'];
+          },
+          {
+            foreignKeyName: 'carts_customer_id_fkey';
+            columns: ['customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'customers';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       categories: {
         Row: {
           created_at: string;
@@ -170,6 +257,33 @@ export type Database = {
           sort_order?: number;
           updated_at?: string;
           vat_rate?: number;
+        };
+        Relationships: [];
+      };
+      customers: {
+        Row: {
+          created_at: string;
+          default_locale: string;
+          id: string;
+          marketing_opt_in: boolean;
+          phone: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          default_locale?: string;
+          id: string;
+          marketing_opt_in?: boolean;
+          phone?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          default_locale?: string;
+          id?: string;
+          marketing_opt_in?: boolean;
+          phone?: string | null;
+          updated_at?: string;
         };
         Relationships: [];
       };

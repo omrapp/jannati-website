@@ -74,7 +74,7 @@ export function summaryColumns(filters: {
  * Columns for the price-sort path, rooted on `product_variants` instead of
  * `products` — see the comment on the `sort` branch in `listProducts` for why.
  */
-function leadVariantColumns(filters: { brandSlug?: string; categorySlug?: string }): string {
+export function leadVariantColumns(filters: { brandSlug?: string; categorySlug?: string }): string {
   const brands = `brands${filters.brandSlug ? '!inner' : ''} ( slug, name_en, name_ar, logo_path )`;
   const categories = filters.categorySlug
     ? ', product_categories!inner ( categories!inner ( slug ) )'
@@ -90,7 +90,7 @@ function leadVariantColumns(filters: { brandSlug?: string; categorySlug?: string
   `;
 }
 
-type LeadVariantRow = {
+export type LeadVariantRow = {
   id: string;
   sku: string | null;
   title_ar: string | null;
@@ -110,7 +110,7 @@ type LeadVariantRow = {
  * Descriptions come back `null`: listings never render them, and the mapper
  * never reads them outside `toProductDetail`.
  */
-function leadVariantRowToProductJoin(row: LeadVariantRow): ProductJoin {
+export function leadVariantRowToProductJoin(row: LeadVariantRow): ProductJoin {
   const { products, ...variant } = row;
 
   return {
