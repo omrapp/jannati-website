@@ -3,6 +3,21 @@
     "name": "جنتي",
     "tagline": "عالم الجمال في مكان واحد"
   },
+  "cart": {
+    "title": "السلة",
+    "empty": "سلتك فارغة.",
+    "continueShopping": "مواصلة التسوق",
+    "viewCart": "عرض السلة",
+    "subtotal": "المجموع الفرعي",
+    "discount": "الخصم",
+    "shipping": "الشحن",
+    "vat": "ضريبة القيمة المضافة",
+    "total": "الإجمالي",
+    "remove": "إزالة",
+    "decreaseQty": "إنقاص الكمية",
+    "increaseQty": "زيادة الكمية",
+    "lineOutOfStock": "غير متوفر"
+  },
   "nav": {
     "home": "الرئيسية",
     "products": "المنتجات",

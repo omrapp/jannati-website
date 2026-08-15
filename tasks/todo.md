@@ -480,7 +480,7 @@ by newest, best selling or price.
 | Item                                                                                                                                                                                                                                                                                                                                                                                                                  | Found in |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | `npm run format:check` fails on `src/lib/catalog/queries.ts`, `search.ts`, `e2e/catalog.spec.ts` — pre-existing, not touched since to keep task diffs scoped                                                                                                                                                                                                                                                          | 2.2      |
-| `addCartItem`/`setCartItemQty` in `src/lib/commerce/cart.ts` are read-then-write, not atomic — two concurrent adds for the same cart/variant can race and one silently clobbers the other. A real fix needs an atomic upsert expression (Postgres function/RPC), which is a schema change — ask-first per project boundaries, not slipped into 2.3. Revisit before 2.4/2.9 exposes this to a real add-to-cart action. | 2.3      |
+| `addCartItem`/`setCartItemQty` in `src/lib/commerce/cart.ts` are read-then-write, not atomic — two concurrent adds for the same cart/variant can race and one silently clobbers the other. A real fix needs an atomic upsert expression (Postgres function/RPC), which is a schema change — ask-first per project boundaries, not slipped into 2.3. **Now live:** 2.6's quantity stepper calls `setCartItemQty` from a real UI (two rapid clicks, or two open tabs, can race). `addCartItem` stays unexposed until whichever task wires PDP's add-to-cart button — revisit before then. | 2.3, 2.6 |
 
 ---
 
@@ -638,25 +638,56 @@ matching variants sum quantities (clamped to stock), the cookie is then cleared.
 
 ---
 
-## Task 2.6: Cart UI
+## Task 2.6: Cart UI ✅
 
 **Description:** Cart drawer (header icon, opens on add) and `/cart` page replacing the placeholder —
 line items, quantity controls, totals breakdown (subtotal, VAT, shipping, total), empty state.
 
 **Acceptance criteria:**
 
-- [ ] Drawer and page both read from 2.3's server-side cart, no divergent client total math
-- [ ] Quantity change and remove both round-trip through the server action, grid updates
-- [ ] Totals breakdown shows VAT and shipping as separate lines, matching 2.2
+- [x] Drawer and page both read from 2.3's server-side cart, no divergent client total math — both call
+      `getCartWithTotals`; the drawer gets its `lines`/formatted totals as server-computed props from
+      `Header`, never re-fetches or re-derives them client-side
+- [x] Quantity change and remove both round-trip through the server action, grid updates — `updateCartItemQty`/
+      `removeCartLine` (`src/app/[locale]/cart/actions.ts`) call `revalidatePath('/', 'layout')`, which
+      Next.js 16's single-roundtrip Server Action model folds into the same response, refreshing the
+      drawer/badge on whatever page triggered the mutation, not just `/cart`
+- [x] Totals breakdown shows VAT and shipping as separate lines, matching 2.2 — `CartTotals` renders
+      subtotal/discount/shipping/VAT/total as distinct rows from 2.2's `calculateCartTotals` output
 
 **Verification:**
 
-- [ ] E2E deferred — noted
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] E2E deferred — noted
+- [x] `npm run typecheck`, `npm run lint`, `npm run build` — all clean, 206/206 tests (no new pure logic
+      to unit test — same "thin, DB-facing, not unit tested" convention as `cart.ts` itself; money
+      formatting is delegated to already-tested `formatMoney`/`calculateCartTotals`)
+- [x] Manual smoke: `/ar-om/cart` and `/en-ae/cart` both 200, Arabic empty-state copy confirmed present
+      (UTF-8 checked directly — `grep` over the raw bytes is a false negative in a non-UTF-8 shell
+      locale), drawer content present in SSR output on `/en-ae`
 
 **Dependencies:** 2.2, 2.3
-**Files:** `src/app/[locale]/cart/page.tsx`, `src/components/commerce/{cart-drawer,cart-line-item,cart-totals}.tsx`
+**Files:** `src/app/[locale]/cart/page.tsx`, `src/app/[locale]/cart/actions.ts`,
+`src/components/commerce/{cart-drawer,cart-line-item,cart-totals}.tsx`, `src/lib/commerce/cart-identity.ts`,
+`src/components/layout/header.tsx` (extend — cart icon becomes the drawer trigger),
+`src/messages/{ar,en}.json` (extend — new `cart` namespace)
 **Scope:** M
+
+Notes from implementation:
+
+- Two files beyond the plan's list turned out to be necessary: `src/lib/commerce/cart-identity.ts` (the
+  customer-vs-guest, RLS-client-vs-service-role-client resolution every cart read/write needs — factored
+  out rather than duplicated between the page and the header) and `header.tsx` itself, since "drawer on
+  the header icon" requires editing the header to put it there. `header.tsx` also had to become an async
+  Server Component to fetch the cart once and hand it down as props.
+- No line-item subtotal (unit price × qty) is shown on a cart line — only the unit price. Computing that
+  product would be money math inside a component, which the project's own convention (`PriceDisplay`'s
+  header comment) rules out; the totals panel is the only place a sum is shown.
+- "Opens on add" from the task description is not wired — there is no add-to-cart action yet (PDP's
+  button is still the inert one from 1.9/`VariantPicker`, out of this task's dependency list). The
+  drawer opens on the header icon; auto-opening on add is deferred to whichever task wires that button.
+- Country/currency pricing for both the page and the drawer is resolved from the URL locale
+  (`getCountry(locale)`), the same way `ProductPage` already does it — not from the cart row's own
+  `country_code` — so there is one definition of "the shopper's current country" across the storefront.
 
 ---
 
