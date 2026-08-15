@@ -186,5 +186,52 @@
       "signedInAs": "Signed in as {email}",
       "signOut": "Sign out"
     }
+  },
+  "checkout": {
+    "heading": "Checkout",
+    "guestEmailLabel": "Email",
+    "guestEmailHint": "Your order confirmation and tracking link go here.",
+    "selectAddressHeading": "Delivery address",
+    "noAddresses": "You don't have a saved address for this country yet.",
+    "addAddress": "Add an address",
+    "couponLabel": "Coupon code",
+    "couponPlaceholder": "Have a code?",
+    "paymentHeading": "Payment method",
+    "cod": "Cash on delivery",
+    "orderSummaryHeading": "Order summary",
+    "placeOrder": "Place order",
+    "placingOrder": "Placing order…",
+    "errors": {
+      "emptyCart": "Your cart is empty.",
+      "selectAddress": "Choose a delivery address.",
+      "invalidAddress": "Check the address details and try again.",
+      "outOfStock": "One or more items are no longer available in the requested quantity. Please review your cart.",
+      "couponRejected": "This coupon code can't be applied.",
+      "countryMismatch": "That address isn't in this store's country.",
+      "generic": "Something went wrong placing your order. Please try again."
+    }
+  },
+  "orders": {
+    "confirmedHeading": "Order confirmed",
+    "confirmedMessage": "Thank you — we've received your order.",
+    "orderNumberLabel": "Order number",
+    "itemsHeading": "Items",
+    "paymentMethodLabel": "Payment method",
+    "deliveryAddressLabel": "Delivery address",
+    "statusLabel": "Order status",
+    "status": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "notFound": "We couldn't find an order matching that number and email."
+  },
+  "orderLookup": {
+    "heading": "Track your order",
+    "orderNumberLabel": "Order number",
+    "emailLabel": "Email",
+    "submit": "Find order"
   }
 }

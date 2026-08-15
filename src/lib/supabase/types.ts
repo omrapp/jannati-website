@@ -778,6 +778,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_order: {
+        Args: {
+          p_cart_id: string
+          p_country_code: string
+          p_coupon_code: string
+          p_currency: string
+          p_customer_id: string
+          p_discount_minor: number
+          p_fx_rate_used: number
+          p_guest_email: string
+          p_guest_phone: string
+          p_items: Json
+          p_order_number: string
+          p_payment_provider: Database["public"]["Enums"]["payment_provider"]
+          p_shipping_address: Json
+          p_shipping_minor: number
+          p_subtotal_minor: number
+          p_total_minor: number
+          p_vat_minor: number
+        }
+        Returns: string
+      }
       merge_guest_cart_into_customer: {
         Args: { p_customer_id: string; p_guest_session_token: string }
         Returns: undefined

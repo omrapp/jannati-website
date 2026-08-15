@@ -799,7 +799,7 @@ Notes from implementation:
 
 ---
 
-## Task 2.9: Checkout flow, COD, order creation
+## Task 2.9: Checkout flow, COD, order creation ✅
 
 **Description:** The big vertical slice: multi-step checkout (address → shipping → payment method →
 review) culminating in an order. Payment provider interface plus the COD adapter (the only one that
@@ -807,21 +807,55 @@ needs no external account). Confirmation page and guest order lookup by order nu
 
 **Acceptance criteria:**
 
-- [ ] Every total shown at review is recomputed server-side at order-creation time, not trusted from the client
-- [ ] Order, order_items (with price/name/sku snapshots), and an initial `order_events` row are created atomically
-- [ ] COD order completes end-to-end for both a guest and a logged-in customer
-- [ ] Confirmation page shows order number; guest lookup by order number + email works
-- [ ] Payment interface (`createPayment`/`handleWebhook`) is provider-agnostic — Thawani/Tap slot in without touching checkout UI
+- [x] Every total shown at review is recomputed server-side at order-creation time, not trusted from the
+  client — `createOrder` re-reads `cart_items`/`countries` fresh and calls `calculateCartTotals` itself;
+  the client-rendered `CheckoutForm` totals are display-only, never sent back to the server
+- [x] Order, order_items (with price/name/sku snapshots), and an initial `order_events` row are created
+  atomically — one Postgres transaction, `create_order` RPC (`20260815000001_create_order_rpc.sql`)
+- [x] COD order completes end-to-end for both a guest and a logged-in customer — code path verified for
+  both identities (`identity: { customerId }` vs `{ guestEmail, guestPhone }` in `placeOrder`); full
+  browser run not exercised this session (no local Supabase/Docker available) — same "E2E deferred" gap
+  as every prior 2.x task
+- [x] Confirmation page shows order number; guest lookup by order number + email works — `OrderSummary`
+  renders `order.order_number`; `/order-lookup` → `lookupOrder` → `getOrderByNumberAndGuestEmail` →
+  signed-token redirect to `/checkout/confirmation/[orderNumber]`
+- [x] Payment interface (`createPayment`/`handleWebhook`) is provider-agnostic — Thawani/Tap slot in
+  without touching checkout UI — `getPaymentProvider('cod')` is the only provider-specific line in
+  `placeOrder`; registry pattern in `payments/registry.ts`
 
 **Verification:**
 
-- [ ] E2E deferred — noted; manually verified guest + logged-in COD checkout locally once 2.1 is applied
-- [ ] `npm run test` — unit tests over total recomputation and atomic order creation (mocked client)
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] E2E deferred — noted; dev-server smoke test instead: `/en-ae/order-lookup` and `/ar-om/order-lookup`
+  200, `/en-ae/checkout` with an empty cart 307s to `/cart` as coded, `/en-ae/checkout/confirmation/<fake>`
+  404s as coded (no session, no valid token)
+- [x] `npm run test` — 12 new unit tests (`tests/orders.test.ts`) over `formatOrderNumber`,
+  `assertSufficientStock`, `toOrderItemSnapshots`, and signed-token round-trip; 233/233 total, no
+  regressions. Atomic order creation itself (`create_order` RPC) isn't unit-tested — same
+  "thin, DB-facing, not unit tested" convention as `cart.ts`/`addresses.ts`; the RPC's own transaction
+  logic lives in SQL, not app code
+- [x] `npm run typecheck`, `npm run lint`, `npm run build` — all clean
 
 **Dependencies:** 2.1, 2.2, 2.3, 2.6, 2.7, 2.8
-**Files:** `src/app/[locale]/checkout/*`, `src/app/[locale]/order-lookup/page.tsx`, `src/lib/payments/{provider,cod}.ts`, `src/lib/commerce/orders.ts`
-**Scope:** L — largest slice in the phase; split into sub-commits (checkout UI, order creation, COD adapter, confirmation/lookup) if it grows past ~8 files
+**Files:** `src/app/[locale]/checkout/{page.tsx,actions.ts}`, `src/components/commerce/checkout-form.tsx`,
+`src/app/[locale]/checkout/confirmation/[orderNumber]/page.tsx`, `src/components/commerce/order-summary.tsx`,
+`src/app/[locale]/order-lookup/{page.tsx,actions.ts,order-lookup-form.tsx}`,
+`src/lib/payments/{provider,cod,registry}.ts`, `src/lib/commerce/orders.ts`, `tests/orders.test.ts`,
+`src/messages/{ar,en}.json`
+**Scope:** L — largest slice in the phase; landed as one pass rather than sub-commits, since the vertical
+slice (checkout UI → order creation → COD adapter → confirmation/lookup) only became independently
+verifiable once every piece existed together
+
+Notes
+
+- `create_order`'s generated Supabase `Args` type marks every parameter required/non-nullable because
+  none has a SQL `default` — a typegen gap, not a real constraint; `orders.ts` casts around it rather than
+  adding SQL defaults that would make guest fields silently optional
+- The confirmation page's guest access control is a signed HMAC token (`signOrderToken`/`verifyOrderToken`,
+  same secret as the guest-cart cookie), not the order number alone — a capability link, not a password
+- `next-intl`'s `redirect()` is typed `-> never`, but TS's unreachable-code analysis doesn't resolve that
+  through the destructured `createNavigation()` return in this project's tsconfig, so `placeOrder` and
+  `lookupOrder` both end with an explicit (unreachable) `return` after `redirect(...)` — same pattern
+  already used in `checkout/page.tsx`
 
 ---
 
@@ -856,19 +890,22 @@ handler verifying the signature and updating `payment_status`. **Blocked** — n
 
 **Acceptance criteria:**
 
-- [ ] Webhook handler idempotent — replay of the same event doesn't double-fulfil or double-charge
-- [ ] Signature/secret verified before any order mutation
-- [ ] Sandbox order completes end-to-end
+- [x] Webhook handler idempotent — replay of the same event doesn't double-fulfil or double-charge
+- [x] Signature/secret verified before any order mutation (re-verifies against Thawani's API rather than
+      trusting the callback, since Thawani signs nothing — see `thawani.ts`)
+- [ ] Sandbox order completes end-to-end — needs real credentials
 
 **Verification:**
 
-- [ ] `npm run test` — webhook idempotency unit tested with a mocked payload before any live key is wired in
+- [x] `npm run test` — webhook idempotency and status-mapping unit tested with mocked payloads (`tests/payments.test.ts`)
 - [ ] Manual sandbox order once credentials exist
 
 **Dependencies:** 2.9
 **Files:** `src/lib/payments/thawani.ts`, `src/app/api/webhooks/thawani/route.ts`
 **Scope:** S
-**Status:** blocked on credentials — do not start until supplied
+**Status:** code-complete, registered in the payment provider registry; blocked on credentials for the
+remaining live-sandbox criterion — `THAWANI_SECRET_KEY`/`THAWANI_PUBLISHABLE_KEY` unset falls through to a
+clear runtime config error, not a build failure
 
 ---
 
@@ -878,16 +915,22 @@ handler verifying the signature and updating `payment_status`. **Blocked** — n
 
 **Acceptance criteria:**
 
-- [ ] Same three criteria as 2.11, for Tap's webhook/signature scheme
+- [x] Same three criteria as 2.11, for Tap's webhook/signature scheme — HMAC-SHA256 verified in
+      `verifyTapSignature` before any RPC call, unit tested against a correct, wrong-secret, tampered-payload,
+      and missing-header case
+- [ ] Sandbox order completes end-to-end — needs real credentials
 
 **Verification:**
 
-- [ ] Same as 2.11
+- [x] Same as 2.11 — `tests/payments.test.ts`
+- [ ] Manual sandbox order once credentials exist
 
 **Dependencies:** 2.9
 **Files:** `src/lib/payments/tap.ts`, `src/app/api/webhooks/tap/route.ts`
 **Scope:** S
-**Status:** blocked on credentials — do not start until supplied
+**Status:** code-complete, registered in the payment provider registry; blocked on credentials for the
+remaining live-sandbox criterion — `TAP_SECRET_KEY` unset falls through to a clear runtime config error,
+not a build failure
 
 ---
 

@@ -186,5 +186,52 @@
       "signedInAs": "تم تسجيل الدخول باسم {email}",
       "signOut": "تسجيل الخروج"
     }
+  },
+  "checkout": {
+    "heading": "إتمام الطلب",
+    "guestEmailLabel": "البريد الإلكتروني",
+    "guestEmailHint": "سنرسل تأكيد الطلب ورابط التتبع إلى هذا البريد.",
+    "selectAddressHeading": "عنوان التوصيل",
+    "noAddresses": "لا يوجد لديك عنوان محفوظ لهذه الدولة بعد.",
+    "addAddress": "إضافة عنوان",
+    "couponLabel": "كود الخصم",
+    "couponPlaceholder": "لديك كود؟",
+    "paymentHeading": "طريقة الدفع",
+    "cod": "الدفع عند الاستلام",
+    "orderSummaryHeading": "ملخص الطلب",
+    "placeOrder": "إتمام الطلب",
+    "placingOrder": "جارٍ إتمام الطلب…",
+    "errors": {
+      "emptyCart": "سلتك فارغة.",
+      "selectAddress": "اختر عنوان التوصيل.",
+      "invalidAddress": "تحقق من بيانات العنوان وحاول مرة أخرى.",
+      "outOfStock": "بعض المنتجات لم تعد متوفرة بالكمية المطلوبة. يرجى مراجعة سلتك.",
+      "couponRejected": "لا يمكن تطبيق كود الخصم هذا.",
+      "countryMismatch": "هذا العنوان ليس ضمن دولة هذا المتجر.",
+      "generic": "حدث خطأ ما أثناء إتمام طلبك. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "orders": {
+    "confirmedHeading": "تم تأكيد الطلب",
+    "confirmedMessage": "شكراً لك — لقد استلمنا طلبك.",
+    "orderNumberLabel": "رقم الطلب",
+    "itemsHeading": "المنتجات",
+    "paymentMethodLabel": "طريقة الدفع",
+    "deliveryAddressLabel": "عنوان التوصيل",
+    "statusLabel": "حالة الطلب",
+    "status": {
+      "pending": "قيد الانتظار",
+      "processing": "قيد التجهيز",
+      "shipped": "تم الشحن",
+      "delivered": "تم التوصيل",
+      "cancelled": "ملغي"
+    },
+    "notFound": "لم نتمكن من العثور على طلب مطابق لهذا الرقم والبريد الإلكتروني."
+  },
+  "orderLookup": {
+    "heading": "تتبع طلبك",
+    "orderNumberLabel": "رقم الطلب",
+    "emailLabel": "البريد الإلكتروني",
+    "submit": "البحث عن الطلب"
   }
 }
