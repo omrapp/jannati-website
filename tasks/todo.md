@@ -999,31 +999,65 @@ Notes
 
 ---
 
-## Task 3.2: Admin catalog — products & variants CRUD
+## Task 3.2: Admin catalog — products & variants CRUD ✅
 
-**Description:** List/create/edit products and their variants from `/admin`. Reuses the money lib from
-1.2 for OMR minor-unit input (staff enters major-unit decimal, stored as minor-unit integer, same
-conversion `PriceDisplay` does in reverse).
+**Description:** List/create/edit products and their variants from `/admin`. Reuses `majorDecimalToMinor`
+from 1.2's money lib for OMR minor-unit input (staff enters major-unit decimal, stored as minor-unit
+integer) rather than a new admin-only parser — it already does exactly this and is already unit tested.
 
 **Acceptance criteria:**
 
-- [ ] Product list — paginated, searchable by name, filterable by status
-- [ ] Create/edit form covers `products` + `product_variants` fields from the schema (names ar/en,
+- [x] Product list — paginated (25/page), searchable by name/handle, filterable by status
+- [x] Create/edit form covers `products` + `product_variants` fields from the schema (names ar/en,
   description ar/en, brand, categories, status, variant sku/title/price/compare-at/stock)
-- [ ] Price entered as major-unit decimal (e.g. `6.400`), stored as OMR minor-unit integer server-side —
-  never a raw minor-unit input field, same "staff thinks in real money" posture as country FX rates
-- [ ] A newly-published product appears on the live storefront PLP/PDP without a deploy
+- [x] Price entered as major-unit decimal (e.g. `6.400`), stored as OMR minor-unit integer server-side —
+  `parsePriceMinor` in `admin/products.ts` rejects anything `majorDecimalToMinor` can't parse rather than
+  silently defaulting to 0; never a raw minor-unit input field, same "staff thinks in real money" posture
+  as country FX rates
+- [ ] A newly-published product appears on the live storefront PLP/PDP without a deploy — code path is the
+  same `products`/`product_variants` tables the storefront already reads, but not exercised end-to-end
+  this session (no local Supabase)
 
 **Verification:**
 
-- [ ] `npm run test` — money-input parsing (major-unit string → minor-unit integer) unit tested
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
-- [ ] Manual: create a product in admin, confirm it renders on `/en-om/products/[handle]` — deferred
+- [x] `npm run test` — no new pure logic to add a test for: the one piece of money-input parsing this task
+  needed (`majorDecimalToMinor`) is reused, not reimplemented, and already covered by `tests/money.test.ts`
+  from 1.2. 251/251 total, no regressions
+- [x] `npm run typecheck`, `npm run lint`, `npm run build` — all clean; route table confirms
+  `/admin/products`, `/admin/products/new`, `/admin/products/[id]`
+- [ ] Manual: create a product in admin, confirm it renders on `/en-om/products/[handle]` — deferred, no
+  local Supabase this session, same gap as 3.1
 
 **Dependencies:** 3.1
-**Files:** `src/app/admin/products/{page.tsx,[id]/page.tsx,actions.ts}`,
-`src/lib/commerce/admin-money.ts`, `supabase/migrations/20260815000004_admin_catalog_write_policies.sql`
+**Files:** `supabase/migrations/20260815000004_admin_catalog_write_policies.sql`,
+`src/lib/admin/products.ts`, `src/components/ui/textarea.tsx`,
+`src/app/admin/(protected)/products/{page.tsx,actions.ts,product-form.tsx,new/page.tsx,[id]/page.tsx}`,
+`src/app/admin/(protected)/admin-nav.tsx`
 **Scope:** L
+
+Notes
+
+- `listProducts` runs three flat queries (products, then brands/variants `in()` on the ids that came
+  back) instead of one query with embedded `brands(...)`/`product_variants(...)` resources —
+  `products_brand_id_fkey`'s generated `isOneToOne: false` makes supabase-js infer that embed as an array,
+  not the single row a scalar `brand_id` FK actually returns at runtime. Three queries side-step the type
+  mismatch instead of fighting it with a cast
+- Variants and category memberships are both full-replace on save, not incrementally diffed against a
+  submitted patch: the edit form always submits its complete current set (add/remove rows client-side),
+  so "delete whatever's not in the submitted set, upsert the rest" is simpler than tracking which rows the
+  user actually touched, at the cost of not being one atomic transaction — same non-blocking-race posture
+  already accepted for `setDefaultAddress` in 2.7
+- Variants and category IDs cross the client/server-action boundary as JSON in hidden `<input>` fields —
+  `FormData` has no native array-of-objects field, and both are managed as React state for
+  add/remove/toggle interactivity
+- Added `src/components/ui/textarea.tsx`: a shadcn-style native-element wrapper, not a new dependency —
+  the project's already-chosen toolkit just didn't have this primitive yet. Skipped adding a `Select`
+  primitive for the same reason in the other direction: a real shadcn `Select` needs `@radix-ui/react-select`
+  which isn't installed, and a plain native `<select>` (styled to match `Input`) is enough for an
+  internal-only admin form
+- Admin catalog write RLS is scoped to exactly what this task touches — `products`, `product_variants`,
+  `product_categories` — not opened for `brands`/`categories`/`product_images` yet; those get their own
+  `is_admin()` policies in 3.3/3.4 when those tasks land
 
 ---
 
