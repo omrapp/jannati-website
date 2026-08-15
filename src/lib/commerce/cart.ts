@@ -281,6 +281,79 @@ export async function removeCartItem(
   if (error) throw new Error(`removing cart item: ${error.message}`);
 }
 
+export type CartLineQty = { variantId: string; qty: number };
+
+/**
+ * Pure merge decision for 2.5: folds a guest cart's lines into a customer's
+ * existing lines. Each overlapping variant reuses `resolveAddQty` — the same
+ * sum-and-clamp rule that governs "add to cart" governs a merge, so there is
+ * one definition of "how much of this fits" instead of two that could drift.
+ * A guest line whose variant no longer exists or has no stock is dropped
+ * rather than failing the whole merge — the shopper still gets everything
+ * else.
+ *
+ * This function is *not* itself safe to re-apply — feeding its own output
+ * back in as `customerLines` alongside the same `guestLines` sums a second
+ * time. Idempotency is owned entirely by the caller (`mergeGuestCartIntoCustomer`
+ * deletes the guest cart row once merged), not by this function.
+ */
+export function resolveCartMerge(
+  customerLines: readonly CartLineQty[],
+  guestLines: readonly CartLineQty[],
+  stockByVariant: ReadonlyMap<string, number>,
+): CartLineQty[] {
+  const qtyByVariant = new Map(customerLines.map((line) => [line.variantId, line.qty]));
+
+  for (const guestLine of guestLines) {
+    const stockQty = stockByVariant.get(guestLine.variantId);
+    if (stockQty === undefined) continue; // variant deleted since the guest added it
+
+    const existingQty = qtyByVariant.get(guestLine.variantId) ?? 0;
+    let resolution: QtyResolution;
+    try {
+      resolution = resolveAddQty(existingQty, guestLine.qty, stockQty);
+    } catch (err) {
+      if (err instanceof CartOperationError) continue; // out of stock — drop this line
+      throw err;
+    }
+    qtyByVariant.set(guestLine.variantId, resolution.qty);
+  }
+
+  return [...qtyByVariant.entries()].map(([variantId, qty]) => ({ variantId, qty }));
+}
+
+/**
+ * Merges a guest's cart into the just-authenticated customer's cart — called
+ * once, right after `signInWithPassword` succeeds.
+ *
+ * This is a thin wrapper over the `merge_guest_cart_into_customer` Postgres
+ * function (`supabase/migrations/20260814000001_merge_guest_cart_rpc.sql`),
+ * not a JS-side read/compute/write sequence: the read, the merge, and the
+ * guest-cart delete all need to happen inside one transaction with row locks
+ * to be race-safe against a concurrent add-to-cart on the guest session or a
+ * concurrent merge into the same customer cart — four separate PostgREST
+ * round trips can't give that guarantee. `resolveCartMerge` above stays the
+ * unit-tested spec for the merge decision the SQL function implements; keep
+ * them in sync if either changes.
+ *
+ * The guest cart has no RLS policy at all (see the file header), and this
+ * RPC is granted to `service_role` only — callers must pass the
+ * service-role client. Callers must also clear the guest session cookie
+ * afterwards (`src/lib/commerce/session.ts`); this function only touches
+ * the database.
+ */
+export async function mergeGuestCartIntoCustomer(
+  client: Client,
+  customerId: string,
+  guestSessionToken: string,
+): Promise<void> {
+  const { error } = await client.rpc('merge_guest_cart_into_customer', {
+    p_customer_id: customerId,
+    p_guest_session_token: guestSessionToken,
+  });
+  if (error) throw new Error(`merging guest cart: ${error.message}`);
+}
+
 function toCartCountry(row: CountryRow): CartCountry {
   return {
     code: row.code as CartCountry['code'],

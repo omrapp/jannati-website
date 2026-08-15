@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { CartOperationError, resolveAddQty, resolveSetQty } from '@/lib/commerce/cart';
+import {
+  CartOperationError,
+  resolveAddQty,
+  resolveCartMerge,
+  resolveSetQty,
+} from '@/lib/commerce/cart';
 
 describe('resolveAddQty', () => {
   it('adds to an empty line within stock', () => {
@@ -90,4 +95,80 @@ describe('resolveSetQty', () => {
   it('rejects a non-integer requested quantity', () => {
     expect(() => resolveSetQty(1.5, 10)).toThrow(RangeError);
   });
+});
+
+describe('resolveCartMerge', () => {
+  it('sums quantities on an overlapping line, clamped to stock', () => {
+    const stock = new Map([['v1', 10]]);
+    const result = resolveCartMerge(
+      [{ variantId: 'v1', qty: 4 }],
+      [{ variantId: 'v1', qty: 3 }],
+      stock,
+    );
+    expect(result).toEqual([{ variantId: 'v1', qty: 7 }]);
+  });
+
+  it('clamps an overlapping line that would exceed stock', () => {
+    const stock = new Map([['v1', 10]]);
+    const result = resolveCartMerge(
+      [{ variantId: 'v1', qty: 8 }],
+      [{ variantId: 'v1', qty: 5 }],
+      stock,
+    );
+    expect(result).toEqual([{ variantId: 'v1', qty: 10 }]);
+  });
+
+  it('carries over a disjoint guest line untouched by the customer cart', () => {
+    const stock = new Map([
+      ['v1', 10],
+      ['v2', 5],
+    ]);
+    const result = resolveCartMerge(
+      [{ variantId: 'v1', qty: 2 }],
+      [{ variantId: 'v2', qty: 3 }],
+      stock,
+    );
+    expect(result).toEqual(
+      expect.arrayContaining([
+        { variantId: 'v1', qty: 2 },
+        { variantId: 'v2', qty: 3 },
+      ]),
+    );
+    expect(result).toHaveLength(2);
+  });
+
+  it('returns the guest lines unchanged when the customer cart is empty', () => {
+    const stock = new Map([['v1', 10]]);
+    const result = resolveCartMerge([], [{ variantId: 'v1', qty: 3 }], stock);
+    expect(result).toEqual([{ variantId: 'v1', qty: 3 }]);
+  });
+
+  it('returns the customer lines unchanged when the guest cart is empty', () => {
+    const stock = new Map([['v1', 10]]);
+    const result = resolveCartMerge([{ variantId: 'v1', qty: 3 }], [], stock);
+    expect(result).toEqual([{ variantId: 'v1', qty: 3 }]);
+  });
+
+  it('is a no-op when both carts are empty', () => {
+    expect(resolveCartMerge([], [], new Map())).toEqual([]);
+  });
+
+  it('drops a guest line whose variant no longer exists', () => {
+    const stock = new Map([['v1', 10]]);
+    const result = resolveCartMerge([], [{ variantId: 'gone', qty: 1 }], stock);
+    expect(result).toEqual([]);
+  });
+
+  it('drops a guest line whose variant is out of stock', () => {
+    const stock = new Map([['v1', 0]]);
+    const result = resolveCartMerge([], [{ variantId: 'v1', qty: 1 }], stock);
+    expect(result).toEqual([]);
+  });
+
+  // Idempotency itself lives one layer up, in `mergeGuestCartIntoCustomer`:
+  // it deletes the guest cart row once merged, so a second login finds no
+  // guest cart at all rather than re-submitting the same guest lines here.
+  // What this function must guarantee is the half of that contract it owns —
+  // merging *nothing* changes *nothing* — already covered above by "returns
+  // the customer lines unchanged when the guest cart is empty".
 });
