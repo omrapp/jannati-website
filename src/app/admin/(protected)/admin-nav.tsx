@@ -8,6 +8,8 @@ import { logout } from './actions';
 const LINKS = [
   { href: '/admin', label: 'Dashboard' },
   { href: '/admin/products', label: 'Products' },
+  { href: '/admin/brands', label: 'Brands' },
+  { href: '/admin/categories', label: 'Categories' },
 ];
 
 export function AdminNav({ email }: { email: string }) {

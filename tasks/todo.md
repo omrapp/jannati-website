@@ -1108,23 +1108,37 @@ Notes
 
 ---
 
-## Task 3.4: Admin brands & categories CRUD
+## Task 3.4: Admin brands & categories CRUD ✅
 
 **Description:** Create/edit/reorder brands and the category tree (parent/child, per data model).
 
 **Acceptance criteria:**
 
-- [ ] Brand list + create/edit (name ar/en, slug, description ar/en, logo)
-- [ ] Category tree editor — create/edit/reorder, parent reassignment
-- [ ] Slug uniqueness enforced server-side, not just a DB constraint error surfaced raw
+- [x] Brand list + create/edit (name ar/en, slug, description ar/en, logo) — logo is a Storage-path text
+  field, not a dedicated upload widget; the 3.3 upload pipeline is product-image-specific and a single
+  logo field didn't justify a second one at M scope
+- [x] Category tree editor — create/edit/reorder, parent reassignment — flat table with indentation by
+  depth (`asTree` walk) and a `sort_order` field, same "boring over drag-and-drop" call as 3.3's up/down
+  buttons; parent reassignment checked server-side for cycles (`wouldCreateCycle` walks the ancestor chain,
+  not just a self-parent check)
+- [x] Slug uniqueness enforced server-side, not just a DB constraint error surfaced raw — `taxonomy.ts`
+  catches Postgres `23505` and raises a plain-English message
 
 **Verification:**
 
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
-- [ ] Manual: edit a category name, confirm it updates on the storefront collection page — deferred
+- [x] `npm run typecheck`, `npm run lint`, `npm run build` — clean; route table confirms
+  `/admin/{brands,categories}{,/new,/[id]}`
+- [x] `npm run test` — 251/251, no regressions (no new pure logic to unit test; writes go through RLS,
+  same posture as 3.2)
+- [ ] Manual: edit a category name, confirm it updates on the storefront collection page — deferred, no
+  local Supabase this session
 
 **Dependencies:** 3.1
-**Files:** `src/app/admin/{brands,categories}/{page.tsx,actions.ts}`
+**Files:** `supabase/migrations/20260815000006_admin_brands_categories_write_policies.sql`,
+`src/lib/admin/taxonomy.ts`,
+`src/app/admin/(protected)/brands/{page.tsx,actions.ts,brand-form.tsx,new/page.tsx,[id]/page.tsx}`,
+`src/app/admin/(protected)/categories/{page.tsx,actions.ts,category-form.tsx,new/page.tsx,[id]/page.tsx}`,
+`src/app/admin/(protected)/admin-nav.tsx`
 **Scope:** M
 
 ---
