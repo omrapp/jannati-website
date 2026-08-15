@@ -1,18 +1,21 @@
 import { notFound } from 'next/navigation';
 
+import { listProductImages } from '@/lib/admin/images';
 import { getProductForEdit } from '@/lib/admin/products';
 import { minorToDecimalString, OMR_EXPONENT } from '@/lib/commerce/money';
 import { createClient } from '@/lib/supabase/server';
 import { ProductForm } from '../product-form';
+import { ProductImages } from './product-images';
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const client = await createClient();
 
-  const [result, { data: brands }, { data: categories }] = await Promise.all([
+  const [result, { data: brands }, { data: categories }, images] = await Promise.all([
     getProductForEdit(client, id),
     client.from('brands').select('id, name_en').order('name_en'),
     client.from('categories').select('id, name_en, name_ar').order('sort_order'),
+    listProductImages(client, id),
   ]);
   if (!result) notFound();
 
@@ -45,6 +48,16 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         }}
         brands={(brands ?? []).map((b) => ({ id: b.id, nameEn: b.name_en }))}
         categories={(categories ?? []).map((c) => ({ id: c.id, nameEn: c.name_en ?? '', nameAr: c.name_ar }))}
+      />
+      <ProductImages
+        productId={product.id}
+        images={images.map((img) => ({
+          id: img.id,
+          storagePath: img.storage_path,
+          altAr: img.alt_ar,
+          altEn: img.alt_en,
+          position: img.position,
+        }))}
       />
     </div>
   );

@@ -1061,25 +1061,50 @@ Notes
 
 ---
 
-## Task 3.3: Admin catalog — product image management
+## Task 3.3: Admin catalog — product image management ✅
 
 **Description:** Upload, reorder, and delete product images from the product edit page, writing to the
 Storage bucket from `20260812000003_storage_buckets.sql` and the `product_images` table.
 
 **Acceptance criteria:**
 
-- [ ] Upload writes to Supabase Storage (not the 422MB local `cdn/` folder, not a data URL in Postgres)
-- [ ] Position/reorder persisted; deleting an image removes both the row and the Storage object
-- [ ] Alt text (ar/en) editable per image — accessibility, not decorative-only
+- [x] Upload writes to Supabase Storage (not the 422MB local `cdn/` folder, not a data URL in Postgres) —
+  `uploadProductImage` uploads to the `product-images` bucket first, only inserts the `product_images` row
+  once that succeeds, and deletes the orphaned object if the insert fails
+- [x] Position/reorder persisted; deleting an image removes both the row and the Storage object
+- [x] Alt text (ar/en) editable per image — accessibility, not decorative-only
 
 **Verification:**
 
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
-- [ ] Manual: upload an image, confirm it's the storefront PDP's first image — deferred
+- [x] `npm run typecheck`, `npm run lint`, `npm run build` — all clean; route table confirms
+  `/admin/products/[id]` still builds with the new component
+- [x] `npm run test` — 251/251, no regressions (no new pure logic here to unit test; the module is
+  Storage/DB I/O, exercised by the existing `checkAdminAccess` gate already covered elsewhere)
+- [ ] Manual: upload an image, confirm it's the storefront PDP's first image — deferred, no local Supabase
+  this session, same gap as 3.1/3.2
 
 **Dependencies:** 3.2
-**Files:** `src/app/admin/products/[id]/images.tsx`, `src/lib/commerce/admin-images.ts`
+**Files:** `supabase/migrations/20260815000005_admin_product_images_policy.sql`,
+`src/lib/admin/images.ts`, `src/app/admin/(protected)/products/[id]/{actions.ts,product-images.tsx,page.tsx}`
 **Scope:** M
+
+Notes
+
+- Deviated from the planned file paths (`src/app/admin/products/[id]/images.tsx`,
+  `src/lib/commerce/admin-images.ts`) to match the conventions 3.1/3.2 actually established:
+  `src/lib/admin/` for admin-only server logic (parallel to `admin/products.ts`), and the route group's
+  real path is `src/app/admin/(protected)/products/[id]/`, not `src/app/admin/products/[id]/`.
+- All writes (Storage object + `product_images` row) go through `createAdminClient()` — the service-role
+  client — not the cookie-bound one `saveProduct` uses. There is no insert/update/delete RLS policy on
+  `storage.objects` (by design, same as the seed pipeline), so `checkAdminAccess()` in each server action is
+  the actual security boundary, not a database policy. The one new migration is read-only: it lets the
+  cookie-bound client the edit page reads with see a draft product's images at all, since the public
+  "images of active products" policy hides them otherwise.
+- Reorder/delete/alt-text edits call their server actions directly from the client component (not via
+  `<form action>`) — Next.js re-renders the current route after a Server Action resolves, so no manual
+  `router.refresh()` is needed; `revalidatePath` in each action is enough.
+- Reordering is up/down buttons, not drag-and-drop — a full drag-and-drop implementation is more than this
+  task's M scope justifies for a staff tool with typically a handful of images per product.
 
 ---
 
