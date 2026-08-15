@@ -18,6 +18,26 @@
     "increaseQty": "زيادة الكمية",
     "lineOutOfStock": "غير متوفر"
   },
+  "addresses": {
+    "title": "العناوين",
+    "empty": "لم تقم بحفظ أي عنوان بعد.",
+    "addNew": "إضافة عنوان",
+    "edit": "تعديل",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "default": "افتراضي",
+    "setDefault": "تعيين كافتراضي",
+    "fullNameLabel": "الاسم الكامل",
+    "phoneLabel": "الهاتف",
+    "countryLabel": "الدولة",
+    "cityLabel": "المدينة",
+    "areaLabel": "المنطقة (اختياري)",
+    "line1Label": "العنوان",
+    "save": "حفظ العنوان",
+    "saving": "جارٍ الحفظ…",
+    "errorGeneric": "حدث خطأ ما. حاول مرة أخرى.",
+    "deleteConfirm": "هل تريد حذف هذا العنوان؟"
+  },
   "nav": {
     "home": "الرئيسية",
     "products": "المنتجات",

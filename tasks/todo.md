@@ -691,25 +691,56 @@ Notes from implementation:
 
 ---
 
-## Task 2.7: Address book
+## Task 2.7: Address book ✅
 
 **Description:** Replace `/account` placeholder pieces needed for checkout: list/add/edit/delete
 addresses, one marked default per customer.
 
 **Acceptance criteria:**
 
-- [ ] CRUD scoped to the logged-in customer via RLS, never trusts a client-supplied `customer_id`
-- [ ] Exactly one address can be default at a time
-- [ ] Country field limited to the 6 enabled countries
+- [x] CRUD scoped to the logged-in customer via RLS, never trusts a client-supplied `customer_id` —
+      every `addresses.ts` function takes an explicit `customerId` resolved server-side from
+      `getAuthUser()` and filters every read/write by it, on top of the RLS policy
+      (`customer_id = auth.uid()`) already scoping the table; a client can submit whatever form fields
+      it wants, `customer_id` never comes from `formData`
+- [x] Exactly one address can be default at a time — enforced at the DB layer by
+      `addresses_one_default_per_customer_idx` (`supabase/migrations/20260813000002_commerce.sql`), a
+      unique index on `customer_id where is_default`; `setDefaultAddress` unsets the old default before
+      setting the new one so the two-write sequence never trips that index
+- [x] Country field limited to the 6 enabled countries — `AddressForm`'s `<select>` is populated from
+      `countries` (`src/i18n/config.ts`), the same list `CountrySwitcher` uses, and the server action's
+      Zod schema re-validates with `z.enum(countries)` rather than trusting the client sent one of them
 
 **Verification:**
 
-- [ ] E2E deferred — noted
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] E2E deferred — noted
+- [x] `npm run typecheck`, `npm run lint`, `npm run build` — all clean; `npm run test` — 206/206 (no new
+      pure logic — `addresses.ts` is thin and DB-facing, same "not unit tested" convention as `cart.ts`)
+- [x] Manual smoke: unauthenticated `GET /en-ae/account/addresses` and `/ar-om/account/addresses` both
+      307 to `/auth/login?next=%2Faccount%2Faddresses`, confirming the auth gate fires before any DB read
 
 **Dependencies:** 2.1, 2.4
-**Files:** `src/app/[locale]/account/addresses/page.tsx`, `src/lib/commerce/addresses.ts`
+**Files:** `src/app/[locale]/account/addresses/{page.tsx,actions.ts}`, `src/lib/commerce/addresses.ts`,
+`src/components/commerce/{address-list,address-form}.tsx`, `src/app/[locale]/account/page.tsx` (extend —
+link to the new page), `src/messages/{ar,en}.json` (extend — new `addresses` namespace)
 **Scope:** M
+
+Notes from implementation:
+
+- A brand-new customer's first address is auto-defaulted (`createAddress` checks
+  `existing.length === 0`) — with nothing to compare against, forcing an explicit "set as default" click
+  on someone's very first saved address only adds friction checkout would otherwise hit immediately.
+  Every address after the first keeps whatever was default until the shopper changes it.
+- `setDefaultAddress`'s unset-then-set is two round trips, not one transaction — same non-blocking-race
+  posture already accepted for `setCartItemQty` (2.3/2.6): a crash between the two writes leaves a
+  customer with zero default addresses, never two, and checkout already has to handle "no default
+  selected" as a normal state.
+- No dedicated add/edit route — `AddressForm` renders inline (toggled by client state in `AddressList`)
+  rather than a `/account/addresses/new` page, since there's no dialog/modal primitive in
+  `src/components/ui/` yet and adding one was out of this task's scope.
+- Extended `account/page.tsx` with a link to the new page — without it the address book would be
+  unreachable from the UI, same "the button that opens it has to exist somewhere" gap flagged for the
+  cart drawer in 2.6.
 
 ---
 

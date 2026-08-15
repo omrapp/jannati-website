@@ -18,6 +18,26 @@
     "increaseQty": "Increase quantity",
     "lineOutOfStock": "Out of stock"
   },
+  "addresses": {
+    "title": "Addresses",
+    "empty": "You haven't saved any addresses yet.",
+    "addNew": "Add address",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "default": "Default",
+    "setDefault": "Set as default",
+    "fullNameLabel": "Full name",
+    "phoneLabel": "Phone",
+    "countryLabel": "Country",
+    "cityLabel": "City",
+    "areaLabel": "Area (optional)",
+    "line1Label": "Address",
+    "save": "Save address",
+    "saving": "Saving…",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "deleteConfirm": "Delete this address?"
+  },
   "nav": {
     "home": "Home",
     "products": "Products",
