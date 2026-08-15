@@ -941,3 +941,285 @@ not a build failure
 - [ ] Webhook handlers idempotent (unit tested; live-verified once credentials exist)
 - [ ] Full suite green: build, lint, typecheck, unit — E2E deferred, same as Checkpoint D
 - [ ] Reviewed with the user
+
+---
+
+# Phase 3 — Admin
+
+No `admin_users` table, `is_admin()` helper, or `/admin` route exists yet. Every catalog/country/coupon
+write policy left in Phase 1/2 migrations is service-role-only with a comment pointing here (see
+`countries.sql:42`, `catalog.sql:173`). 3.1 lands the gate everything else in this phase depends on.
+
+## Task 3.1: Admin foundation — role gate + shell ✅
+
+**Description:** `admin_users` table (`user_id`, `role` — admin|staff), an `is_admin()` SQL helper for RLS
+policies, and the `/admin` route shell: layout that redirects non-admins to storefront/login, a login form
+(same auth call as 2.4's, minus locale/guest-cart concerns that don't apply to staff), and an empty
+dashboard page. This is the gate every later Phase 3 task's RLS policies and routes build on — no
+catalog/order/coupon write policy exists until this lands.
+
+**Acceptance criteria:**
+
+- [x] `admin_users` table + RLS: readable only by admins (via `is_admin()`), writable only via service
+  role (staff added by a developer running SQL, not self-service — no signup path)
+- [x] `is_admin()` `security definer` SQL function other tables' RLS policies can call without each one
+  re-deriving the check
+- [x] `/admin` unreachable without an `admin_users` row — not-signed-in redirects to `/admin/login`,
+  signed-in-but-not-staff redirects to the storefront default locale (`/ar-om`, not bare `/`, which has
+  no route — see `admin/(protected)/layout.tsx`)
+- [x] `/admin` layout is its own shell — not nested under `[locale]`, no storefront header/footer/cart;
+  confirmed by `next build`'s route table listing `/admin` and `/admin/login` outside the `[locale]` tree
+
+**Verification:**
+
+- [x] `npm run test` — no new pure logic to extract; `checkAdminAccess` is DB-facing, same
+  "thin, not unit tested" convention as `cart.ts`/`addresses.ts`. 251/251 total, no regressions
+- [x] `npm run typecheck`, `npm run lint`, `npm run build` — all clean
+- [ ] Manual: unauthenticated `/admin` → login; logged-in non-admin `/admin` → `/ar-om`; logged-in admin
+  `/admin` → dashboard shell — deferred, no local Supabase this session, same gap as every prior task
+
+**Dependencies:** 2.4
+**Files:** `supabase/migrations/20260815000003_admin_users.sql`, `src/lib/admin/auth.ts`,
+`src/app/admin/layout.tsx`, `src/app/admin/login/{page,actions,login-form}.tsx`,
+`src/app/admin/(protected)/{layout,page,actions,admin-nav}.tsx`
+**Scope:** L — grew past the M estimate once the login/gate/nav pieces turned out to need each other to be
+independently verifiable, same reasoning 2.9 gave for landing as one pass
+
+Notes
+
+- `checkAdminAccess()` returns a discriminated union (`{ isAdmin: true; user: User } | { isAdmin: false;
+  user: User | null }`), not a plain `{ user, isAdmin }` pair — so `if (!access.isAdmin) redirect(...)` in
+  the protected layout narrows `access.user` to non-null for every line past the guard, without a second
+  redundant null check
+- `is_admin()` doesn't exist in generated `Database` types yet — same typegen gap as `mark_payment_status`
+  in `apply-webhook-result.ts` (2.11/2.12); `src/lib/admin/auth.ts` uses the same local-type-extension
+  workaround, to be deleted once this migration goes through `db:push`/`gen types`
+- Admin UI is plain English, no next-intl — staff-only surface outside the `[locale]` tree, not
+  customer-facing; revisit only if the plan's "en/ar admin UI" note turns out to matter to the shop
+
+---
+
+## Task 3.2: Admin catalog — products & variants CRUD
+
+**Description:** List/create/edit products and their variants from `/admin`. Reuses the money lib from
+1.2 for OMR minor-unit input (staff enters major-unit decimal, stored as minor-unit integer, same
+conversion `PriceDisplay` does in reverse).
+
+**Acceptance criteria:**
+
+- [ ] Product list — paginated, searchable by name, filterable by status
+- [ ] Create/edit form covers `products` + `product_variants` fields from the schema (names ar/en,
+  description ar/en, brand, categories, status, variant sku/title/price/compare-at/stock)
+- [ ] Price entered as major-unit decimal (e.g. `6.400`), stored as OMR minor-unit integer server-side —
+  never a raw minor-unit input field, same "staff thinks in real money" posture as country FX rates
+- [ ] A newly-published product appears on the live storefront PLP/PDP without a deploy
+
+**Verification:**
+
+- [ ] `npm run test` — money-input parsing (major-unit string → minor-unit integer) unit tested
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: create a product in admin, confirm it renders on `/en-om/products/[handle]` — deferred
+
+**Dependencies:** 3.1
+**Files:** `src/app/admin/products/{page.tsx,[id]/page.tsx,actions.ts}`,
+`src/lib/commerce/admin-money.ts`, `supabase/migrations/20260815000004_admin_catalog_write_policies.sql`
+**Scope:** L
+
+---
+
+## Task 3.3: Admin catalog — product image management
+
+**Description:** Upload, reorder, and delete product images from the product edit page, writing to the
+Storage bucket from `20260812000003_storage_buckets.sql` and the `product_images` table.
+
+**Acceptance criteria:**
+
+- [ ] Upload writes to Supabase Storage (not the 422MB local `cdn/` folder, not a data URL in Postgres)
+- [ ] Position/reorder persisted; deleting an image removes both the row and the Storage object
+- [ ] Alt text (ar/en) editable per image — accessibility, not decorative-only
+
+**Verification:**
+
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: upload an image, confirm it's the storefront PDP's first image — deferred
+
+**Dependencies:** 3.2
+**Files:** `src/app/admin/products/[id]/images.tsx`, `src/lib/commerce/admin-images.ts`
+**Scope:** M
+
+---
+
+## Task 3.4: Admin brands & categories CRUD
+
+**Description:** Create/edit/reorder brands and the category tree (parent/child, per data model).
+
+**Acceptance criteria:**
+
+- [ ] Brand list + create/edit (name ar/en, slug, description ar/en, logo)
+- [ ] Category tree editor — create/edit/reorder, parent reassignment
+- [ ] Slug uniqueness enforced server-side, not just a DB constraint error surfaced raw
+
+**Verification:**
+
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: edit a category name, confirm it updates on the storefront collection page — deferred
+
+**Dependencies:** 3.1
+**Files:** `src/app/admin/{brands,categories}/{page.tsx,actions.ts}`
+**Scope:** M
+
+---
+
+## Task 3.5: Admin orders — list, detail, status transitions
+
+**Description:** Order list (filter by status/country/date), order detail (items, totals, customer/guest
+identity, payment + fulfilment status, event timeline), and a status-transition action that writes to
+`order_events` — the staff-driven counterpart to the webhook-driven `mark_payment_status` RPC from 2.11/2.12.
+Manual tracking number entry per the locked "no courier API" decision.
+
+**Acceptance criteria:**
+
+- [ ] Order list filterable by `payment_status`/`fulfilment_status`/`country_code`, sorted newest first
+- [ ] Order detail shows the same price/name snapshots the customer sees at confirmation, not a re-read
+  of current product data
+- [ ] Fulfilment status transition writes an `order_events` row (`created_by` = admin user, not null,
+  distinct from the system-generated payment-webhook events)
+- [ ] Tracking number/URL editable, shows on the customer's own order view once set
+- [ ] Only valid forward transitions allowed (reuses/extends 2.9's `isAllowedPaymentTransition` shape for
+  `fulfilment_status`, not a free-text status field)
+
+**Verification:**
+
+- [ ] `npm run test` — fulfilment-status transition table unit tested, same style as
+  `isAllowedPaymentTransition` in `tests/payments.test.ts`
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: move a real order Pending → Delivered end-to-end — deferred, this is Checkpoint F's gate
+
+**Dependencies:** 3.1, 2.9
+**Files:** `src/app/admin/orders/{page.tsx,[id]/page.tsx,actions.ts}`,
+`src/lib/commerce/fulfilment.ts`, `tests/fulfilment.test.ts`,
+`supabase/migrations/20260815000005_admin_order_write_policies.sql`
+**Scope:** L
+
+---
+
+## Task 3.6: Admin country settings
+
+**Description:** Edit `countries` — FX rate, VAT rate, shipping flat rate, free-shipping threshold,
+enable/disable — the admin-editable knobs every earlier phase's code already assumes exist.
+
+**Acceptance criteria:**
+
+- [ ] All six countries editable; FX/VAT/shipping changes take effect on the next page load, no deploy
+- [ ] Disabling a country hides it from locale/country switching without deleting its historical orders
+- [ ] Inputs validated server-side against the same constraints the migration's `check`s enforce (rate > 0,
+  VAT in `[0, 1)`, etc.) — a bad value rejected with a clear message, not a raw Postgres constraint error
+
+**Verification:**
+
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: edit AE's VAT rate, confirm checkout totals for `/en-ae` reflect it — deferred
+
+**Dependencies:** 3.1
+**Files:** `src/app/admin/countries/{page.tsx,actions.ts}`
+**Scope:** S
+
+---
+
+## Task 3.7: Admin coupons CRUD
+
+**Description:** Create/edit/deactivate coupons against the schema and validation rules 2.8 already built
+(`isCouponValid`) — admin only needed the write side; the validation logic is already tested and reused
+as-is.
+
+**Acceptance criteria:**
+
+- [ ] Create/edit form covers type (percent|fixed), value, min order, date window, usage limits, active flag
+- [ ] Percent coupons capped at 100 server-side (mirrors the migration's own `coupons_percent_range` check)
+- [ ] Deactivating a coupon doesn't affect orders that already used it (soft reference, per schema comment)
+
+**Verification:**
+
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: create a coupon, apply it at checkout — deferred
+
+**Dependencies:** 3.1, 2.8
+**Files:** `src/app/admin/coupons/{page.tsx,actions.ts}`
+**Scope:** M
+
+---
+
+## Task 3.8: Admin content — banners & pages
+
+**Description:** CRUD for `banners` (homepage carousel) and `content_pages` (about/FAQ/terms, seeded from
+the darbeauty scrape per decision #15) — the last DB-editable content still hardcoded/absent from admin.
+
+**Acceptance criteria:**
+
+- [ ] Banner list — create/edit/reorder/activate, image upload to Storage (same pattern as 3.3)
+- [ ] Content page list — edit title/body ar+en, publish toggle; slug fixed at creation, not editable
+  (existing links would break)
+
+**Verification:**
+
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: edit the "about" page body, confirm it renders at `/en-om/p/about` — deferred
+
+**Dependencies:** 3.1, 3.3
+**Files:** `src/app/admin/{banners,pages}/{page.tsx,actions.ts}`
+**Scope:** M
+
+---
+
+## Task 3.9: Admin review moderation
+
+**Description:** Queue of `pending` reviews with approve/reject actions. Reviews themselves (customer-facing
+submission) aren't built yet — this is admin-side only, moderating whatever rows exist once Phase 4 adds
+the submission form; built now so Phase 4 has somewhere to land moderated output.
+
+**Acceptance criteria:**
+
+- [ ] Pending-review queue, oldest first, shows product/customer/rating/body
+- [ ] Approve/reject writes `status`; rejected reviews never appear on the storefront PDP
+
+**Verification:**
+
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: deferred — no submission path exists yet to generate a real pending review this session
+
+**Dependencies:** 3.1
+**Files:** `src/app/admin/reviews/{page.tsx,actions.ts}`
+**Scope:** S
+
+---
+
+## Task 3.10: Admin customer list
+
+**Description:** Read-only customer list — search by email/phone, view their addresses and order history.
+No customer edit/delete in v1 (out of scope per plan; staff acting on a customer's behalf isn't a
+requirement that was raised).
+
+**Acceptance criteria:**
+
+- [ ] Searchable list, paginated
+- [ ] Detail view shows addresses (2.7) and orders (2.9/3.5) for that customer, read-only
+
+**Verification:**
+
+- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: deferred
+
+**Dependencies:** 3.1
+**Files:** `src/app/admin/customers/{page.tsx,[id]/page.tsx}`
+**Scope:** S
+
+---
+
+## Checkpoint F — Phase 3 complete
+
+- [ ] A non-technical user can create a product, publish it, see it live on the storefront
+- [ ] A non-technical user can move a real order Pending → Delivered from `/admin`
+- [ ] Every catalog/country/coupon/order write policy that was service-role-only in Phase 1/2 now has a
+  real admin-role RLS policy backing it — no lingering "Phase 3" comment pointing here unresolved
+- [ ] Full suite green: build, lint, typecheck, unit — E2E deferred, same as Checkpoints D/E
+- [ ] Reviewed with the user
