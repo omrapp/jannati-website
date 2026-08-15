@@ -3,6 +3,21 @@
     "name": "Jannati",
     "tagline": "The World of Beauty in One Place"
   },
+  "cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty.",
+    "continueShopping": "Continue shopping",
+    "viewCart": "View cart",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "shipping": "Shipping",
+    "vat": "VAT",
+    "total": "Total",
+    "remove": "Remove",
+    "decreaseQty": "Decrease quantity",
+    "increaseQty": "Increase quantity",
+    "lineOutOfStock": "Out of stock"
+  },
   "nav": {
     "home": "Home",
     "products": "Products",
