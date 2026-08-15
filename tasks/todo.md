@@ -744,25 +744,58 @@ Notes from implementation:
 
 ---
 
-## Task 2.8: Coupon validation
+## Task 2.8: Coupon validation ✅
 
 **Description:** Server-side coupon lookup and validation — active window, usage limit, per-user limit,
 minimum order — wired into 2.2's cart-totals reducer and a "have a coupon?" field in the cart/checkout UI.
 
 **Acceptance criteria:**
 
-- [ ] Expired, exhausted, below-minimum, and invalid codes all rejected with a translated reason
-- [ ] Valid coupon reduces the total exactly once, never stacks with itself
-- [ ] Usage/per-user counters only increment on a completed order, not on validation
+- [x] Expired, exhausted, below-minimum, and invalid codes all rejected with a translated reason —
+      `evaluateCoupon` returns one of 7 typed `CouponRejectionReason` literals (not a raw error or
+      prose string), so the checkout UI that consumes it (2.9) maps each one to a message key rather
+      than displaying anything hardcoded
+- [x] Valid coupon reduces the total exactly once, never stacks with itself — `CartCoupon`
+      (`cart-totals.ts`, from 2.2) is a single optional value, not a list, and `carts` has no
+      applied-coupon column at all (see schema), so a code is only ever validated fresh at checkout —
+      there is no persisted state a second application could stack onto
+- [x] Usage/per-user counters only increment on a completed order, not on validation — counts are
+      derived by querying `orders.coupon_code` (per the schema's own design comment), which
+      `validateCoupon` only ever reads; nothing here writes to `orders`, so validating a code, even
+      repeatedly, cannot itself move a coupon closer to its limit
 
 **Verification:**
 
-- [ ] `npm run test` — unit tests over every rejection reason plus a valid-application case
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] `npm run test` — 15 new unit tests over `evaluateCoupon`: inactive, not-started, expired
+      (boundary-inclusive), below-minimum (boundary-exact), global usage limit (boundary-exact),
+      per-user limit, the guest-no-email skip case, fixed-priority rejection ordering when multiple
+      reasons apply at once, and both coupon types applying cleanly. 221/221 total, no regressions
+- [x] `npm run typecheck`, `npm run lint`, `npm run build` — all clean
 
 **Dependencies:** 2.1, 2.2, 2.6
 **Files:** `src/lib/commerce/coupons.ts`, `tests/coupons.test.ts`
 **Scope:** S
+
+Notes from implementation:
+
+- Lib only, not yet wired to a page/action — same posture as 2.5's guest-cart-merge lib. There is no
+  "have a coupon?" field yet because there is no checkout UI yet; that wiring lands in 2.9, which is
+  also where `subtotalMinorOmr` (the OMR-scale subtotal `min_order_minor` compares against — see the
+  migration's column comment) gets computed and passed in, since only the checkout step has a
+  reason to know the cart's pre-conversion OMR total.
+- `endsAt` is an inclusive-exclusive boundary: valid through the instant just before `ends_at`, expired
+  exactly at and after it. Chose this over "expired the day after" because `ends_at` is a `timestamptz`,
+  not a date — staff setting an exact cutoff moment should get exactly that moment, not a day of slop.
+- Usage counting excludes `failed` orders (payment declined, order never completed) but counts
+  `pending` and `refunded` ones — a refund doesn't retroactively un-use a coupon that was genuinely
+  applied when the order was placed. This is a judgment call the schema comment doesn't spell out;
+  flagging it here in case it should be revisited once 2.9 shows what `payment_status` transitions
+  actually look like in practice.
+- `userUsageCount: null` (guest, no email collected yet) skips the per-user check rather than treating
+  it as zero. The real enforcement point for guests is still 2.9: order creation re-validates with the
+  guest's actual checkout email before the order is finalized, closing the window this lib alone
+  can't — same "server recomputes everything at order time" posture 2.9's own acceptance criteria
+  already call for.
 
 ---
 
