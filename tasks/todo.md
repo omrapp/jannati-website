@@ -1204,15 +1204,22 @@ enable/disable — the admin-editable knobs every earlier phase's code already a
 
 **Acceptance criteria:**
 
-- [ ] All six countries editable; FX/VAT/shipping changes take effect on the next page load, no deploy
-- [ ] Disabling a country hides it from locale/country switching without deleting its historical orders
-- [ ] Inputs validated server-side against the same constraints the migration's `check`s enforce (rate > 0,
+- [x] All six countries editable; FX/VAT/shipping changes take effect on the next page load, no deploy
+- [x] Disabling a country hides it from locale/country switching without deleting its historical orders
+- [x] Inputs validated server-side against the same constraints the migration's `check`s enforce (rate > 0,
   VAT in `[0, 1)`, etc.) — a bad value rejected with a clear message, not a raw Postgres constraint error
 
 **Verification:**
 
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] `npm run typecheck`, `npm run lint`, `npm run build`
 - [ ] Manual: edit AE's VAT rate, confirm checkout totals for `/en-ae` reflect it — deferred
+
+**Implementation notes:** `src/lib/admin/countries.ts` (`listCountries`/`updateCountrySettings`, bounds mirror
+the migration's `check`s), `/admin/countries` page + per-country `CountrySettingsForm` (edit-in-place, no
+create/delete — the six rows are fixed). RLS write policy already added in
+`20260815000008_admin_countries_write_policy.sql`. `getEnabledCountries()` added to `catalog/queries.ts` and
+threaded into `Header`/`MobileNav` → `CountrySwitcher` so a disabled country drops out of the switcher
+(routing and historical orders for it still work — `getCountry()` already filtered on `enabled = true`).
 
 **Dependencies:** 3.1
 **Files:** `src/app/admin/countries/{page.tsx,actions.ts}`

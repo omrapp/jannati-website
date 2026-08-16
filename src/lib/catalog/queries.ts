@@ -12,7 +12,7 @@
 
 import { cache } from 'react';
 
-import { parseLocale, type Locale } from '@/i18n/config';
+import { parseLocale, type CountryCode, type Locale } from '@/i18n/config';
 import { convertToOmrBound, majorDecimalToMinor } from '@/lib/commerce/money';
 import type { CountryPricing } from '@/lib/commerce/types';
 import { createClient } from '@/lib/supabase/server';
@@ -201,6 +201,19 @@ export const getCountry = cache(async (locale: Locale): Promise<CountryRow> => {
   }
 
   return data;
+});
+
+/**
+ * Enabled country codes only, for the header's country switcher. `countries`
+ * in `i18n/config.ts` stays the static list of all six locale-routable
+ * codes (routing has to exist for a country an admin might re-enable); this
+ * is the narrower, admin-editable set that's actually offered to shoppers.
+ */
+export const getEnabledCountries = cache(async (): Promise<CountryCode[]> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('countries').select('code').eq('enabled', true);
+  if (error) throw new Error(`listing enabled countries: ${error.message}`);
+  return data.map((row) => row.code as CountryCode);
 });
 
 export async function listProducts(options: ListProductsOptions): Promise<Page<ProductSummary>> {

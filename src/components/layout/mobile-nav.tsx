@@ -9,10 +9,10 @@ import { LocaleSwitcher } from '@/components/layout/locale-switcher';
 import { primaryNav } from '@/components/layout/nav-links';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { parseLocale, textDirection, type Locale } from '@/i18n/config';
+import { parseLocale, textDirection, type CountryCode, type Locale } from '@/i18n/config';
 import { Link } from '@/i18n/navigation';
 
-export function MobileNav() {
+export function MobileNav({ enabledCountries }: { enabledCountries: readonly CountryCode[] }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
   const [open, setOpen] = useState(false);
@@ -47,7 +47,7 @@ export function MobileNav() {
           </ul>
         </nav>
         <div className="mt-auto flex flex-col gap-2 border-t p-4">
-          <CountrySwitcher />
+          <CountrySwitcher enabled={enabledCountries} />
           <LocaleSwitcher />
         </div>
       </SheetContent>

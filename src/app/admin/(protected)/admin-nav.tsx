@@ -11,6 +11,7 @@ const LINKS = [
   { href: '/admin/brands', label: 'Brands' },
   { href: '/admin/categories', label: 'Categories' },
   { href: '/admin/orders', label: 'Orders' },
+  { href: '/admin/countries', label: 'Countries' },
 ];
 
 export function AdminNav({ email }: { email: string }) {

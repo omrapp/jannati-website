@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import type { Locale } from '@/i18n/config';
 import { Link } from '@/i18n/navigation';
 import { toCountryPricing } from '@/lib/catalog/mappers';
-import { getCountry } from '@/lib/catalog/queries';
+import { getCountry, getEnabledCountries } from '@/lib/catalog/queries';
 import { getCartWithTotals } from '@/lib/commerce/cart';
 import { getCartContext } from '@/lib/commerce/cart-identity';
 import { formatMoney } from '@/lib/commerce/money';
@@ -31,6 +31,7 @@ export async function Header() {
 
   const context = await getCartContext();
   const cart = context ? await getCartWithTotals(context.client, context.identity, locale) : null;
+  const enabledCountries = await getEnabledCountries();
 
   let cartTotals: {
     subtotal: string;
@@ -58,7 +59,7 @@ export async function Header() {
       </div>
 
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
-        <MobileNav />
+        <MobileNav enabledCountries={enabledCountries} />
         <Logo />
 
         <form action="/search" className="relative mx-auto hidden max-w-md flex-1 md:block">
@@ -74,7 +75,7 @@ export async function Header() {
 
         <div className="ms-auto flex items-center gap-1">
           <div className="hidden md:flex md:items-center md:gap-1">
-            <CountrySwitcher />
+            <CountrySwitcher enabled={enabledCountries} />
             <LocaleSwitcher />
           </div>
           <ThemeToggle />
