@@ -1368,9 +1368,16 @@ Nav link added. `npm run typecheck/lint/build` all clean; `/admin/customers` and
 
 ## Checkpoint F — Phase 3 complete
 
-- [ ] A non-technical user can create a product, publish it, see it live on the storefront
-- [ ] A non-technical user can move a real order Pending → Delivered from `/admin`
+- [ ] A non-technical user can create a product, publish it, see it live on the storefront — manual, deferred (same as Checkpoints D/E)
+- [ ] A non-technical user can move a real order Pending → Delivered from `/admin` — manual, deferred (same as Checkpoints D/E)
 - [ ] Every catalog/country/coupon/order write policy that was service-role-only in Phase 1/2 now has a
-  real admin-role RLS policy backing it — no lingering "Phase 3" comment pointing here unresolved
-- [ ] Full suite green: build, lint, typecheck, unit — E2E deferred, same as Checkpoints D/E
+  real admin-role RLS policy backing it — no lingering "Phase 3" comment pointing here unresolved.
+  **Not closed**: `src/lib/admin/orders.ts` and `src/lib/admin/customers.ts` still document
+  service-role-client-plus-`checkAdminAccess()` as the actual boundary, no RLS policy backing
+  order/customer/address reads or order writes. (`images.ts`'s service-role use is a separate,
+  deliberate call — Storage has no insert/update/delete policy on `storage.objects` by design —
+  not this gap.) Closing this is its own migration + RLS-policy task, not attempted here; flagging
+  for the user rather than expanding Task 3.10's scope into it unasked.
+- [x] Full suite green: build, lint, typecheck, unit — E2E deferred, same as Checkpoints D/E
+  (260/260 unit tests, `npm run build`/`lint`/`typecheck` all clean as of the Task 3.10 merge)
 - [ ] Reviewed with the user
