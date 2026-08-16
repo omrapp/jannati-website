@@ -1340,17 +1340,29 @@ requirement that was raised).
 
 **Acceptance criteria:**
 
-- [ ] Searchable list, paginated
-- [ ] Detail view shows addresses (2.7) and orders (2.9/3.5) for that customer, read-only
+- [x] Searchable list, paginated
+- [x] Detail view shows addresses (2.7) and orders (2.9/3.5) for that customer, read-only
 
 **Verification:**
 
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] `npm run typecheck`, `npm run lint`, `npm run build`
 - [ ] Manual: deferred
 
 **Dependencies:** 3.1
 **Files:** `src/app/admin/customers/{page.tsx,[id]/page.tsx}`
 **Scope:** S
+
+**Implementation notes:**
+
+`public.customers` has no admin RLS policy (same Checkpoint-F gap as `orders.ts`),
+so `src/lib/admin/customers.ts` takes the service-role client, same as `admin/orders.ts`.
+Email isn't a column on `customers` — it lives in `auth.users` — so every list/detail
+read pairs the row with an `auth.admin.getUserById` call. Search matches phone via a DB-side
+`ilike` and email via an in-memory scan of `auth.admin.listUsers` (capped at 20 pages of 1000;
+Auth has no server-side email filter), combined into one `.or()` query. Detail view reuses
+`listAddresses` (2.7) and a `customer_id`-scoped orders query shaped like `OrderListItem` (3.5).
+Nav link added. `npm run typecheck/lint/build` all clean; `/admin/customers` and
+`/admin/customers/[id]` confirmed in the build's route list.
 
 ---
 
