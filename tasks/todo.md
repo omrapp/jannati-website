@@ -1143,7 +1143,7 @@ Notes
 
 ---
 
-## Task 3.5: Admin orders — list, detail, status transitions
+## Task 3.5: Admin orders — list, detail, status transitions ✅
 
 **Description:** Order list (filter by status/country/date), order detail (items, totals, customer/guest
 identity, payment + fulfilment status, event timeline), and a status-transition action that writes to
@@ -1152,27 +1152,48 @@ Manual tracking number entry per the locked "no courier API" decision.
 
 **Acceptance criteria:**
 
-- [ ] Order list filterable by `payment_status`/`fulfilment_status`/`country_code`, sorted newest first
-- [ ] Order detail shows the same price/name snapshots the customer sees at confirmation, not a re-read
-  of current product data
-- [ ] Fulfilment status transition writes an `order_events` row (`created_by` = admin user, not null,
-  distinct from the system-generated payment-webhook events)
-- [ ] Tracking number/URL editable, shows on the customer's own order view once set
-- [ ] Only valid forward transitions allowed (reuses/extends 2.9's `isAllowedPaymentTransition` shape for
-  `fulfilment_status`, not a free-text status field)
+- [x] Order list filterable by `payment_status`/`fulfilment_status`/`country_code`, sorted newest first
+- [x] Order detail shows the same price/name snapshots the customer sees at confirmation, not a re-read
+  of current product data — reuses `getOrderById`'s `OrderDetail` (new export in `commerce/orders.ts`,
+  same `loadOrderDetail` the customer confirmation page uses)
+- [x] Fulfilment status transition writes an `order_events` row (`created_by` = admin user, not null,
+  distinct from the system-generated payment-webhook events) — `mark_fulfilment_status` RPC always takes a
+  `p_created_by`, unlike `mark_payment_status` where it's null
+- [x] Tracking number/URL editable, shows on the customer's own order view once set — plain update, no
+  RPC needed, no transition race to guard
+- [x] Only valid forward transitions allowed — `isAllowedFulfilmentTransition` (`commerce/fulfilment.ts`),
+  same table-lookup shape as `isAllowedPaymentTransition`, backed by the same atomic-`where`-clause RPC
+  pattern as `mark_payment_status`, not a free-text status field
 
 **Verification:**
 
-- [ ] `npm run test` — fulfilment-status transition table unit tested, same style as
-  `isAllowedPaymentTransition` in `tests/payments.test.ts`
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] `npm run test` — 260/260 (9 new), `isAllowedFulfilmentTransition` table unit tested in
+  `tests/fulfilment.test.ts`, same style as `isAllowedPaymentTransition`
+- [x] `npm run typecheck`, `npm run lint`, `npm run build` — clean; route table confirms
+  `/admin/orders`, `/admin/orders/[id]`
 - [ ] Manual: move a real order Pending → Delivered end-to-end — deferred, this is Checkpoint F's gate
 
 **Dependencies:** 3.1, 2.9
-**Files:** `src/app/admin/orders/{page.tsx,[id]/page.tsx,actions.ts}`,
-`src/lib/commerce/fulfilment.ts`, `tests/fulfilment.test.ts`,
-`supabase/migrations/20260815000005_admin_order_write_policies.sql`
+**Files:** `src/app/admin/(protected)/orders/{page.tsx,[id]/{page.tsx,actions.ts}}`,
+`src/lib/admin/orders.ts`, `src/lib/commerce/fulfilment.ts`, `tests/fulfilment.test.ts`,
+`supabase/migrations/20260815000007_mark_fulfilment_status_rpc.sql`,
+`src/lib/commerce/orders.ts` (added `getOrderById`), `src/app/admin/(protected)/admin-nav.tsx`
 **Scope:** L
+
+Notes
+
+- No new RLS write policy, unlike 3.2/3.4 — `orders`/`order_items`/`order_events` deliberately have *no*
+  insert/update policy for any role including admin (the migration's own header says so): every write goes
+  through the service-role client, gated by `checkAdminAccess()` in the server action, same posture as
+  3.3's Storage writes. `listOrders`/`getOrderForAdmin` also read via the service-role client for the same
+  reason — there's no admin select policy on `orders` either, so the cookie-bound client would only ever
+  see the admin's own orders (`customer_id = auth.uid()`), not everyone's.
+- Added `mark_fulfilment_status`, a second RPC mirroring `mark_payment_status`'s atomic-`where`-clause
+  shape, rather than a plain `UPDATE` — two staff transitioning the same order concurrently (or one
+  double-click) hits the same race `mark_payment_status` was built to close for webhook retries.
+- `getOrderById` added to `commerce/orders.ts` rather than duplicated in `admin/orders.ts` — reuses the
+  existing (already-private) `loadOrderDetail` helper, so admin and customer order views can never drift
+  on what a "loaded order" contains.
 
 ---
 

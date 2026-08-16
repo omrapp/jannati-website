@@ -404,6 +404,21 @@ export async function getOrderForCustomer(
 }
 
 /**
+ * Any order by id, with no ownership check — only for a caller that has
+ * already verified the requester is entitled to see any order (the admin
+ * order-detail page, gated on `checkAdminAccess()` before this is ever
+ * called).
+ */
+export async function getOrderById(client: Client, orderId: string): Promise<OrderDetail | null> {
+  const { data, error } = await client.from('orders').select('*').eq('id', orderId).maybeSingle();
+
+  if (error) throw new Error(`reading order ${orderId}: ${error.message}`);
+  if (!data) return null;
+
+  return loadOrderDetail(client, data);
+}
+
+/**
  * Any order by number, with no ownership check — only for a caller that has
  * already verified the requester is entitled to it (a verified guest
  * confirmation token, or `getOrderByNumberAndGuestEmail` below).
