@@ -1380,4 +1380,5 @@ Nav link added. `npm run typecheck/lint/build` all clean; `/admin/customers` and
   for the user rather than expanding Task 3.10's scope into it unasked.
 - [x] Full suite green: build, lint, typecheck, unit — E2E deferred, same as Checkpoints D/E
   (260/260 unit tests, `npm run build`/`lint`/`typecheck` all clean as of the Task 3.10 merge)
-- [ ] Reviewed with the user
+- [x] Reviewed with the user — manual checks and RLS-hardening accepted as known v1 gaps,
+  Phase 3 called closed 2026-08-16
