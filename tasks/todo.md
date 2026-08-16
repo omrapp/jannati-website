@@ -1235,18 +1235,27 @@ as-is.
 
 **Acceptance criteria:**
 
-- [ ] Create/edit form covers type (percent|fixed), value, min order, date window, usage limits, active flag
-- [ ] Percent coupons capped at 100 server-side (mirrors the migration's own `coupons_percent_range` check)
-- [ ] Deactivating a coupon doesn't affect orders that already used it (soft reference, per schema comment)
+- [x] Create/edit form covers type (percent|fixed), value, min order, date window, usage limits, active flag
+- [x] Percent coupons capped at 100 server-side (mirrors the migration's own `coupons_percent_range` check)
+- [x] Deactivating a coupon doesn't affect orders that already used it (soft reference, per schema comment)
 
 **Verification:**
 
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] `npm run typecheck`, `npm run lint`, `npm run build`
 - [ ] Manual: create a coupon, apply it at checkout — deferred
 
 **Dependencies:** 3.1, 2.8
 **Files:** `src/app/admin/coupons/{page.tsx,actions.ts}`
 **Scope:** M
+
+**Implementation notes:** `src/lib/admin/coupons.ts` uses the service-role client (`createAdminClient()`), not
+the cookie-bound one — `coupons` has zero RLS policies for any role (schema comment: "never readable by anon
+or authenticated clients"), same posture as `orders.ts` (Task 3.5), unlike the RLS-gated `taxonomy.ts`
+(Task 3.4). `validate()` mirrors the migration's checks (percent ≤ 100, positive value, non-negative min
+order, positive usage limits). No `deleteCoupon` — `active: false` is the only retirement path, since
+`orders.coupon_code` is a text snapshot, not a foreign key, so a past redemption is untouched either way.
+`<input type="datetime-local">` for `starts_at`/`ends_at` is treated as UTC on both read and write (no
+browser-timezone conversion) to avoid drift on repeated edits.
 
 ---
 
