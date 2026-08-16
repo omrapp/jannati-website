@@ -1382,3 +1382,247 @@ Nav link added. `npm run typecheck/lint/build` all clean; `/admin/customers` and
   (260/260 unit tests, `npm run build`/`lint`/`typecheck` all clean as of the Task 3.10 merge)
 - [x] Reviewed with the user — manual checks and RLS-hardening accepted as known v1 gaps,
   Phase 3 called closed 2026-08-16
+
+---
+
+# Phase 4 — Reviews, wishlist, notifications, SEO, perf, a11y, domain
+
+Per `tasks/plan.md`'s phase table: reviews + wishlist, notifications (Resend email + Twilio SMS,
+WhatsApp optional), SEO/hreflang, performance pass, accessibility pass, domain + DNS. Gate:
+Lighthouse ≥90 perf / ≥95 a11y on home + PDP; a test order triggers ar/en email + SMS; sitemap and
+hreflang validate.
+
+## Architecture decisions
+
+- **Reviews need no new migration.** `reviews.sql` (Task 3.9) already has the full RLS set: public
+  read of `status = 'approved'`, a customer can read their own row regardless of status, insert
+  their own always landing `pending`. 4.1 is UI only — a submission form and a PDP display — plus
+  one app-level rule the DB doesn't enforce: purchase verification. That's checked the same way
+  coupon eligibility is (Task 2.8) — server-side, in the submit action, not trusted from the client.
+- **Wishlist needs a new table.** Nothing in the schema today. `wishlists` (or
+  `wishlist_items`, one row per customer+product) with RLS scoped to `customer_id = auth.uid()`,
+  same shape as `addresses`. No guest wishlist — the plan's account-only feature, unlike cart.
+- **Notifications are credential-blocked, same as 2.10–2.12.** `RESEND_API_KEY`,
+  `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_MESSAGING_SERVICE_SID` are all empty in
+  `.env.local` (checked via `node -e`, never `cat`/`grep` — see the env-inspection memory).
+  WhatsApp is explicitly optional per the plan, gated on Meta Business verification. 4.3 builds the
+  adapter interface + Resend/Twilio implementations against their SDKs, wired to fire on order
+  events, but sending can't be verified end-to-end without real keys — same "built, blocked on
+  credentials" outcome as the OAuth/payment tasks, not a reason to skip building it.
+- **Domain + DNS (4.7) is an outward-facing purchase/config decision**, not something to do
+  unprompted — needs the user to actually own a domain first. Flagged, not started, until asked.
+- **SEO/perf/a11y (4.4–4.6) touch the whole `[locale]` tree**, not one new route — scope discipline
+  matters more here than anywhere else in the phase: metadata/hreflang/sitemap generation, image
+  `sizes`/`loading` audits, and semantic/ARIA fixes on existing pages, not new features.
+
+## Dependency graph
+
+4.1 reviews → needs order/order_items (2.9) for purchase verification, `reviews` table (3.9)
+4.2 wishlist → needs auth (2.4), new migration, independent of everything else in the phase
+4.3 notifications → needs order events (2.9, 3.5) to fire on; blocked on credentials for real sends
+4.4 SEO → independent, touches routes from Phases 1–3
+4.5 performance → best done after 4.4 (metadata/JSON-LD additions can affect bundle/render cost)
+4.6 accessibility → independent, can run in parallel with 4.4/4.5
+4.7 domain → independent, blocked on the user owning a domain
+
+## Risks
+
+| Risk | Likelihood | Mitigation |
+| --- | --- | --- |
+| Notification sends unverifiable without real Resend/Twilio keys | High | Build adapters + unit-test the payload shaping; defer live-send verification like 2.11/2.12 did |
+| Purchase-verification query (order_items → variant → product) adds a real join, easy to get wrong | Medium | Unit test the eligibility check in isolation, same as `coupons.ts` |
+| Lighthouse gate is easy to regress on later phases if no one re-runs it | Medium | Re-check at Checkpoint G, note the score in the task's notes |
+| Domain purchase is entirely outside this session's control | High | Treat 4.7 as blocked until the user says a domain is bought |
+
+## Open questions
+
+- Does "wishlist" need country/price context (item may not be available/priced in the viewer's
+  country) or is it a plain product-id list? Assuming plain list — a wishlist item that's
+  unavailable in-country renders "not available here" rather than being filtered out, same spirit
+  as how the plan treats out-of-stock.
+- Is a rating-without-body (stars only) a valid review, or is `body` always required? `reviews.body`
+  is `not null` in the schema already — treating it as required, no schema change needed to match.
+
+## Task 4.1: Customer reviews — submission + PDP display
+
+**Description:** A signed-in customer who has a delivered order containing a product can submit a
+1–5 star rating + body for it (lands `pending`, same as the DB default). The PDP shows approved
+reviews (newest first) and the average rating; a customer's own pending/rejected review is visible
+only to them, same as the admin moderation queue's status semantics from Task 3.9.
+
+**Acceptance criteria:**
+
+- [ ] Submission gated server-side on a delivered order containing the product — not just "signed
+  in", and not trusted from a client-supplied flag
+- [ ] One review per customer per product (re-submitting edits the existing row, or is rejected —
+  pick one and document it)
+- [ ] PDP shows approved reviews + average rating; a review not yet approved never appears to anyone
+  but its author
+- [ ] Arabic and English review body both render correctly (no locale-specific schema change needed
+  — `reviews.body` is a single `text` column, same as it's stored today)
+
+**Verification:**
+
+- [ ] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: deferred, same gap as every prior task this session
+
+**Dependencies:** 2.9, 3.9
+**Files:** `src/lib/commerce/reviews.ts`, `src/app/[locale]/products/[handle]/{page.tsx,review-form.tsx}`
+**Scope:** M
+
+---
+
+## Task 4.2: Wishlist
+
+**Description:** Signed-in customers can add/remove products to a wishlist and view it at
+`/account/wishlist` (currently a `PagePlaceholder` stub). No guest wishlist.
+
+**Acceptance criteria:**
+
+- [ ] New `wishlist_items` table + migration, RLS scoped to `customer_id = auth.uid()`
+- [ ] Add/remove from PDP and/or PLP card, signed-in only (signed-out sees a sign-in prompt, not a
+  silent no-op)
+- [ ] `/account/wishlist` lists saved products with current price/availability for the viewer's
+  country
+
+**Verification:**
+
+- [ ] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: deferred
+
+**Dependencies:** 2.4
+**Files:** `supabase/migrations/<ts>_wishlist.sql`, `src/lib/commerce/wishlist.ts`,
+`src/app/[locale]/account/wishlist/page.tsx`
+**Scope:** M
+
+---
+
+## Task 4.3: Notifications — Resend email + Twilio SMS
+
+**Description:** Order confirmation, shipping, and delivery events trigger an ar/en transactional
+email (Resend) and SMS (Twilio) to the customer. WhatsApp Cloud API is optional, gated on Meta
+Business verification — ship without it if not approved, per the plan.
+
+**Acceptance criteria:**
+
+- [ ] Notification adapter interface (mirrors the payment adapter shape from 2.11/2.12), Resend and
+  Twilio implementations behind it
+- [ ] Fires on order creation and on fulfilment status transitions to shipped/delivered (hooks into
+  3.5's `transitionFulfilmentStatus`)
+- [ ] ar/en templates — language chosen from the order's locale, not the admin's
+- [ ] Unit tests cover payload shaping without a live send
+
+**Verification:**
+
+- [ ] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: **blocked** — `RESEND_API_KEY`/`TWILIO_*` are empty in `.env.local`; live-send
+  verification deferred until the user provides credentials, same outcome as 2.10–2.12
+
+**Dependencies:** 2.9, 3.5
+**Files:** `src/lib/notifications/{types,resend,twilio}.ts`
+**Scope:** L
+
+---
+
+## Task 4.4: SEO — metadata, hreflang, sitemap, JSON-LD, robots
+
+**Description:** `generateMetadata` + `alternates.languages` hreflang across all 12
+`{lang}-{country}` combos, `sitemap.xml`, product `JSON-LD`, `robots.txt`. The `alternates.languages`
+hreflang gap was already flagged as deferred-to-Phase-4 back on Task 1's PDP work.
+
+**Acceptance criteria:**
+
+- [ ] Every public route has correct `<title>`/`<meta description>`, ar and en
+- [ ] hreflang alternates present and correct for all 12 locale-country combos on PLP/PDP/home
+- [ ] `sitemap.xml` includes every published product/category/content page
+- [ ] Product pages carry `Product` JSON-LD (price, availability, rating if reviews exist)
+- [ ] `robots.txt` allows the storefront, disallows `/admin` and `/account`
+
+**Verification:**
+
+- [ ] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: validate a sample of hreflang tags and the sitemap against Google's testing tools —
+  deferred, no live deployment to point them at yet this session
+
+**Dependencies:** Phase 1 catalog routes
+**Files:** `src/app/sitemap.ts`, `src/app/robots.ts`, per-route `generateMetadata`, JSON-LD component
+**Scope:** M
+
+---
+
+## Task 4.5: Performance pass
+
+**Description:** Core Web Vitals pass on home + PDP — image `sizes`/`priority`/`loading`, bundle
+size, render-blocking audit. Builds on the Lighthouse spot-check flagged (and deferred) back before
+Phase 2 began.
+
+**Acceptance criteria:**
+
+- [ ] Lighthouse performance ≥90 on home and PDP
+- [ ] LCP image on each has `priority`/correct `sizes`, no oversized image downloads
+- [ ] No obvious render-blocking third-party script on the critical path
+
+**Verification:**
+
+- [ ] `npm run build` (bundle size visible in output)
+- [ ] Manual: Lighthouse run — deferred until there's a deployed URL to point it at
+
+**Dependencies:** 4.4 (metadata/JSON-LD additions can shift bundle weight)
+**Files:** TBD per finding
+**Scope:** M
+
+---
+
+## Task 4.6: Accessibility pass
+
+**Description:** Semantic HTML + ARIA pass across storefront and admin — focus order, form labels,
+color contrast, keyboard navigation, RTL correctness re-checked now that the full app surface exists.
+
+**Acceptance criteria:**
+
+- [ ] Lighthouse accessibility ≥95 on home and PDP
+- [ ] Every form input has an associated label; every interactive element is keyboard-reachable
+- [ ] RTL layout re-verified across pages added since the Phase 0 smoke test
+
+**Verification:**
+
+- [ ] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`
+- [ ] Manual: Lighthouse + keyboard-only pass — deferred until there's a deployed URL
+
+**Dependencies:** none
+**Files:** TBD per finding
+**Scope:** M
+
+---
+
+## Task 4.7: Domain + DNS
+
+**Description:** Point the purchased production domain at Vercel, configure DNS, verify all 12
+locale-country routes resolve correctly.
+
+**Acceptance criteria:**
+
+- [ ] Domain added in Vercel, DNS configured, HTTPS live
+- [ ] Redirects/canonical host settled (www vs bare, trailing slash)
+
+**Verification:**
+
+- [ ] Manual only — nothing to unit test
+
+**Dependencies:** none
+**Files:** none (Vercel/DNS config, not repo code)
+**Scope:** S
+**Status:** blocked — no domain purchased yet; do not start without the user confirming one exists
+
+---
+
+## Checkpoint G — Phase 4 complete
+
+- [ ] A customer can leave a review on a delivered order's product and see it appear on the PDP once approved
+- [ ] A customer can save and view a wishlist
+- [ ] Notification adapters built and unit-tested; live send verified once credentials are provided
+- [ ] Lighthouse ≥90 perf / ≥95 a11y on home + PDP
+- [ ] hreflang + sitemap validate
+- [ ] Domain live (or explicitly deferred with the user's agreement)
+- [ ] Full suite green: build, lint, typecheck, unit
+- [ ] Reviewed with the user
