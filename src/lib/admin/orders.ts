@@ -73,14 +73,17 @@ export async function getOrderForAdmin(admin: AdminClient, orderId: string): Pro
 }
 
 /**
- * `mark_fulfilment_status` doesn't exist in `Database` yet — same typegen
- * gap as `mark_payment_status` in `apply-webhook-result.ts`; same narrow
- * `Functions` extension instead of casting the whole call to `any`. Delete
- * this once the migration lands in generated types.
+ * `mark_fulfilment_status` is in generated `types.ts` now, but typegen
+ * doesn't express function-arg nullability — see the identical comment on
+ * `DatabaseWithMarkPaymentStatus` in `apply-webhook-result.ts`. `Omit` at
+ * *every* nesting level, not just `Functions`: `Database & {public: ...}`
+ * alone still merges the untouched top-level `public` back in, which
+ * re-collides at `Functions.mark_fulfilment_status` one level down and
+ * collapses `p_note` to non-nullable again.
  */
-type DatabaseWithMarkFulfilmentStatus = Database & {
-  public: Database['public'] & {
-    Functions: Database['public']['Functions'] & {
+type DatabaseWithMarkFulfilmentStatus = Omit<Database, 'public'> & {
+  public: Omit<Database['public'], 'Functions'> & {
+    Functions: Omit<Database['public']['Functions'], 'mark_fulfilment_status'> & {
       mark_fulfilment_status: {
         Args: { p_order_id: string; p_status: FulfilmentStatus; p_note: string | null; p_created_by: string };
         Returns: boolean;

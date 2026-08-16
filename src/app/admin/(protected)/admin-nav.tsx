@@ -15,6 +15,7 @@ const LINKS = [
   { href: '/admin/coupons', label: 'Coupons' },
   { href: '/admin/banners', label: 'Banners' },
   { href: '/admin/content-pages', label: 'Pages' },
+  { href: '/admin/reviews', label: 'Reviews' },
 ];
 
 export function AdminNav({ email }: { email: string }) {

@@ -16,18 +16,17 @@ import type { PaymentStatus } from './idempotency';
 import type { WebhookResult } from './provider';
 
 /**
- * `mark_payment_status` doesn't exist in `Database` at all yet — unlike
- * `create_order`'s args-nullability gap in `orders.ts`, this migration
- * hasn't been through `db:push`/`gen types` yet (project rule: migrations
- * are written, not applied, by the assistant). A local extension of
- * `Functions` is a narrower workaround than casting the whole call to
- * `any`: everything past this cast — `admin.rpc('mark_payment_status', …)`
- * — stays fully typed. Delete this once the real migration lands in
- * generated types and replace with a plain `admin.rpc(...)` call.
+ * `mark_payment_status` is in generated `types.ts` now, but typegen doesn't
+ * express function-arg nullability — `p_note text` (nullable in the SQL
+ * signature) comes out as `p_note: string`, not `string | null`. `Omit` at
+ * *every* nesting level, not just `Functions`: `Database & {public: ...}`
+ * alone still merges the untouched top-level `public` back in, which
+ * re-collides at `Functions.mark_payment_status` one level down and
+ * collapses `p_note` to non-nullable again.
  */
-type DatabaseWithMarkPaymentStatus = Database & {
-  public: Database['public'] & {
-    Functions: Database['public']['Functions'] & {
+type DatabaseWithMarkPaymentStatus = Omit<Database, 'public'> & {
+  public: Omit<Database['public'], 'Functions'> & {
+    Functions: Omit<Database['public']['Functions'], 'mark_payment_status'> & {
       mark_payment_status: {
         Args: { p_order_id: string; p_status: PaymentStatus; p_note: string | null };
         Returns: boolean;

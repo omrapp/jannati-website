@@ -96,6 +96,60 @@ export type Database = {
           },
         ]
       }
+      admin_users: {
+        Row: {
+          created_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      banners: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          image_path: string
+          link: string | null
+          sort_order: number
+          title_ar: string | null
+          title_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          image_path: string
+          link?: string | null
+          sort_order?: number
+          title_ar?: string | null
+          title_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          image_path?: string
+          link?: string | null
+          sort_order?: number
+          title_ar?: string | null
+          title_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       brands: {
         Row: {
           created_at: string
@@ -271,6 +325,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      content_pages: {
+        Row: {
+          body_ar: string
+          body_en: string | null
+          created_at: string
+          id: string
+          published: boolean
+          slug: string
+          title_ar: string
+          title_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          body_ar: string
+          body_en?: string | null
+          created_at?: string
+          id?: string
+          published?: boolean
+          slug: string
+          title_ar: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body_ar?: string
+          body_en?: string | null
+          created_at?: string
+          id?: string
+          published?: boolean
+          slug?: string
+          title_ar?: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       countries: {
         Row: {
@@ -773,6 +863,54 @@ export type Database = {
           },
         ]
       }
+      reviews: {
+        Row: {
+          body: string
+          created_at: string
+          customer_id: string
+          id: string
+          product_id: string
+          rating: number
+          status: Database["public"]["Enums"]["review_status"]
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          product_id: string
+          rating: number
+          status?: Database["public"]["Enums"]["review_status"]
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          product_id?: string
+          rating?: number
+          status?: Database["public"]["Enums"]["review_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -800,6 +938,24 @@ export type Database = {
         }
         Returns: string
       }
+      is_admin: { Args: never; Returns: boolean }
+      mark_fulfilment_status: {
+        Args: {
+          p_created_by: string
+          p_note: string
+          p_order_id: string
+          p_status: Database["public"]["Enums"]["fulfilment_status"]
+        }
+        Returns: boolean
+      }
+      mark_payment_status: {
+        Args: {
+          p_note: string
+          p_order_id: string
+          p_status: Database["public"]["Enums"]["payment_status"]
+        }
+        Returns: boolean
+      }
       merge_guest_cart_into_customer: {
         Args: { p_customer_id: string; p_guest_session_token: string }
         Returns: undefined
@@ -825,6 +981,7 @@ export type Database = {
       payment_provider: "thawani" | "tap" | "cod"
       payment_status: "pending" | "paid" | "failed" | "refunded"
       product_status: "draft" | "active" | "archived"
+      review_status: "pending" | "approved" | "rejected"
       translation_status: "missing" | "machine" | "human"
     }
     CompositeTypes: {
@@ -967,6 +1124,7 @@ export const Constants = {
       payment_provider: ["thawani", "tap", "cod"],
       payment_status: ["pending", "paid", "failed", "refunded"],
       product_status: ["draft", "active", "archived"],
+      review_status: ["pending", "approved", "rejected"],
       translation_status: ["missing", "machine", "human"],
     },
   },

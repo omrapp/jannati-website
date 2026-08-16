@@ -1302,17 +1302,33 @@ the submission form; built now so Phase 4 has somewhere to land moderated output
 
 **Acceptance criteria:**
 
-- [ ] Pending-review queue, oldest first, shows product/customer/rating/body
-- [ ] Approve/reject writes `status`; rejected reviews never appear on the storefront PDP
+- [x] Pending-review queue, oldest first, shows product/customer/rating/body
+- [x] Approve/reject writes `status`; rejected reviews never appear on the storefront PDP
 
 **Verification:**
 
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
-- [ ] Manual: deferred — no submission path exists yet to generate a real pending review this session
+- [x] `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] Manual: deferred — no submission path exists yet to generate a real pending review this session; PDP
+  doesn't read reviews at all yet either (Phase 4), so "never appears" holds trivially for now
 
 **Dependencies:** 3.1
-**Files:** `src/app/admin/reviews/{page.tsx,actions.ts}`
+**Files:** `supabase/migrations/20260816000002_reviews.sql`, `src/lib/admin/reviews.ts`,
+`src/app/admin/(protected)/reviews/{page.tsx,actions.ts}`, `src/app/admin/(protected)/admin-nav.tsx`
 **Scope:** S
+
+**Implementation notes:** the `reviews` table itself didn't exist yet (only planned in the spec's data
+model) — this task's migration creates it, per decision #13. `reviews` has no admin service-role posture:
+RLS lets a customer read/insert their own row (always landing `pending`, never self-approved) and lets
+`is_admin()` do everything, so the moderation actions use the cookie-bound client, not
+`createAdminClient()`. Ran `npm run db:push` + `npm run db:types` for the first time this session with a
+working link — `types.ts` now has `banners`, `content_pages`, and `reviews` for real, and also
+`mark_fulfilment_status`/`mark_payment_status`'s RPC signatures, which broke `orders.ts` and
+`apply-webhook-result.ts`'s local type-extension workarounds (naive `Database & {...}` intersects the
+*unmodified* original back in at every level, collapsing `p_note: string | null` to non-nullable). Fixed
+by `Omit`-ing the colliding key at every nesting level instead of intersecting. `banners.ts` and
+`content-pages.ts`'s own local-extension comments now say "delete once the real migration lands in
+generated types" — that's now true but left alone this task; still typechecks fine, so it's a follow-up
+cleanup, not a correctness fix.
 
 ---
 
