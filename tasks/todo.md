@@ -1266,17 +1266,30 @@ the darbeauty scrape per decision #15) — the last DB-editable content still ha
 
 **Acceptance criteria:**
 
-- [ ] Banner list — create/edit/reorder/activate, image upload to Storage (same pattern as 3.3)
-- [ ] Content page list — edit title/body ar+en, publish toggle; slug fixed at creation, not editable
+- [x] Banner list — create/edit/reorder/activate, image upload to Storage (same pattern as 3.3)
+- [x] Content page list — edit title/body ar+en, publish toggle; slug fixed at creation, not editable
   (existing links would break)
 
 **Verification:**
 
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build`
-- [ ] Manual: edit the "about" page body, confirm it renders at `/en-om/p/about` — deferred
+- [x] `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] Manual: `/[locale]/p/[slug]` now reads `content_pages` (was a placeholder); renders `about` once an
+  admin creates that slug and publishes it — no seed row exists yet, so the render itself is unverified
+  live, but the route is wired
 
 **Dependencies:** 3.1, 3.3
-**Files:** `src/app/admin/{banners,pages}/{page.tsx,actions.ts}`
+**Files:** `supabase/migrations/20260816000001_content.sql`, `src/lib/admin/{banners,content-pages}.ts`,
+`src/app/admin/(protected)/{banners,content-pages}/**`, `src/app/[locale]/p/[slug]/page.tsx`,
+`src/app/admin/(protected)/admin-nav.tsx`
+
+**Implementation notes:** `banners` has no RLS policy (same posture as `coupons` — service-role client is
+the only writer, `checkAdminAccess()` in the action is the real gate); `content_pages` does have RLS
+(`admins can manage content pages`) so its actions use the cookie-bound client instead. Both tables were
+missing from generated `types.ts` (migration not yet through `db:push`/`gen types`), so both modules use a
+local `DatabaseWithX` type extension rather than casting every call to `any`. A Server Component can't
+import a `'use server'` actions file directly when that file also exports a non-function (like
+`idleBannerFormState` for `useActionState`) — routed the banner delete button through a small client
+component (`delete-banner-button.tsx`) instead, same shape as `ProductImages`' delete button.
 **Scope:** M
 
 ---
