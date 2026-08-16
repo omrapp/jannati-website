@@ -38,6 +38,25 @@
     "errorGeneric": "Something went wrong. Please try again.",
     "deleteConfirm": "Delete this address?"
   },
+  "reviews": {
+    "title": "Reviews",
+    "empty": "No reviews yet.",
+    "averageSummary": "{average} out of 5 ({count, plural, one {# review} other {# reviews}})",
+    "yourReview": "Your review",
+    "pendingNotice": "Your review is awaiting approval and isn't visible to other shoppers yet.",
+    "rejectedNotice": "Your review wasn't approved. You can edit and resubmit it.",
+    "writeReview": "Write a review",
+    "editReview": "Edit your review",
+    "ratingLabel": "Rating",
+    "bodyLabel": "Your review",
+    "submit": "Submit review",
+    "saving": "Submitting…",
+    "cancel": "Cancel",
+    "signInRequired": "Sign in to leave a review.",
+    "invalid": "Please choose a rating and write a review.",
+    "notEligible": "Only customers who've received this product can leave a review.",
+    "submitted": "Thanks — your review has been submitted for approval."
+  },
   "nav": {
     "home": "Home",
     "products": "Products",

@@ -23,6 +23,7 @@ const variant = (id: string, priceMinor: number, inStock: boolean) => ({
 
 function product(overrides: Partial<ProductDetail> = {}): ProductDetail {
   return {
+    id: 'a1c1a1c1-0000-0000-0000-000000000001',
     handle: 'abib-hand-creme',
     name: 'كريم اليد',
     brand: { slug: 'abib', name: 'Abib' },

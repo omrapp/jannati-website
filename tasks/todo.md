@@ -1452,23 +1452,46 @@ only to them, same as the admin moderation queue's status semantics from Task 3.
 
 **Acceptance criteria:**
 
-- [ ] Submission gated server-side on a delivered order containing the product — not just "signed
+- [x] Submission gated server-side on a delivered order containing the product — not just "signed
   in", and not trusted from a client-supplied flag
-- [ ] One review per customer per product (re-submitting edits the existing row, or is rejected —
-  pick one and document it)
-- [ ] PDP shows approved reviews + average rating; a review not yet approved never appears to anyone
+- [x] One review per customer per product (re-submitting edits the existing row, chosen over
+  rejecting the second submission — documented in `reviews.ts`/`reviews_edit.sql`)
+- [x] PDP shows approved reviews + average rating; a review not yet approved never appears to anyone
   but its author
-- [ ] Arabic and English review body both render correctly (no locale-specific schema change needed
+- [x] Arabic and English review body both render correctly (no locale-specific schema change needed
   — `reviews.body` is a single `text` column, same as it's stored today)
 
 **Verification:**
 
-- [ ] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build` — 260/260 unit tests, all clean
 - [ ] Manual: deferred, same gap as every prior task this session
 
 **Dependencies:** 2.9, 3.9
-**Files:** `src/lib/commerce/reviews.ts`, `src/app/[locale]/products/[handle]/{page.tsx,review-form.tsx}`
+**Files:** `supabase/migrations/20260816000003_reviews_edit.sql`, `src/lib/commerce/reviews.ts`,
+`src/app/[locale]/products/[handle]/{page.tsx,actions.ts}`,
+`src/components/commerce/{review-form.tsx,reviews-section.tsx}`,
+`src/lib/catalog/{mappers.ts,queries.ts}` (added `id` to `ProductSummary`/`PRODUCT_COLUMNS`),
+`src/messages/{en,ar}.json`
 **Scope:** M
+
+**Implementation notes:**
+
+`ProductDetail`/`ProductSummary` had no `id` field — the PDP only ever needed `handle` before this.
+Reviews and purchase-verification both need the actual product UUID (the FK target), so `id` was
+added to `PRODUCT_COLUMNS`, `ProductJoin`, and `ProductSummary`/mapped output — additive, every
+existing caller unaffected, two test fixtures updated to satisfy the now-required field.
+
+3.9's `reviews.sql` had no unique constraint on `(customer_id, product_id)` and no customer-facing
+`update` policy — both assumed a v1 where only admins ever wrote past the initial insert. A second
+migration (`reviews_edit.sql`) added the unique constraint (backs the `upsert`) and an update policy
+whose `with check` forces the resulting row back to `pending`, so editing a review re-moderates it
+rather than leaving a stale `approved` row live under new wording.
+
+`hasDeliveredPurchase` is three flat queries (variant ids → delivered order ids → intersection),
+not one embedded `.select()`, matching `products.ts`'s stated reason for avoiding embeds. After a
+successful submit, `ReviewsSection` calls `router.refresh()` rather than reconstructing the saved
+row client-side — `submitReviewAction` doesn't return it, and `revalidatePath` alone doesn't
+re-render already-mounted Client Component props.
 
 ---
 

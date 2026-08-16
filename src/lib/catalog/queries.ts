@@ -36,7 +36,7 @@ import type { ProductSort } from './query-params';
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 const PRODUCT_COLUMNS = `
-  handle, name_ar, name_en, description_ar, description_en,
+  id, handle, name_ar, name_en, description_ar, description_en,
   brands ( slug, name_en, name_ar, logo_path ),
   product_variants ( id, sku, title_ar, title_en, base_price_minor, compare_at_minor, stock_qty, position ),
   product_images ( storage_path, alt_ar, alt_en, position )
