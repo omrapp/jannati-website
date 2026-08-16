@@ -40,6 +40,7 @@ const ae: CountryRow = {
 
 function row(overrides: Partial<ProductJoin> = {}): ProductJoin {
   return {
+    id: 'a1c1a1c1-0000-0000-0000-000000000001',
     handle: 'abib-hand-creme',
     name_ar: 'كريم اليد',
     name_en: 'Abib Hand Creme',

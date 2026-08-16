@@ -3,13 +3,16 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 import { ProductGallery } from '@/components/commerce/product-gallery';
+import { ReviewsSection } from '@/components/commerce/reviews-section';
 import { VariantPicker } from '@/components/commerce/variant-picker';
 import { isLocale, type Locale } from '@/i18n/config';
 import { Link } from '@/i18n/navigation';
 import { jsonLdScript, productJsonLd } from '@/lib/catalog/json-ld';
 import { getCountry, getProductByHandle } from '@/lib/catalog/queries';
 import { stripHtml } from '@/lib/catalog/text';
+import { getApprovedReviews, getOwnReview, hasDeliveredPurchase } from '@/lib/commerce/reviews';
 import { env } from '@/lib/env';
+import { createClient, getAuthUser } from '@/lib/supabase/server';
 
 type Params = Promise<{ locale: string; handle: string }>;
 
@@ -56,6 +59,14 @@ export default async function ProductPage({ params }: { params: Params }) {
     currencyExponent: country.currency_exponent,
   });
 
+  const client = await createClient();
+  const user = await getAuthUser();
+  const [approvedReviews, ownReview, eligible] = await Promise.all([
+    getApprovedReviews(client, product.id),
+    user ? getOwnReview(client, user.id, product.id) : Promise.resolve(null),
+    user ? hasDeliveredPurchase(client, user.id, product.id) : Promise.resolve(false),
+  ]);
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
       <script
@@ -101,6 +112,17 @@ export default async function ProductPage({ params }: { params: Params }) {
             </section>
           )}
         </div>
+      </div>
+
+      <div className="mt-10 max-w-2xl">
+        <ReviewsSection
+          locale={locale}
+          productId={product.id}
+          handle={product.handle}
+          approvedReviews={approvedReviews}
+          eligible={eligible}
+          ownReview={ownReview}
+        />
       </div>
     </div>
   );

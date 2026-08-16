@@ -46,7 +46,7 @@ type ImageJoin = Pick<
 
 export type ProductJoin = Pick<
   Tables['products']['Row'],
-  'handle' | 'name_ar' | 'name_en' | 'description_ar' | 'description_en'
+  'id' | 'handle' | 'name_ar' | 'name_en' | 'description_ar' | 'description_en'
 > & {
   brands: BrandJoin | null;
   product_variants: VariantJoin[];
@@ -56,6 +56,7 @@ export type ProductJoin = Pick<
 export type ProductImage = { path: string; url: string; alt: string | null; position: number };
 
 export type ProductSummary = {
+  id: string;
   handle: string;
   name: string;
   brand: { slug: string; name: string } | null;
@@ -150,6 +151,7 @@ export function toProductSummary(
       : null;
 
   return {
+    id: product.id,
     handle: product.handle,
     // name_ar is not nullable, so a name always resolves.
     name: text(product.name_ar, product.name_en, locale) as string,
