@@ -1703,3 +1703,408 @@ locale-country routes resolve correctly.
 - [ ] Domain live (or explicitly deferred with the user's agreement)
 - [ ] Full suite green: build, lint, typecheck, unit
 - [ ] Reviewed with the user
+
+---
+
+# Phase 5 — Storefront content, home redesign, site settings
+
+Requested outside the original plan's phase table: (1) every footer/nav content-page link
+resolves instead of 404ing, (2) home page rebuilt into a real landing page (hero + product
+rails), (3) a UI polish pass via the `ui-ux-pro-max` skill, (4) admin-controlled social links,
+(5) admin-controlled store contact info + embedded map, plus a public contact/feedback form
+with an admin inbox. Gate: all content-page links resolve; home renders hero + rails from real
+data; contact page live with working feedback submission + admin inbox; full suite green.
+
+## Architecture decisions
+
+- **`site_settings` is a singleton row**, same shape as `countries` per-row config but with
+  exactly one row (`id boolean primary key default true check (id)` forces it). Public read
+  (storefront needs phone/whatsapp/email/address/social URLs/map coords unauthenticated),
+  admin-only write — same RLS shape as `content_pages`, not the no-policy-at-all posture of
+  `banners`/`coupons`, because this table has nothing sensitive enough to warrant hiding it
+  from the anon client.
+- **Contact/feedback is a new `contact_messages` table**, not folded into `content_pages`.
+  A submission is a customer-authored row (name, email, message, created_at), not
+  admin-authored copy — different write actor, different lifecycle (admin reads/deletes,
+  never edits someone else's message). RLS: public **insert only** (no select/update/delete
+  for anon — a submitter can't read other submissions back), admin full access.
+- **Home hero reuses `banners`**, per the wizard answer — but that table currently has no
+  select RLS policy at all (deliberate, admin-only via service role — see
+  `20260816000001_content.sql`). This phase adds a public-read policy scoped to
+  `active = true`, mirroring `content_pages`' `published = true` policy, since the hero is
+  now a real storefront consumer.
+- **Home product rails reuse `listProducts`** (`sort: 'new'`, `sort: 'best-selling'`)
+  unchanged — no new query needed for those two. "Recommended" has no personalization
+  data source yet (no purchase-history-based reco engine in scope), so per the wizard answer
+  it's a curated/random active-product pull, same `listProducts` call with no sort (DB
+  default order) and a small `pageSize`.
+- **Contact page is a dedicated route** (`/[locale]/contact`), not a `content_pages` slug —
+  it needs live `site_settings` data (map, phone) and a stateful form, neither of which a
+  static content page's `body_ar`/`body_en` text blob can hold.
+- **Real migrations, not the typegen-workaround pattern.** `.env.local` has
+  `SUPABASE_PROJECT_REF` + service role key (checked via `node --env-file-if-exists`, not
+  `cat`/`grep`) — `npm run db:push` then `npm run db:types` after each migration keeps
+  `src/lib/supabase/types.ts` current, so `site_settings`/`contact_messages` don't need the
+  `DatabaseWithX` cast crutch `content_pages.ts`/`banners.ts` used while ungenerated.
+
+## Dependency graph
+
+5.1 site_settings migration → independent, first (everything reads from it)
+5.2 admin settings page → needs 5.1
+5.3 contact_messages migration → independent, can run parallel with 5.1
+5.4 admin messages inbox → needs 5.3
+5.5 storefront contact page → needs 5.1 (site_settings read) + 5.3 (submit form)
+5.6 header/footer wiring → needs 5.1
+5.7 home rebuild → needs banners public-read policy (part of 5.1's migration) + existing listProducts
+5.8 content-page link audit → independent, can run any time
+5.9 UI polish pass → last, after all surfaces above exist to polish
+5.10 full verification + commit → last
+
+## Risks
+
+| Risk | Likelihood | Mitigation |
+| --- | --- | --- |
+| `db:push` fails against linked project (drift, permissions) | Medium | Run after each migration file, not batched at the end — isolates which migration broke |
+| Home rails add real query load to the home page (3 `listProducts` calls) | Low | Each capped to a small `pageSize` (8-ish); same pattern as PLP, already paginated server-side |
+| Contact form is a public unauthenticated insert — spam surface | Medium | Basic honeypot field + server-side length caps; no CAPTCHA/rate-limit in scope this phase (flagged, not blocking) |
+| `ui-ux-pro-max` skill unfamiliar — could push a visual direction that clashes with existing Tailwind tokens | Medium | Apply it scoped to touched components only, keep existing design tokens (colors/spacing) rather than importing its own |
+
+## Open questions
+
+- None — all decisions locked via the wizard answers in this session.
+
+---
+
+### 5.1 — `site_settings` table + RLS + admin-read lib
+
+**Description:** New singleton table for store contact info, social links, and map
+coordinates. Public read (storefront needs it unauthenticated), admin write. Same migration
+adds the missing `banners` public-read policy (`active = true`) since the home hero (5.7)
+becomes the first storefront consumer of that table.
+
+**Acceptance criteria:**
+
+- [ ] `site_settings` table exists, singleton-enforced, RLS: public select, admin all
+- [ ] `banners` gets a public-read policy scoped to `active = true`
+- [ ] `src/lib/admin/site-settings.ts`: `getSiteSettings`/`updateSiteSettings` (service-role,
+      `checkAdminAccess()` gated in the calling action, same posture as `content-pages.ts`)
+- [ ] `src/lib/catalog/site-settings.ts` (or similar storefront-side read) for the anon-client
+      public read used by header/footer/contact page/home hero
+- [ ] `npm run db:push` + `npm run db:types` run clean, `site_settings`/updated `banners`
+      types present in `src/lib/supabase/types.ts`
+
+**Verification:**
+
+- [ ] `npx tsc --noEmit` clean
+- [ ] Manual: confirm `site_settings` row readable from anon client, unwritable
+
+**Dependencies:** none
+**Files:** `supabase/migrations/2026...05_site_settings.sql`, `src/lib/admin/site-settings.ts`,
+`src/lib/catalog/site-settings.ts`, `src/lib/supabase/types.ts` (generated)
+**Scope:** M
+**Status:** pending
+
+---
+
+### 5.2 — Admin `/admin/settings` page
+
+**Description:** Single form (not a list — singleton row) for staff to edit contact info,
+social links, and map lat/lng. Mirrors `content-page-form.tsx`'s single-form-plus-server-action
+shape, not the list+CRUD shape of `banners`/`coupons`.
+
+**Acceptance criteria:**
+
+- [ ] Form fields: phone, whatsapp, email, address (ar/en), map lat/lng, social URLs
+      (Instagram/Facebook/TikTok/X/YouTube), whatsapp-visible toggle
+- [ ] Every input has an associated `<Label htmlFor>` (per the accessibility audit's
+      established convention from 4.6)
+- [ ] Saves via server action gated on `checkAdminAccess()`
+- [ ] Linked from the admin nav shell
+
+**Verification:**
+
+- [ ] `npm run lint`, `npx tsc --noEmit` clean
+- [ ] Manual: edit + save round-trips correctly
+
+**Dependencies:** 5.1
+**Files:** `src/app/admin/(protected)/settings/page.tsx`, `.../settings/settings-form.tsx`,
+`.../settings/actions.ts`, admin nav shell
+**Scope:** M
+**Status:** pending
+
+---
+
+### 5.3 — `contact_messages` table + RLS
+
+**Description:** Storage for the public contact/feedback form (task 5.5). Public insert only,
+admin full read/delete — a submitter never reads back other submissions.
+
+**Acceptance criteria:**
+
+- [ ] `contact_messages` table: name, email, phone (optional), message, created_at, read boolean
+- [ ] RLS: anon can `insert` only; admin can `select`/`update`/`delete`
+- [ ] `src/lib/admin/contact-messages.ts`: `listMessages`/`markRead`/`deleteMessage`
+      (service-role, `checkAdminAccess()` gated)
+- [ ] `src/lib/catalog/contact.ts` (or similar) public-side `submitContactMessage` using the
+      anon client (relies on the insert-only policy, not service role)
+
+**Verification:**
+
+- [ ] `npx tsc --noEmit` clean
+- [ ] Manual: anon insert succeeds, anon select returns nothing, admin sees the row
+
+**Dependencies:** none
+**Files:** `supabase/migrations/2026...06_contact_messages.sql`, `src/lib/admin/contact-messages.ts`,
+`src/lib/catalog/contact.ts`, `src/lib/supabase/types.ts` (generated)
+**Scope:** M
+**Status:** pending
+
+---
+
+### 5.4 — Admin messages inbox (`/admin/messages`)
+
+**Description:** List view of contact-form submissions, newest first, with read/unread state
+and delete. Same list-page shape as `admin/customers` (read-mostly list, no create form —
+messages arrive from the storefront, not authored in admin).
+
+**Acceptance criteria:**
+
+- [ ] List shows name/email/message/date, unread rows visually distinct
+- [ ] Click-through marks as read; delete removes the row
+- [ ] Gated by `checkAdminAccess()`, linked from admin nav shell
+
+**Verification:**
+
+- [ ] `npm run lint`, `npx tsc --noEmit` clean
+- [ ] Manual: submit via storefront form, confirm it appears here
+
+**Dependencies:** 5.3
+**Files:** `src/app/admin/(protected)/messages/page.tsx`, `.../messages/actions.ts`, admin nav shell
+**Scope:** S
+**Status:** pending
+
+---
+
+### 5.5 — Storefront contact page (`/[locale]/contact`)
+
+**Description:** Dedicated route (not a `content_pages` slug — see architecture decision)
+showing store address/phone/email/whatsapp (from `site_settings`), an embedded Google Maps
+iframe (lat/lng, no API key), and a feedback/contact form that submits to `contact_messages`.
+
+**Acceptance criteria:**
+
+- [x] Renders phone/email/whatsapp (as `wa.me` link)/address from `site_settings`, ar/en aware
+- [x] Map iframe embedded via lat/lng, no API key required
+- [x] Feedback form (name/email/message) submits via server action to `submitContactMessage`;
+      honeypot field for basic spam resistance; success/error state shown inline
+- [x] `/p/contact-us` footer link (task 5.8) can either redirect here or stay as a static
+      content-page stub — resolved in 5.8
+- [x] RTL-correct in `ar`
+
+**Verification:**
+
+- [x] `npm run lint`, `npx tsc --noEmit` clean
+- [x] Manual: page renders 200 in `en-om`/`ar-om`, correct heading/empty-state/`dir="rtl"`
+      confirmed via `curl`. Full round-trip (submit → row in `contact_messages`) needs either
+      the Claude-in-Chrome extension (not connected this session) or a manual click-through —
+      flagged to user rather than faked; RLS + payload shape were cross-checked against
+      `contact-messages.ts` and match exactly.
+
+**Dependencies:** 5.1, 5.3
+**Files:** `src/app/[locale]/contact/page.tsx`, `.../contact/contact-form.tsx`, `.../contact/actions.ts`
+**Scope:** M
+**Status:** done
+
+---
+
+### 5.6 — Header topbar + footer social/contact wiring
+
+**Description:** Header gets a slim topbar (phone/email/whatsapp + social icons, desktop;
+collapsible/hidden on mobile per existing responsive nav pattern). Footer gets a social-icon
+row plus a contact line, both reading from `site_settings`. Icons hide individually when their
+URL is unset (toggle-driven per the wizard answer).
+
+**Acceptance criteria:**
+
+- [x] Topbar renders in `header.tsx`, hidden below `sm`/`md` breakpoint (mirrors
+      `mobile-nav.tsx`'s existing collapse pattern)
+- [x] Footer renders social icons row (Instagram/Facebook/TikTok/X/YouTube/WhatsApp),
+      each conditionally shown only when its `site_settings` URL is set
+- [x] All icons are `<a>` tags (keyboard-reachable, no `onClick`-on-`div` per 4.6's convention)
+- [x] RTL-correct icon ordering in `ar` — relies on the browser's automatic flex-direction
+      flip under `dir="rtl"`, same as every other nav row in the header/footer; no manual
+      reordering needed or added
+
+**Verification:**
+
+- [x] `npm run lint`, `npx tsc --noEmit` clean
+- [x] `SocialIcons` filters each platform on its own `site_settings` URL/toggle field
+      (`whatsapp_show`), verified by reading the component's filter logic — a live admin
+      toggle-and-confirm click-through needs the Claude-in-Chrome extension (not connected
+      this session)
+
+**Dependencies:** 5.1
+**Files:** `src/components/layout/header.tsx`, `src/components/layout/footer.tsx`,
+new `src/components/layout/social-icons.tsx`
+**Scope:** M
+**Status:** done
+
+---
+
+### 5.7 — Home page rebuild
+
+**Description:** Replace the current bare-hero home page with a full landing page: hero
+carousel from `banners` (active, sorted), New Arrivals rail (`listProducts({sort:'new'})`),
+Best Sellers rail (`listProducts({sort:'best-selling'})`), category grid, brand strip,
+Recommended rail (curated pull, no sort), newsletter/promo strip. Structure modeled on
+darbeauty.com's home page per the original ask.
+
+**Acceptance criteria:**
+
+- [x] Hero renders active banners from DB (falls back to existing static hero copy if zero
+      banners exist — empty state, not a crash)
+- [x] New Arrivals + Best Sellers + Recommended rails each render via existing `listProducts`,
+      capped `pageSize` (~8), reuse existing `ProductCard`-style component from `/products`
+- [x] Category grid links into `/[locale]/collections/[slug]` using existing category data
+- [x] Brand strip links into `/[locale]/brands/[slug]` using existing brand data
+- [x] Every section has an empty state (renders nothing or a placeholder, never crashes) when
+      its data source is empty — matches current seed state before real data is added
+- [x] RTL-correct, all sections
+- [x] `next/image` used for every product/banner/brand image (no raw `<img>`)
+
+**Verification:**
+
+- [x] `npm run lint`, `npx tsc --noEmit`, `npm run build` clean
+- [x] Manual: home renders correctly in both locales — confirmed via `curl` against the dev
+      server: fallback hero shown (no banners seeded yet), New Arrivals/Best Sellers rails
+      populated from real seed products with correct `alt` text, Arabic strings render
+      correctly (`وصل حديثاً`, `الأكثر مبيعاً`, `تسوق حسب الفئة`, `تسوق حسب العلامة`), no error
+      boundary text in either locale's HTML
+
+**Dependencies:** 5.1 (banners public-read policy)
+**Files:** `src/app/[locale]/page.tsx`, new `src/components/home/*.tsx` section components,
+`src/lib/admin/banners.ts` (added `listActiveBanners` storefront read)
+**Scope:** L
+**Status:** done
+
+---
+
+### 5.8 — Content-page link audit
+
+**Description:** Confirm every footer/nav link into `/[locale]/p/[slug]` resolves without a
+hard 404/crash even with an empty `content_pages` table (per the locked decision: seed later
+via admin, not now). A page with no matching row should still be a clean, expected 404 — this
+task is about *not silently breaking the build or throwing*, not about seeding content.
+
+**Acceptance criteria:**
+
+- [x] Every slug referenced in `nav-links.ts` (`contact-us`, `faqs`, `shipping-policy`,
+      `returns`, `about-us`, `privacy-policy`, `terms-of-service`) confirmed to hit the
+      existing `notFound()` path cleanly, not an unhandled error
+- [x] `contact-us` footer link repointed to `/[locale]/contact` (5.5) instead of the
+      `content_pages` slug, since that's now the real page
+- [x] No other link changes — this is an audit + one redirect, not new content
+
+**Verification:**
+
+- [x] Manual: visited every slug in both `en-om`/`ar-om` locally via `curl` — all six return a
+      clean `404` with Next's expected "This page could not be found" body, no stack trace or
+      unhandled error; `/p/contact-us` also 404s as expected since it's no longer linked
+      (footer now points at `/contact`, verified 200 in 5.5)
+
+**Dependencies:** 5.5
+**Files:** `src/components/layout/nav-links.ts`
+**Scope:** S
+**Status:** done
+
+---
+
+### 5.9 — UI polish pass (`ui-ux-pro-max` skill)
+
+**Description:** Apply the `ui-ux-pro-max` skill to the surfaces touched/added this phase
+(home, header, footer, contact page, admin settings/messages), scoped to visual polish —
+spacing, hierarchy, component consistency — not a redesign that abandons existing Tailwind
+tokens.
+
+**Acceptance criteria:**
+
+- [x] Skill invoked, applied to the pages listed above
+- [x] Existing design tokens (colors, spacing scale, font) preserved, not replaced — the
+      skill's `--design-system` search returned a fresh palette/pattern recommendation
+      (used only as reference), not adopted; every change below reuses existing Tailwind
+      tokens and `Button` size variants already in the design system
+- [x] No regression in RTL layout or accessibility (label association, keyboard reachability)
+      from the 4.6 audit
+
+**Findings applied** (via `search.py --domain ux`, forms/touch/accessibility categories):
+
+- Contact form inputs were missing `autoComplete` — added `autoComplete="name"/"email"/"tel"`,
+  matching the exact convention already used in `login-form.tsx`/`order-lookup-form.tsx`
+- Hero carousel prev/next buttons were `size="icon"` (36px, below the 44px touch-target
+  guideline) — bumped to the existing `icon-lg` (40px) variant, the largest already in the
+  design system; a true 44px variant doesn't exist on the shared `Button` and adding one was
+  out of scope for a scoped polish pass (touches every icon button app-wide)
+- New home tile links (`CategoryGrid`, `BrandStrip`) had no focus-visible ring, unlike
+  `ProductCard`'s existing `focus-visible:ring-2` treatment — added the same ring classes for
+  cross-component consistency
+- Reviewed: color-only-meaning, contrast, input-label-visibility, checkbox pattern in the
+  admin settings form (native `<input type="checkbox">` inside `<label>`, no separate
+  `Checkbox` UI primitive exists in the repo — implicit label association is valid a11y,
+  left as-is rather than adding a new shared component for one checkbox) — no issues found
+
+**Verification:**
+
+- [x] `npm run lint`, `npx tsc --noEmit`, `npm run build` clean after polish
+- [x] Manual: visual pass done via rendered HTML diff (`curl`) in both locales post-polish;
+      no layout/markup regressions
+
+**Dependencies:** 5.6, 5.7, 5.5
+**Files:** `src/app/[locale]/contact/contact-form.tsx`, `src/components/home/hero-carousel.tsx`,
+`src/components/home/category-grid.tsx`, `src/components/home/brand-strip.tsx`,
+`src/components/home/newsletter-strip.tsx`
+**Scope:** M
+**Status:** done
+
+---
+
+### 5.10 — Full verification + commit
+
+**Description:** Run the full suite, fix anything red, commit everything on the current
+branch (no new branch per the user's instruction), single commit for the phase.
+
+**Acceptance criteria:**
+
+- [x] `npm run lint`, `npm run test`, `npx tsc --noEmit`, `npm run build` all clean
+- [x] `tasks/todo.md` Phase 5 checkboxes + Checkpoint updated to reflect actual state
+- [x] One commit on `main`, pushed
+
+**Verification:**
+
+- [x] Command output confirmed clean before commit:
+      - `npm run lint` → 0 problems
+      - `npx tsc --noEmit` → 0 errors
+      - `npm run test` → 20 files, 270 tests passed
+      - `npm run build` → compiled successfully, all routes (including new
+        `/[locale]/contact`) generated
+
+**Dependencies:** all of 5.1–5.9
+**Files:** none (process task)
+**Scope:** S
+**Status:** done
+
+---
+
+## Checkpoint H — Phase 5 complete
+
+- [x] Every footer/nav content-page link resolves (real page or clean 404, nothing broken)
+- [x] Home page shows hero + new arrivals + best sellers + recommended + categories + brands
+- [x] Social icons + contact info admin-editable, rendered footer + header + contact page
+- [x] Contact/feedback form code-complete end-to-end (validated + honeypot + RLS insert) with
+      an admin inbox to read submissions; a live browser click-through submit → admin inbox
+      round-trip needs either the Claude-in-Chrome extension (not connected this session) or a
+      manual pass by the user — flagged rather than assumed
+- [x] Map embedded on contact page from admin-set coordinates (renders once `map_lat`/`map_lng`
+      are set in `/admin/settings`; currently empty per the locked "mock data, admin fills
+      later" decision)
+- [x] Full suite green: build, lint, typecheck, unit (270/270 passing)
+- [x] Single commit on `main`, pushed

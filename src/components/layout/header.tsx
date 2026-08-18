@@ -1,4 +1,4 @@
-import { Heart, Search, User } from 'lucide-react';
+import { Heart, Mail, Phone, Search, User } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
 
 import { CartDrawer } from '@/components/commerce/cart-drawer';
@@ -7,16 +7,19 @@ import { LocaleSwitcher } from '@/components/layout/locale-switcher';
 import { Logo } from '@/components/layout/logo';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { primaryNav } from '@/components/layout/nav-links';
+import { SocialIcons } from '@/components/layout/social-icons';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { Locale } from '@/i18n/config';
 import { Link } from '@/i18n/navigation';
+import { getSiteSettings } from '@/lib/admin/site-settings';
 import { toCountryPricing } from '@/lib/catalog/mappers';
 import { getCountry, getEnabledCountries } from '@/lib/catalog/queries';
 import { getCartWithTotals } from '@/lib/commerce/cart';
 import { getCartContext } from '@/lib/commerce/cart-identity';
 import { formatMoney } from '@/lib/commerce/money';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * Server Component so the cart drawer (`CartDrawer`) can render from the same
@@ -32,6 +35,7 @@ export async function Header() {
   const context = await getCartContext();
   const cart = context ? await getCartWithTotals(context.client, context.identity, locale) : null;
   const enabledCountries = await getEnabledCountries();
+  const settings = await getSiteSettings(await createClient());
 
   let cartTotals: {
     subtotal: string;
@@ -54,8 +58,28 @@ export async function Header() {
 
   return (
     <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-50 border-b backdrop-blur">
-      <div className="bg-primary text-primary-foreground hidden py-1.5 text-center text-xs md:block">
-        {t('brand.tagline')}
+      <div className="bg-primary text-primary-foreground hidden items-center justify-between py-1.5 text-xs md:flex">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4">
+          <span>{t('brand.tagline')}</span>
+          <div className="flex items-center gap-4">
+            {settings.phone && (
+              <a href={`tel:${settings.phone}`} className="flex items-center gap-1 hover:underline">
+                <Phone className="size-3.5" /> {settings.phone}
+              </a>
+            )}
+            {settings.email && (
+              <a href={`mailto:${settings.email}`} className="flex items-center gap-1 hover:underline">
+                <Mail className="size-3.5" /> {settings.email}
+              </a>
+            )}
+            <SocialIcons
+              settings={settings}
+              t={t}
+              className="flex items-center gap-3"
+              iconClassName="size-3.5 text-primary-foreground/90 hover:text-primary-foreground"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">

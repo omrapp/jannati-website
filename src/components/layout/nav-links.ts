@@ -14,7 +14,9 @@ export const primaryNav: NavItem[] = [
 export const footerShopNav: NavItem[] = primaryNav;
 
 export const footerHelpNav: NavItem[] = [
-  { labelKey: 'nav.contact', href: '/p/contact-us' },
+  // Real route (Task 5.5), not a `content_pages` slug — needs live
+  // `site_settings` data and a stateful form neither a static page can hold.
+  { labelKey: 'nav.contact', href: '/contact' },
   { labelKey: 'nav.faq', href: '/p/faqs' },
   { labelKey: 'footer.shipping', href: '/p/shipping-policy' },
   { labelKey: 'footer.returns', href: '/p/returns' },

@@ -17,6 +17,8 @@ const LINKS = [
   { href: '/admin/banners', label: 'Banners' },
   { href: '/admin/content-pages', label: 'Pages' },
   { href: '/admin/reviews', label: 'Reviews' },
+  { href: '/admin/messages', label: 'Messages' },
+  { href: '/admin/settings', label: 'Settings' },
 ];
 
 export function AdminNav({ email }: { email: string }) {

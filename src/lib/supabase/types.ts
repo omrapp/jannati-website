@@ -326,6 +326,36 @@ export type Database = {
           },
         ]
       }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_read: boolean
+          message: string
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_read?: boolean
+          message: string
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
       content_pages: {
         Row: {
           body_ar: string
@@ -913,6 +943,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      site_settings: {
+        Row: {
+          address_ar: string | null
+          address_en: string | null
+          email: string | null
+          facebook_url: string | null
+          id: boolean
+          instagram_url: string | null
+          map_lat: number | null
+          map_lng: number | null
+          phone: string | null
+          tiktok_url: string | null
+          updated_at: string
+          whatsapp: string | null
+          whatsapp_show: boolean
+          x_url: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          address_ar?: string | null
+          address_en?: string | null
+          email?: string | null
+          facebook_url?: string | null
+          id?: boolean
+          instagram_url?: string | null
+          map_lat?: number | null
+          map_lng?: number | null
+          phone?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+          whatsapp_show?: boolean
+          x_url?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          address_ar?: string | null
+          address_en?: string | null
+          email?: string | null
+          facebook_url?: string | null
+          id?: boolean
+          instagram_url?: string | null
+          map_lat?: number | null
+          map_lng?: number | null
+          phone?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+          whatsapp_show?: boolean
+          x_url?: string | null
+          youtube_url?: string | null
+        }
+        Relationships: []
       }
       wishlist_items: {
         Row: {

@@ -30,6 +30,7 @@ Resend + Twilio (+ WhatsApp Cloud API, phase 4) · Vitest + Playwright · GitHub
 | 2     | Auth, guest+user cart, checkout, VAT/shipping/coupons, Thawani/Tap/COD, orders   | E2E checkout passes both paths; webhooks idempotent                                          |
 | 3     | `/admin` — catalog CRUD, orders, country settings, reviews moderation            | non-technical user creates a product and fulfils an order                                    |
 | 4     | Reviews, wishlist, notifications, SEO/hreflang, perf, a11y, domain               | Lighthouse ≥90 perf / ≥95 a11y; order triggers ar/en email + SMS                             |
+| 5 ✅  | Home redesign, site settings (social/contact/map), contact+feedback form + admin inbox, content-page link audit, UI polish | Home shows hero + product rails from real data; contact form + admin inbox work end-to-end; every footer/nav link resolves |
 
 ---
 

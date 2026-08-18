@@ -1,8 +1,12 @@
-import { useTranslations } from 'next-intl';
+import { Mail, Phone } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
 import { Logo } from '@/components/layout/logo';
 import { footerAboutNav, footerHelpNav, footerShopNav } from '@/components/layout/nav-links';
+import { SocialIcons } from '@/components/layout/social-icons';
 import { Link } from '@/i18n/navigation';
+import { getSiteSettings } from '@/lib/admin/site-settings';
+import { createClient } from '@/lib/supabase/server';
 
 const columns = [
   { titleKey: 'shop', items: footerShopNav },
@@ -13,8 +17,9 @@ const columns = [
 /** Payment methods shown as text until brand-approved payment marks are added. */
 const paymentMethods = ['Visa', 'Mastercard', 'Amex', 'Thawani', 'COD'];
 
-export function Footer() {
-  const t = useTranslations();
+export async function Footer() {
+  const t = await getTranslations();
+  const settings = await getSiteSettings(await createClient());
 
   return (
     <footer className="bg-muted/40 mt-16 border-t">
@@ -22,6 +27,25 @@ export function Footer() {
         <div className="space-y-4">
           <Logo />
           <p className="text-muted-foreground text-sm">{t('brand.tagline')}</p>
+          {(settings.phone || settings.email) && (
+            <ul className="text-muted-foreground space-y-1.5 text-sm">
+              {settings.phone && (
+                <li>
+                  <a href={`tel:${settings.phone}`} className="hover:text-foreground flex items-center gap-1.5">
+                    <Phone className="size-3.5" /> {settings.phone}
+                  </a>
+                </li>
+              )}
+              {settings.email && (
+                <li>
+                  <a href={`mailto:${settings.email}`} className="hover:text-foreground flex items-center gap-1.5">
+                    <Mail className="size-3.5" /> {settings.email}
+                  </a>
+                </li>
+              )}
+            </ul>
+          )}
+          <SocialIcons settings={settings} t={t} className="flex items-center gap-3" />
         </div>
 
         {columns.map((column) => (

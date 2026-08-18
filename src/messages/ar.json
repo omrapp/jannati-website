@@ -108,7 +108,18 @@
     "heroTitle": "جمالك يبدأ من هنا",
     "heroSubtitle": "أكثر من ١٥ عاماً من الخبرة في منتجات التجميل والعناية، من مسقط إلى دول الخليج.",
     "shopNow": "تسوق الآن",
-    "exploreBrands": "تصفح العلامات التجارية"
+    "exploreBrands": "تصفح العلامات التجارية",
+    "newArrivals": "وصل حديثاً",
+    "bestSellers": "الأكثر مبيعاً",
+    "recommended": "نوصي لك",
+    "shopByCategory": "تسوق حسب الفئة",
+    "shopByBrand": "تسوق حسب العلامة التجارية",
+    "viewAll": "عرض الكل",
+    "newsletterTitle": "ابقَ على اطلاع",
+    "newsletterSubtitle": "أحدث المنتجات والعروض ونصائح الجمال، مباشرة إلى بريدك الإلكتروني.",
+    "newsletterPlaceholder": "بريدك الإلكتروني",
+    "newsletterSubmit": "اشترك",
+    "newsletterComingSoon": "الاشتراك في النشرة البريدية قريباً."
   },
   "footer": {
     "shop": "التسوق",
@@ -264,5 +275,32 @@
     "brandsDescription": "تصفح جميع العلامات التجارية للتجميل والعناية المتوفرة في جنتي.",
     "collectionDescription": "تسوّق {name} من جنتي.",
     "searchDescription": "ابحث في كتالوج جنتي لمنتجات التجميل والعناية."
+  },
+  "contact": {
+    "heading": "تواصل معنا",
+    "subheading": "أسئلة، ملاحظات، أو طلب بالجملة — يسعدنا أن نسمع منك.",
+    "phoneLabel": "الهاتف",
+    "emailLabel": "البريد الإلكتروني",
+    "whatsappLabel": "واتساب",
+    "addressLabel": "العنوان",
+    "mapHeading": "موقعنا",
+    "formHeading": "أرسل لنا رسالة",
+    "nameLabel": "الاسم",
+    "emailFieldLabel": "البريد الإلكتروني",
+    "phoneFieldLabel": "الهاتف (اختياري)",
+    "messageLabel": "الرسالة",
+    "submit": "إرسال الرسالة",
+    "sending": "جارٍ الإرسال…",
+    "success": "شكراً لك — وصلتنا رسالتك وسنتواصل معك قريباً.",
+    "error": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    "noInfoYet": "معلومات التواصل ستتوفر قريباً."
+  },
+  "social": {
+    "instagram": "إنستغرام",
+    "facebook": "فيسبوك",
+    "tiktok": "تيك توك",
+    "x": "إكس (تويتر)",
+    "youtube": "يوتيوب",
+    "whatsapp": "تواصل عبر واتساب"
   }
 }

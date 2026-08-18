@@ -84,6 +84,23 @@ export async function listBanners(admin: AdminClient): Promise<Banner[]> {
   return data;
 }
 
+/**
+ * Storefront-side read (home hero, Task 5.7) — cookie-bound client, not
+ * service-role, same "storefront read lives next to admin write" shape as
+ * `getPublishedContentPage`/`getSiteSettings`. Relies on the "active banners
+ * publicly readable" RLS policy added alongside the `site_settings`
+ * migration, not on a service-role bypass.
+ */
+export async function listActiveBanners(client: AdminClient): Promise<Banner[]> {
+  const { data, error } = await withBanners(client)
+    .from('banners')
+    .select('*')
+    .eq('active', true)
+    .order('sort_order');
+  if (error) throw new Error(`listing active banners: ${error.message}`);
+  return data;
+}
+
 export async function getBanner(admin: AdminClient, id: string): Promise<Banner | null> {
   const { data, error } = await withBanners(admin).from('banners').select('*').eq('id', id).maybeSingle();
   if (error) throw new Error(`reading banner: ${error.message}`);

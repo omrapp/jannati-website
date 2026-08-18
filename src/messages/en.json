@@ -108,7 +108,18 @@
     "heroTitle": "Your beauty starts here",
     "heroSubtitle": "Over 15 years of expertise in beauty and skincare, from Muscat to the Gulf.",
     "shopNow": "Shop now",
-    "exploreBrands": "Explore brands"
+    "exploreBrands": "Explore brands",
+    "newArrivals": "New Arrivals",
+    "bestSellers": "Best Sellers",
+    "recommended": "Recommended For You",
+    "shopByCategory": "Shop by Category",
+    "shopByBrand": "Shop by Brand",
+    "viewAll": "View all",
+    "newsletterTitle": "Stay in the loop",
+    "newsletterSubtitle": "New arrivals, offers, and beauty tips — straight to your inbox.",
+    "newsletterPlaceholder": "Your email",
+    "newsletterSubmit": "Subscribe",
+    "newsletterComingSoon": "Newsletter sign-up is coming soon."
   },
   "footer": {
     "shop": "Shop",
@@ -264,5 +275,32 @@
     "brandsDescription": "Browse every beauty and skincare brand available at Jannati.",
     "collectionDescription": "Shop {name} at Jannati.",
     "searchDescription": "Search Jannati's catalog of beauty and skincare products."
+  },
+  "contact": {
+    "heading": "Contact Us",
+    "subheading": "Questions, feedback, or a bulk order — we'd love to hear from you.",
+    "phoneLabel": "Phone",
+    "emailLabel": "Email",
+    "whatsappLabel": "WhatsApp",
+    "addressLabel": "Address",
+    "mapHeading": "Find us",
+    "formHeading": "Send us a message",
+    "nameLabel": "Name",
+    "emailFieldLabel": "Email",
+    "phoneFieldLabel": "Phone (optional)",
+    "messageLabel": "Message",
+    "submit": "Send message",
+    "sending": "Sending…",
+    "success": "Thanks — we've received your message and will get back to you soon.",
+    "error": "Something went wrong. Please try again.",
+    "noInfoYet": "Contact details coming soon."
+  },
+  "social": {
+    "instagram": "Instagram",
+    "facebook": "Facebook",
+    "tiktok": "TikTok",
+    "x": "X (Twitter)",
+    "youtube": "YouTube",
+    "whatsapp": "Chat on WhatsApp"
   }
 }
