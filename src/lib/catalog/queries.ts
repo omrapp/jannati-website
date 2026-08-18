@@ -380,6 +380,24 @@ export const getProductByHandle = cache(async function getProductByHandle(
   return toProductDetail(data as unknown as ProductJoin, country, locale);
 });
 
+/**
+ * Product cards by id, unordered by the query — callers that need a
+ * specific order (the wishlist page preserves save order) re-sort after.
+ * Archived/draft products are excluded the same way every other read here
+ * is: RLS only exposes `status = 'active'` rows, so a wishlisted product
+ * that's since been unpublished simply doesn't come back.
+ */
+export async function getProductsByIds(ids: string[], locale: Locale): Promise<ProductSummary[]> {
+  if (ids.length === 0) return [];
+
+  const [country, supabase] = await Promise.all([getCountry(locale), createClient()]);
+
+  const { data, error } = await supabase.from('products').select(PRODUCT_COLUMNS).in('id', ids);
+  if (error) throw new Error(`reading products by id: ${error.message}`);
+
+  return (data as unknown as ProductJoin[]).map((row) => toProductSummary(row, country, locale));
+}
+
 export async function listBrands(locale: Locale): Promise<BrandSummary[]> {
   const supabase = await createClient();
 

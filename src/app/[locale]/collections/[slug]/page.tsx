@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
@@ -5,6 +6,7 @@ import { Pagination } from '@/components/commerce/pagination';
 import { ProductGrid } from '@/components/commerce/product-grid';
 import { isLocale, type Locale } from '@/i18n/config';
 import { listCategories, listProducts } from '@/lib/catalog/queries';
+import { localeAlternates } from '@/lib/seo/alternates';
 
 type Params = Promise<{ locale: string; slug: string }>;
 type Search = Promise<{ page?: string }>;
@@ -13,6 +15,20 @@ async function category(slug: string, locale: Locale) {
   const categories = await listCategories(locale);
 
   return categories.find((item) => item.slug === slug) ?? null;
+}
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const { locale, slug } = await params;
+  if (!isLocale(locale)) return {};
+
+  const [found, tSeo] = await Promise.all([category(slug, locale), getTranslations('seo')]);
+  if (!found) return {};
+
+  return {
+    title: found.name,
+    description: tSeo('collectionDescription', { name: found.name }),
+    alternates: localeAlternates(locale, `/collections/${slug}`),
+  };
 }
 
 export default async function CollectionPage({

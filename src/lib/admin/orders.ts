@@ -130,3 +130,20 @@ export async function updateTracking(
     .eq('id', orderId);
   if (error) throw new Error(`updating tracking info: ${error.message}`);
 }
+
+/**
+ * A customer's email isn't stored on `orders` or `customers` — guests have
+ * `guest_email` right on the row, but a signed-in customer's email only
+ * lives in `auth.users`, same split `getCustomerDetail` (customers.ts)
+ * already resolves with this exact `auth.admin.getUserById` call.
+ */
+export async function resolveOrderContactEmail(
+  admin: AdminClient,
+  order: Pick<Tables<'orders'>, 'customer_id' | 'guest_email'>,
+): Promise<string | null> {
+  if (order.guest_email) return order.guest_email;
+  if (!order.customer_id) return null;
+
+  const { data: authUser } = await admin.auth.admin.getUserById(order.customer_id);
+  return authUser.user?.email ?? null;
+}

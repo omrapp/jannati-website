@@ -175,20 +175,34 @@ export function ProductForm({
         {variants.map((variant, index) => (
           <div key={index} className="grid grid-cols-7 items-end gap-2 rounded-md border p-3">
             <div className="flex flex-col gap-1">
-              <Label>SKU</Label>
-              <Input value={variant.sku} onChange={(e) => updateVariant(index, { sku: e.target.value })} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label>Title (ar)</Label>
-              <Input dir="rtl" value={variant.titleAr} onChange={(e) => updateVariant(index, { titleAr: e.target.value })} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label>Title (en)</Label>
-              <Input value={variant.titleEn} onChange={(e) => updateVariant(index, { titleEn: e.target.value })} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label>Price (OMR)</Label>
+              <Label htmlFor={`variant-${index}-sku`}>SKU</Label>
               <Input
+                id={`variant-${index}-sku`}
+                value={variant.sku}
+                onChange={(e) => updateVariant(index, { sku: e.target.value })}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor={`variant-${index}-title-ar`}>Title (ar)</Label>
+              <Input
+                id={`variant-${index}-title-ar`}
+                dir="rtl"
+                value={variant.titleAr}
+                onChange={(e) => updateVariant(index, { titleAr: e.target.value })}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor={`variant-${index}-title-en`}>Title (en)</Label>
+              <Input
+                id={`variant-${index}-title-en`}
+                value={variant.titleEn}
+                onChange={(e) => updateVariant(index, { titleEn: e.target.value })}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor={`variant-${index}-price`}>Price (OMR)</Label>
+              <Input
+                id={`variant-${index}-price`}
                 inputMode="decimal"
                 placeholder="6.400"
                 value={variant.priceMajor}
@@ -197,16 +211,18 @@ export function ProductForm({
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label>Compare-at</Label>
+              <Label htmlFor={`variant-${index}-compare-at`}>Compare-at</Label>
               <Input
+                id={`variant-${index}-compare-at`}
                 inputMode="decimal"
                 value={variant.compareAtMajor}
                 onChange={(e) => updateVariant(index, { compareAtMajor: e.target.value })}
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label>Stock</Label>
+              <Label htmlFor={`variant-${index}-stock`}>Stock</Label>
               <Input
+                id={`variant-${index}-stock`}
                 type="number"
                 min={0}
                 value={variant.stockQty}

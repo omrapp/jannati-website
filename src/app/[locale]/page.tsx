@@ -1,9 +1,24 @@
+import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { isLocale } from '@/i18n/config';
 import { Link } from '@/i18n/navigation';
+import { localeAlternates } from '@/lib/seo/alternates';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+
+  // Title/description fall through to the layout default ("Jannati — The
+  // World of Beauty in One Place"), already the right copy for the home page.
+  return { alternates: localeAlternates(locale, '') };
+}
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

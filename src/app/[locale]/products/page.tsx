@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
@@ -8,8 +9,28 @@ import { SortSelect } from '@/components/commerce/sort-select';
 import { isLocale } from '@/i18n/config';
 import { parseProductFilters, serializeProductFilters } from '@/lib/catalog/query-params';
 import { listBrandFacets, listCategoryFacets, listProducts } from '@/lib/catalog/queries';
+import { localeAlternates } from '@/lib/seo/alternates';
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
+
+// hreflang/canonical ignore filter/sort query params on purpose — those are
+// the same catalog document under a facet, not a distinct page to index.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+
+  const [t, tSeo] = await Promise.all([getTranslations('catalog'), getTranslations('seo')]);
+
+  return {
+    title: t('allProducts'),
+    description: tSeo('productsDescription'),
+    alternates: localeAlternates(locale, '/products'),
+  };
+}
 
 export default async function ProductsPage({
   params,

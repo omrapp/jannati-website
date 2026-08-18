@@ -584,6 +584,7 @@ export type Database = {
           guest_email: string | null
           guest_phone: string | null
           id: string
+          locale: string
           order_number: string
           payment_provider: Database["public"]["Enums"]["payment_provider"]
           payment_status: Database["public"]["Enums"]["payment_status"]
@@ -608,6 +609,7 @@ export type Database = {
           guest_email?: string | null
           guest_phone?: string | null
           id?: string
+          locale?: string
           order_number: string
           payment_provider: Database["public"]["Enums"]["payment_provider"]
           payment_status?: Database["public"]["Enums"]["payment_status"]
@@ -632,6 +634,7 @@ export type Database = {
           guest_email?: string | null
           guest_phone?: string | null
           id?: string
+          locale?: string
           order_number?: string
           payment_provider?: Database["public"]["Enums"]["payment_provider"]
           payment_status?: Database["public"]["Enums"]["payment_status"]
@@ -911,6 +914,42 @@ export type Database = {
           },
         ]
       }
+      wishlist_items: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_items_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wishlist_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -928,6 +967,7 @@ export type Database = {
           p_guest_email: string
           p_guest_phone: string
           p_items: Json
+          p_locale?: string
           p_order_number: string
           p_payment_provider: Database["public"]["Enums"]["payment_provider"]
           p_shipping_address: Json

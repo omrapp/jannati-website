@@ -16,6 +16,8 @@ import {
   type CreateOrderInput,
   type ShippingAddressInput,
 } from '@/lib/commerce/orders';
+import { getCountry } from '@/lib/catalog/queries';
+import { dispatchOrderNotification } from '@/lib/notifications/dispatch';
 import { getPaymentProvider } from '@/lib/payments/registry';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient, getAuthUser } from '@/lib/supabase/server';
@@ -159,6 +161,20 @@ export async function placeOrder(
     // email so this stays correct once 2.10's OAuth providers land too.
     customerEmail: ('guestEmail' in identity ? identity.guestEmail : user?.email) ?? '',
     locale,
+  });
+
+  const pricing = await getCountry(locale);
+  await dispatchOrderNotification({
+    event: 'order_created',
+    orderNumber: result.orderNumber,
+    locale,
+    customerName: shippingAddress.fullName,
+    customerEmail: ('guestEmail' in identity ? identity.guestEmail : user?.email) ?? null,
+    customerPhone: shippingAddress.phone,
+    totalMinor: result.totals.totalMinor,
+    currency: pricing.currency,
+    currencyExponent: pricing.currency_exponent,
+    trackingUrl: null,
   });
 
   const confirmationPath =

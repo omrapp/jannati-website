@@ -5,13 +5,16 @@ import { notFound } from 'next/navigation';
 import { ProductGallery } from '@/components/commerce/product-gallery';
 import { ReviewsSection } from '@/components/commerce/reviews-section';
 import { VariantPicker } from '@/components/commerce/variant-picker';
+import { WishlistButton } from '@/components/commerce/wishlist-button';
 import { isLocale, type Locale } from '@/i18n/config';
 import { Link } from '@/i18n/navigation';
 import { jsonLdScript, productJsonLd } from '@/lib/catalog/json-ld';
 import { getCountry, getProductByHandle } from '@/lib/catalog/queries';
 import { stripHtml } from '@/lib/catalog/text';
 import { getApprovedReviews, getOwnReview, hasDeliveredPurchase } from '@/lib/commerce/reviews';
+import { isWishlisted } from '@/lib/commerce/wishlist';
 import { env } from '@/lib/env';
+import { localeAlternates } from '@/lib/seo/alternates';
 import { createClient, getAuthUser } from '@/lib/supabase/server';
 
 type Params = Promise<{ locale: string; handle: string }>;
@@ -31,7 +34,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return {
     title: product.name,
     description: product.description ? stripHtml(product.description).slice(0, 160) : undefined,
-    alternates: { canonical: canonicalUrl(locale, product.handle) },
+    alternates: localeAlternates(locale, `/products/${encodeURIComponent(product.handle)}`),
     openGraph: {
       title: product.name,
       images: product.image ? [product.image.url] : undefined,
@@ -61,10 +64,11 @@ export default async function ProductPage({ params }: { params: Params }) {
 
   const client = await createClient();
   const user = await getAuthUser();
-  const [approvedReviews, ownReview, eligible] = await Promise.all([
+  const [approvedReviews, ownReview, eligible, saved] = await Promise.all([
     getApprovedReviews(client, product.id),
     user ? getOwnReview(client, user.id, product.id) : Promise.resolve(null),
     user ? hasDeliveredPurchase(client, user.id, product.id) : Promise.resolve(false),
+    user ? isWishlisted(client, user.id, product.id) : Promise.resolve(false),
   ]);
 
   return (
@@ -99,6 +103,13 @@ export default async function ProductPage({ params }: { params: Params }) {
           ) : (
             <p className="text-muted-foreground">{t('priceOnRequest')}</p>
           )}
+
+          <WishlistButton
+            productId={product.id}
+            handle={product.handle}
+            signedIn={user !== null}
+            initialSaved={saved}
+          />
 
           {product.description && (
             <section className="flex flex-col gap-2">

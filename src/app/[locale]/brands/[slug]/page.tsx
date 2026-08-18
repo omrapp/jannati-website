@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -6,6 +7,7 @@ import { Pagination } from '@/components/commerce/pagination';
 import { ProductGrid } from '@/components/commerce/product-grid';
 import { isLocale, type Locale } from '@/i18n/config';
 import { listBrands, listProducts } from '@/lib/catalog/queries';
+import { localeAlternates } from '@/lib/seo/alternates';
 
 type Params = Promise<{ locale: string; slug: string }>;
 type Search = Promise<{ page?: string }>;
@@ -14,6 +16,16 @@ async function brand(slug: string, locale: Locale) {
   const brands = await listBrands(locale);
 
   return brands.find((item) => item.slug === slug) ?? null;
+}
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const { locale, slug } = await params;
+  if (!isLocale(locale)) return {};
+
+  const found = await brand(slug, locale);
+  if (!found) return {};
+
+  return { title: found.name, alternates: localeAlternates(locale, `/brands/${slug}`) };
 }
 
 export default async function BrandPage({

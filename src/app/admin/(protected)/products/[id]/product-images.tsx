@@ -138,12 +138,23 @@ function ImageRow({
       />
       <div className="grid grid-cols-2 gap-2">
         <div className="flex flex-col gap-1">
-          <Label>Alt text (ar)</Label>
-          <Input dir="rtl" value={altAr} onChange={(e) => setAltAr(e.target.value)} disabled={busy} />
+          <Label htmlFor={`image-${image.id}-alt-ar`}>Alt text (ar)</Label>
+          <Input
+            id={`image-${image.id}-alt-ar`}
+            dir="rtl"
+            value={altAr}
+            onChange={(e) => setAltAr(e.target.value)}
+            disabled={busy}
+          />
         </div>
         <div className="flex flex-col gap-1">
-          <Label>Alt text (en)</Label>
-          <Input value={altEn} onChange={(e) => setAltEn(e.target.value)} disabled={busy} />
+          <Label htmlFor={`image-${image.id}-alt-en`}>Alt text (en)</Label>
+          <Input
+            id={`image-${image.id}-alt-en`}
+            value={altEn}
+            onChange={(e) => setAltEn(e.target.value)}
+            disabled={busy}
+          />
         </div>
       </div>
       <div className="flex flex-col gap-1">

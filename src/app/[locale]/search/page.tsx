@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
@@ -7,6 +8,26 @@ import { isLocale } from '@/i18n/config';
 import { searchProducts } from '@/lib/catalog/search';
 
 type Search = Promise<{ q?: string; page?: string }>;
+
+// No canonical/hreflang here: every `?q=` value is functionally a different
+// page but not one worth indexing on its own — `noindex, follow` keeps
+// crawlers off search-result pages while still following links out of them.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+
+  const [t, tSeo] = await Promise.all([getTranslations('search'), getTranslations('seo')]);
+
+  return {
+    title: t('heading'),
+    description: tSeo('searchDescription'),
+    robots: { index: false, follow: true },
+  };
+}
 
 export default async function SearchPage({
   params,

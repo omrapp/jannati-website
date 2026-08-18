@@ -8,6 +8,7 @@ import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
 import { ThemeProvider } from '@/components/theme-provider';
 import { htmlLang, isLocale, locales, parseLocale, textDirection } from '@/i18n/config';
+import { env } from '@/lib/env';
 import '../globals.css';
 
 const arabic = IBM_Plex_Sans_Arabic({
@@ -44,6 +45,9 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: 'brand' });
 
   return {
+    // Lets every page below set OG images and canonical/hreflang URLs as
+    // relative paths and still resolve correctly.
+    metadataBase: new URL(env.siteUrl),
     title: { default: `${t('name')} — ${t('tagline')}`, template: `%s | ${t('name')}` },
     description: t('tagline'),
   };

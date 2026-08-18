@@ -347,6 +347,7 @@ export async function createOrder(client: Client, input: CreateOrderInput): Prom
       unit_price_minor: item.unitPriceMinor,
       line_total_minor: item.lineTotalMinor,
     })),
+    p_locale: locale,
   } as unknown as Database['public']['Functions']['create_order']['Args'];
 
   const { data: orderId, error: rpcError } = await client.rpc('create_order', args);

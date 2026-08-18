@@ -21,6 +21,14 @@ const schema = z.object({
   thawaniPublishableKey: z.string().min(1).optional(),
   thawaniEnv: z.enum(['uat', 'production']).default('uat'),
   tapSecretKey: z.string().min(1).optional(),
+  // 4.3: same posture as the payment keys above — unset until the user
+  // supplies real Resend/Twilio credentials, so each adapter throws its own
+  // config error only when actually called rather than failing the build.
+  resendApiKey: z.string().min(1).optional(),
+  resendFromEmail: z.email().default('orders@jannati.om'),
+  twilioAccountSid: z.string().min(1).optional(),
+  twilioAuthToken: z.string().min(1).optional(),
+  twilioMessagingServiceSid: z.string().min(1).optional(),
 });
 
 export const env = schema.parse({
@@ -41,4 +49,9 @@ export const env = schema.parse({
   // over what is, until 2.11 is unblocked, a dead code path either way.
   thawaniEnv: process.env.THAWANI_ENV === 'production' ? 'production' : 'uat',
   tapSecretKey: process.env.TAP_SECRET_KEY || undefined,
+  resendApiKey: process.env.RESEND_API_KEY || undefined,
+  resendFromEmail: process.env.RESEND_FROM_EMAIL || undefined,
+  twilioAccountSid: process.env.TWILIO_ACCOUNT_SID || undefined,
+  twilioAuthToken: process.env.TWILIO_AUTH_TOKEN || undefined,
+  twilioMessagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID || undefined,
 });

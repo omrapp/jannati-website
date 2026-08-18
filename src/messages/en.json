@@ -57,6 +57,12 @@
     "notEligible": "Only customers who've received this product can leave a review.",
     "submitted": "Thanks — your review has been submitted for approval."
   },
+  "wishlist": {
+    "title": "Wishlist",
+    "empty": "Your wishlist is empty.",
+    "add": "Add to wishlist",
+    "remove": "Remove from wishlist"
+  },
   "nav": {
     "home": "Home",
     "products": "Products",
@@ -252,5 +258,11 @@
     "orderNumberLabel": "Order number",
     "emailLabel": "Email",
     "submit": "Find order"
+  },
+  "seo": {
+    "productsDescription": "Shop the full Jannati catalog of beauty and skincare products, delivered across the Gulf.",
+    "brandsDescription": "Browse every beauty and skincare brand available at Jannati.",
+    "collectionDescription": "Shop {name} at Jannati.",
+    "searchDescription": "Search Jannati's catalog of beauty and skincare products."
   }
 }

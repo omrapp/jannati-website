@@ -1502,21 +1502,40 @@ re-render already-mounted Client Component props.
 
 **Acceptance criteria:**
 
-- [ ] New `wishlist_items` table + migration, RLS scoped to `customer_id = auth.uid()`
-- [ ] Add/remove from PDP and/or PLP card, signed-in only (signed-out sees a sign-in prompt, not a
+- [x] New `wishlist_items` table + migration, RLS scoped to `customer_id = auth.uid()`
+- [x] Add/remove from PDP and/or PLP card, signed-in only (signed-out sees a sign-in prompt, not a
   silent no-op)
-- [ ] `/account/wishlist` lists saved products with current price/availability for the viewer's
+- [x] `/account/wishlist` lists saved products with current price/availability for the viewer's
   country
 
 **Verification:**
 
-- [ ] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`
-- [ ] Manual: deferred
+- [x] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build` — 260/260 unit tests, all clean
+- [ ] Manual: deferred, same gap every prior task session
 
 **Dependencies:** 2.4
-**Files:** `supabase/migrations/<ts>_wishlist.sql`, `src/lib/commerce/wishlist.ts`,
-`src/app/[locale]/account/wishlist/page.tsx`
+**Files:** `supabase/migrations/20260816000004_wishlist.sql`, `src/lib/commerce/wishlist.ts`,
+`src/lib/catalog/queries.ts` (`getProductsByIds`),
+`src/app/[locale]/account/wishlist/{page.tsx,actions.ts}`,
+`src/app/[locale]/products/[handle]/page.tsx`,
+`src/components/commerce/{wishlist-button.tsx,wishlist-grid.tsx}`, `src/messages/{en,ar}.json`
 **Scope:** M
+
+**Implementation notes:**
+
+`wishlist_items` mirrors `addresses`' RLS shape exactly (`using`/`with check` both pinned to
+`customer_id = auth.uid()`), unique `(customer_id, product_id)` so `addToWishlist` is a plain
+`upsert` instead of a check-then-insert race. No guest wishlist — unlike the cart there's no
+cookie-token identity to hang a pre-auth wishlist off of, and the plan doesn't ask for one.
+
+`WishlistButton` renders on the PDP only (PLP card was "and/or" in the criteria); signed-out
+visitors get a sign-in link with `next` pointing back at the product, not a disabled control.
+Signed-in toggle is optimistic client state plus a fire-and-forget server action — a failed
+mutation just leaves the button one toggle out of sync until the next load, not worth a rollback
+path for something this low-stakes and easily retried. `/account/wishlist` reuses `ProductCard`
+from the PLP grid with a remove button pinned over the corner (`WishlistGrid`), and re-sorts
+`getProductsByIds`' unordered rows back into save order since that function is also handy
+unordered for other future callers.
 
 ---
 
@@ -1528,21 +1547,22 @@ Business verification — ship without it if not approved, per the plan.
 
 **Acceptance criteria:**
 
-- [ ] Notification adapter interface (mirrors the payment adapter shape from 2.11/2.12), Resend and
+- [x] Notification adapter interface (mirrors the payment adapter shape from 2.11/2.12), Resend and
   Twilio implementations behind it
-- [ ] Fires on order creation and on fulfilment status transitions to shipped/delivered (hooks into
+- [x] Fires on order creation and on fulfilment status transitions to shipped/delivered (hooks into
   3.5's `transitionFulfilmentStatus`)
-- [ ] ar/en templates — language chosen from the order's locale, not the admin's
-- [ ] Unit tests cover payload shaping without a live send
+- [x] ar/en templates — language chosen from the order's locale, not the admin's
+- [x] Unit tests cover payload shaping without a live send
 
 **Verification:**
 
-- [ ] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`
 - [ ] Manual: **blocked** — `RESEND_API_KEY`/`TWILIO_*` are empty in `.env.local`; live-send
   verification deferred until the user provides credentials, same outcome as 2.10–2.12
 
 **Dependencies:** 2.9, 3.5
-**Files:** `src/lib/notifications/{types,resend,twilio}.ts`
+**Files:** `src/lib/notifications/{types,templates,resend,twilio,dispatch}.ts`, `src/app/[locale]/checkout/actions.ts`,
+`src/app/admin/(protected)/orders/[id]/actions.ts`, `src/lib/admin/orders.ts`, `tests/notifications.test.ts`
 **Scope:** L
 
 ---
@@ -1555,20 +1575,22 @@ hreflang gap was already flagged as deferred-to-Phase-4 back on Task 1's PDP wor
 
 **Acceptance criteria:**
 
-- [ ] Every public route has correct `<title>`/`<meta description>`, ar and en
-- [ ] hreflang alternates present and correct for all 12 locale-country combos on PLP/PDP/home
-- [ ] `sitemap.xml` includes every published product/category/content page
-- [ ] Product pages carry `Product` JSON-LD (price, availability, rating if reviews exist)
-- [ ] `robots.txt` allows the storefront, disallows `/admin` and `/account`
+- [x] Every public route has correct `<title>`/`<meta description>`, ar and en
+- [x] hreflang alternates present and correct for all 12 locale-country combos on PLP/PDP/home
+- [x] `sitemap.xml` includes every published product/category/content page
+- [x] Product pages carry `Product` JSON-LD (price, availability, rating if reviews exist)
+- [x] `robots.txt` allows the storefront, disallows `/admin` and `/account`
 
 **Verification:**
 
-- [ ] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`
 - [ ] Manual: validate a sample of hreflang tags and the sitemap against Google's testing tools —
   deferred, no live deployment to point them at yet this session
 
 **Dependencies:** Phase 1 catalog routes
-**Files:** `src/app/sitemap.ts`, `src/app/robots.ts`, per-route `generateMetadata`, JSON-LD component
+**Files:** `src/lib/seo/alternates.ts`, `src/app/sitemap.ts`, `src/app/robots.ts`, `src/app/[locale]/layout.tsx`,
+per-route `generateMetadata` (home, products, brands, brands/[slug], collections/[slug], p/[slug], search,
+products/[handle]), `src/lib/catalog/json-ld.ts` (already existed from Task 4.1), `src/messages/{en,ar}.json`
 **Scope:** M
 
 ---
@@ -1582,16 +1604,26 @@ Phase 2 began.
 **Acceptance criteria:**
 
 - [ ] Lighthouse performance ≥90 on home and PDP
-- [ ] LCP image on each has `priority`/correct `sizes`, no oversized image downloads
-- [ ] No obvious render-blocking third-party script on the critical path
+- [x] LCP image on each has `priority`/correct `sizes`, no oversized image downloads
+- [x] No obvious render-blocking third-party script on the critical path
+
+**Audit findings — no code changes required:** `ProductGallery`'s main PDP image already sets `priority` +
+`sizes="(min-width: 1024px) 50vw, 100vw"`; `ProductGrid` already passes `priority={index < 4}` to the first row
+of `ProductCard`s (the home page itself carries no images at all — text-only hero); `Logo` is a correctly-sized
+(36×36) `priority` image. Every image routes through `next/image` with `next.config.ts`'s `remotePatterns`, so
+the built-in optimizer resizes/reformats server-side — no oversized downloads. The only `<script>` tag in the
+app is the inert `application/ld+json` JSON-LD island on the PDP (data, not render-blocking JS); fonts are
+self-hosted via `next/font/google` with `display: 'swap'`. All of this predates this task (Phase 0–3 work).
 
 **Verification:**
 
-- [ ] `npm run build` (bundle size visible in output)
+- [x] `npm run build` — succeeds; this Next.js/Turbopack version's CLI output has no per-route First Load JS
+  size table (only the static/dynamic route list), so a bundle-size regression can't be read off the build log
+  directly — would need `@next/bundle-analyzer` or a deployed Lighthouse run to quantify
 - [ ] Manual: Lighthouse run — deferred until there's a deployed URL to point it at
 
 **Dependencies:** 4.4 (metadata/JSON-LD additions can shift bundle weight)
-**Files:** TBD per finding
+**Files:** none — audit only, existing code already meets the criteria
 **Scope:** M
 
 ---
@@ -1604,16 +1636,38 @@ color contrast, keyboard navigation, RTL correctness re-checked now that the ful
 **Acceptance criteria:**
 
 - [ ] Lighthouse accessibility ≥95 on home and PDP
-- [ ] Every form input has an associated label; every interactive element is keyboard-reachable
-- [ ] RTL layout re-verified across pages added since the Phase 0 smoke test
+- [x] Every form input has an associated label; every interactive element is keyboard-reachable
+- [x] RTL layout re-verified across pages added since the Phase 0 smoke test
+
+**Audit findings:**
+
+Grepped every `<Label` usage across `src` for missing `htmlFor`. Found 8 gaps, all in admin
+product-editing UI (storefront forms — address, checkout, filter, review — already correctly
+pair `htmlFor`/`id`, confirmed against `AddressForm`'s pattern):
+
+- `product-form.tsx`: 6 unlabeled variant-row fields (SKU, Title ar/en, Price, Compare-at,
+  Stock) — fixed with `variant-${index}-*` scoped ids (rows repeat per variant, so ids are
+  index-scoped, not static).
+- `product-images.tsx`: 2 unlabeled fields (Alt text ar/en) — fixed with `image-${image.id}-*`
+  scoped ids (same reasoning, one row per uploaded image).
+
+Keyboard-reachability: grepped for `onClick` on non-interactive elements (`<div>`/`<span>`) —
+none found; every clickable surface in the app is a native `<button>`, `<a>`, or form control,
+so nothing needed fixing here.
+
+RTL: spot-checked pages added since Phase 0 (reviews, wishlist, notifications templates, SEO
+metadata pages, admin orders/coupons/content/reviews) — all reuse existing `dir="rtl"`-aware
+primitives (`Input`, `Textarea`, layout components) rather than introducing new raw markup, so
+no new RTL regressions.
 
 **Verification:**
 
-- [ ] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`
+- [x] `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`
 - [ ] Manual: Lighthouse + keyboard-only pass — deferred until there's a deployed URL
 
 **Dependencies:** none
-**Files:** TBD per finding
+**Files:** `src/app/admin/(protected)/products/product-form.tsx`,
+`src/app/admin/(protected)/products/[id]/product-images.tsx`
 **Scope:** M
 
 ---
