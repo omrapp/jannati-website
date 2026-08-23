@@ -64,6 +64,19 @@ function imageFolder(url: string): ParsedImage['folder'] {
 }
 
 /**
+ * darbeauty.com's own image URLs are protocol-relative or root-relative in
+ * the scraped HTML/JSON (`//darbeauty.com/cdn/shop/...`, `/cdn/shop/...`) —
+ * normalise to an absolute URL so it is directly fetchable later, without
+ * guessing the scheme/host at fetch time.
+ */
+export function absoluteImageUrl(url: string): string {
+  if (url.startsWith('//')) return `https:${url}`;
+  if (url.startsWith('/')) return `https://darbeauty.com${url}`;
+
+  return url;
+}
+
+/**
  * Shopify money field -> OMR baisa.
  *
  * Anything that is not a finite number fails the page. Left unchecked it would
@@ -175,7 +188,12 @@ function collectImages(html: string, payload: ShopifyProduct): ParsedImage[] {
 
     if (!file || seen.has(key)) continue;
     seen.add(key);
-    images.push({ file, folder, position: images.length + 1 });
+    images.push({
+      file,
+      folder,
+      position: images.length + 1,
+      sourceUrl: absoluteImageUrl(url),
+    });
   }
 
   return images;

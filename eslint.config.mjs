@@ -14,6 +14,7 @@ const eslintConfig = defineConfig([
     'next-env.d.ts',
     // Read-only reference scrape of darbeauty.com — not our source.
     'darbeauty.com/**',
+    'darbeauty_backup/**',
     'data/**',
   ]),
 ]);

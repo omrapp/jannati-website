@@ -43,6 +43,7 @@ next-env.d.ts
 
 # reference scrape of darbeauty.com — read-only, 422MB, never committed
 /darbeauty.com/
+darbeauty_backup/
 
 # seed pipeline intermediates
 /data/

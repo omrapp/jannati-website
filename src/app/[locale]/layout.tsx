@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { IBM_Plex_Sans_Arabic, Inter, Playfair_Display } from 'next/font/google';
+import { Almarai, Outfit, Playfair_Display } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -11,14 +11,16 @@ import { htmlLang, isLocale, locales, parseLocale, textDirection } from '@/i18n/
 import { env } from '@/lib/env';
 import '../globals.css';
 
-const arabic = IBM_Plex_Sans_Arabic({
+// Darbeauty's actual body/UI fonts (Outfit + Almarai) — headings stay Playfair Display,
+// which darbeauty doesn't have but the user asked to keep.
+const arabic = Almarai({
   subsets: ['arabic'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['300', '400', '700', '800'],
   variable: '--font-arabic',
   display: 'swap',
 });
 
-const latin = Inter({
+const latin = Outfit({
   subsets: ['latin'],
   variable: '--font-latin',
   display: 'swap',

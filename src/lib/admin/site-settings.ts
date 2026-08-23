@@ -47,6 +47,9 @@ export type SiteSettingsInput = {
   tiktokUrl: string | null;
   xUrl: string | null;
   youtubeUrl: string | null;
+  legalEntityNameEn: string | null;
+  legalEntityNameAr: string | null;
+  registrationNumber: string | null;
 };
 
 export async function updateSiteSettings(client: Client, input: SiteSettingsInput): Promise<void> {
@@ -66,6 +69,9 @@ export async function updateSiteSettings(client: Client, input: SiteSettingsInpu
       tiktok_url: input.tiktokUrl,
       x_url: input.xUrl,
       youtube_url: input.youtubeUrl,
+      legal_entity_name_en: input.legalEntityNameEn,
+      legal_entity_name_ar: input.legalEntityNameAr,
+      registration_number: input.registrationNumber,
     })
     .eq('id', true);
   if (error) throw new Error(`updating site settings: ${error.message}`);

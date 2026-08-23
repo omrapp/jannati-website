@@ -65,6 +65,7 @@
   },
   "nav": {
     "home": "Home",
+    "categories": "Categories",
     "products": "Products",
     "brands": "Brands",
     "newArrivals": "New Arrivals",
@@ -151,6 +152,7 @@
     "allBrands": "All brands",
     "brandCount": "{count} brands",
     "allCategories": "All categories",
+    "categoryCount": "{count} categories",
     "filters": "Filters",
     "clearFilters": "Clear filters",
     "availability": "Availability",
@@ -273,6 +275,7 @@
   "seo": {
     "productsDescription": "Shop the full Jannati catalog of beauty and skincare products, delivered across the Gulf.",
     "brandsDescription": "Browse every beauty and skincare brand available at Jannati.",
+    "categoriesDescription": "Browse every product category available at Jannati.",
     "collectionDescription": "Shop {name} at Jannati.",
     "searchDescription": "Search Jannati's catalog of beauty and skincare products."
   },

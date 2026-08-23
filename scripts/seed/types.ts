@@ -30,6 +30,14 @@ export type ParsedImage = {
   position: number;
   /** Key in the Storage bucket, written by `npm run seed:images`. */
   storagePath?: string | null;
+  /**
+   * Full darbeauty.com URL the image was linked from (normalised to an
+   * absolute `https://` URL). Optional so catalog.json snapshots taken
+   * before this field existed still parse — only present after a re-run of
+   * `npm run seed:extract`. Used by `fetch-missing-images.ts` to pull files
+   * the scrape linked to but never mirrored locally.
+   */
+  sourceUrl?: string;
 };
 
 export type ParsedProduct = {

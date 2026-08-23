@@ -26,6 +26,8 @@ export type MissingImage = {
   handle: string;
   file: string;
   folder: ParsedImage['folder'];
+  /** Absent when the catalog snapshot predates the `sourceUrl` field. */
+  sourceUrl?: string;
 };
 
 export type UploadPlan = {
@@ -45,6 +47,16 @@ function widthOf(fileName: string): number {
 
 function baseNameOf(fileName: string): string {
   return fileName.split('?')[0];
+}
+
+/**
+ * Content hash of a file's bytes, keyed against `storagePath` by callers to
+ * skip re-uploading a file that has not changed since a previous run — on
+ * top of, not instead of, the per-product storage-path scheme above (each
+ * product still keeps its own copy even when it shares bytes with another).
+ */
+export function sha1Hex(bytes: Uint8Array): string {
+  return createHash('sha1').update(bytes).digest('hex');
 }
 
 /** The largest rendition of `file` among `candidates`, or null if absent. */
@@ -110,7 +122,12 @@ export function planUploads(products: ParsedProduct[], local: LocalFiles): Uploa
       const localFile = widestCopy(image.file, local[image.folder]);
 
       if (!localFile) {
-        missing.push({ handle: product.handle, file: image.file, folder: image.folder });
+        missing.push({
+          handle: product.handle,
+          file: image.file,
+          folder: image.folder,
+          sourceUrl: image.sourceUrl,
+        });
         continue;
       }
 

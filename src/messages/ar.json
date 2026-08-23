@@ -65,6 +65,7 @@
   },
   "nav": {
     "home": "الرئيسية",
+    "categories": "الفئات",
     "products": "المنتجات",
     "brands": "العلامات التجارية",
     "newArrivals": "وصل حديثاً",
@@ -151,6 +152,7 @@
     "allBrands": "جميع العلامات التجارية",
     "brandCount": "{count} علامة تجارية",
     "allCategories": "جميع الفئات",
+    "categoryCount": "{count} فئة",
     "filters": "الفلاتر",
     "clearFilters": "مسح الفلاتر",
     "availability": "التوفر",
@@ -273,6 +275,7 @@
   "seo": {
     "productsDescription": "تسوّق مجموعة جنتي الكاملة من منتجات التجميل والعناية، بالتوصيل إلى دول الخليج.",
     "brandsDescription": "تصفح جميع العلامات التجارية للتجميل والعناية المتوفرة في جنتي.",
+    "categoriesDescription": "تصفح جميع فئات المنتجات المتوفرة في جنتي.",
     "collectionDescription": "تسوّق {name} من جنتي.",
     "searchDescription": "ابحث في كتالوج جنتي لمنتجات التجميل والعناية."
   },

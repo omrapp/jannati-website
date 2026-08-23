@@ -11,8 +11,8 @@ export default async function AdminSettingsPage() {
       <div>
         <h1 className="text-xl font-semibold">Store settings</h1>
         <p className="text-muted-foreground text-sm">
-          Contact info, social links, and map location shown on the storefront header, footer,
-          and contact page.
+          Contact info, social links, and map location shown on the storefront header, footer, and
+          contact page.
         </p>
       </div>
       <SettingsForm
@@ -30,6 +30,9 @@ export default async function AdminSettingsPage() {
           tiktokUrl: settings.tiktok_url ?? '',
           xUrl: settings.x_url ?? '',
           youtubeUrl: settings.youtube_url ?? '',
+          legalEntityNameEn: settings.legal_entity_name_en ?? '',
+          legalEntityNameAr: settings.legal_entity_name_ar ?? '',
+          registrationNumber: settings.registration_number ?? '',
         }}
       />
     </div>

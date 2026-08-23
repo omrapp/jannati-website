@@ -952,9 +952,12 @@ export type Database = {
           facebook_url: string | null
           id: boolean
           instagram_url: string | null
+          legal_entity_name_ar: string | null
+          legal_entity_name_en: string | null
           map_lat: number | null
           map_lng: number | null
           phone: string | null
+          registration_number: string | null
           tiktok_url: string | null
           updated_at: string
           whatsapp: string | null
@@ -969,9 +972,12 @@ export type Database = {
           facebook_url?: string | null
           id?: boolean
           instagram_url?: string | null
+          legal_entity_name_ar?: string | null
+          legal_entity_name_en?: string | null
           map_lat?: number | null
           map_lng?: number | null
           phone?: string | null
+          registration_number?: string | null
           tiktok_url?: string | null
           updated_at?: string
           whatsapp?: string | null
@@ -986,9 +992,12 @@ export type Database = {
           facebook_url?: string | null
           id?: boolean
           instagram_url?: string | null
+          legal_entity_name_ar?: string | null
+          legal_entity_name_en?: string | null
           map_lat?: number | null
           map_lng?: number | null
           phone?: string | null
+          registration_number?: string | null
           tiktok_url?: string | null
           updated_at?: string
           whatsapp?: string | null

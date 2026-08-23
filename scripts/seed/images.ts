@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 
 import { createClient } from '@supabase/supabase-js';
 
-import { planUploads, type LocalFiles, type PlannedUpload } from './image-plan.ts';
+import { planUploads, sha1Hex, type LocalFiles, type PlannedUpload } from './image-plan.ts';
 import type { Catalog } from './types.ts';
 
 const BUCKET = 'product-images';
@@ -26,6 +26,10 @@ const BUCKET = 'product-images';
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const cdnRoot = join(repoRoot, 'darbeauty.com', 'darbeauty.com', 'cdn', 'shop');
 const catalogPath = join(repoRoot, 'data', 'catalog.json');
+// Content hash per storage path from the last run — lets a re-run skip
+// uploading bytes that have not changed, instead of paying the transfer
+// cost just to have Supabase reject it as already existing.
+const hashCachePath = join(repoRoot, 'data', 'image-hashes.json');
 
 function localFiles(): LocalFiles {
   return {
@@ -38,11 +42,20 @@ function sizeOf(upload: PlannedUpload): number {
   return statSync(join(cdnRoot, upload.folder, upload.localFile)).size;
 }
 
+function loadHashCache(): Record<string, string> {
+  try {
+    return JSON.parse(readFileSync(hashCachePath, 'utf8')) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
 function humanBytes(bytes: number): string {
   return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
 }
 
-function contentType(file: string): string {
+/** Exported for reuse by other seed scripts (e.g. `brand-logos.ts`). */
+export function contentType(file: string): string {
   const extension = file.split('?')[0].split('.').pop()?.toLowerCase();
 
   if (extension === 'png') return 'image/png';
@@ -53,7 +66,7 @@ function contentType(file: string): string {
 }
 
 /** Service-role client: uploading to Storage is a staff-level write. */
-function storageClient() {
+export function storageClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -86,14 +99,25 @@ async function main(): Promise<void> {
   }
 
   const supabase = storageClient();
+  const hashCache = loadHashCache();
   let uploaded = 0;
   let skipped = 0;
+  let unchanged = 0;
   let bytes = 0;
 
   const failed: { path: string; message: string }[] = [];
 
   for (const upload of plan.uploads) {
     const body = readFileSync(join(cdnRoot, upload.folder, upload.localFile));
+    const hash = sha1Hex(body);
+
+    // Bytes at this storage path are exactly what was uploaded last run —
+    // skip the transfer instead of re-sending it just to be told it exists.
+    if (hashCache[upload.storagePath] === hash) {
+      unchanged += 1;
+      continue;
+    }
+
     const { error } = await supabase.storage
       .from(BUCKET)
       .upload(upload.storagePath, body, { contentType: contentType(upload.localFile) });
@@ -107,15 +131,19 @@ async function main(): Promise<void> {
 
     // Already there from an earlier run: leave it, count it as done.
     if (error) {
+      hashCache[upload.storagePath] = hash;
       skipped += 1;
       continue;
     }
 
+    hashCache[upload.storagePath] = hash;
     uploaded += 1;
     bytes += body.byteLength;
 
     if (uploaded % 200 === 0) console.log(`  uploaded ${uploaded}…`);
   }
+
+  writeFileSync(hashCachePath, `${JSON.stringify(hashCache, null, 2)}\n`, 'utf8');
 
   // Record the keys so the loader writes storage paths, never darbeauty URLs.
   // A key that failed to upload is left out, so the loader records no image
@@ -135,7 +163,9 @@ async function main(): Promise<void> {
 
   writeFileSync(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`, 'utf8');
 
-  console.log(`\nuploaded ${uploaded} (${humanBytes(bytes)}), already present ${skipped}`);
+  console.log(
+    `\nuploaded ${uploaded} (${humanBytes(bytes)}), already present ${skipped}, unchanged ${unchanged}`,
+  );
   console.log(`catalog updated with storage paths: ${catalogPath}`);
 
   if (failed.length > 0) {
@@ -147,4 +177,8 @@ async function main(): Promise<void> {
   }
 }
 
-await main();
+// Guarded so `brand-logos.ts` can import `contentType`/`storageClient` from
+// this file without triggering a second, unrelated product-image upload run.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  await main();
+}

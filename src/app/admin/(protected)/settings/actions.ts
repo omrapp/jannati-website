@@ -28,6 +28,9 @@ const settingsSchema = z.object({
   tiktokUrl: z.string().trim().url().nullable(),
   xUrl: z.string().trim().url().nullable(),
   youtubeUrl: z.string().trim().url().nullable(),
+  legalEntityNameEn: z.string().trim().nullable(),
+  legalEntityNameAr: z.string().trim().nullable(),
+  registrationNumber: z.string().trim().nullable(),
 });
 
 export type SettingsFormState = { status: 'idle' | 'error' | 'success'; message?: string };
@@ -55,6 +58,9 @@ export async function saveSiteSettings(
     tiktokUrl: emptyToNull(formData.get('tiktokUrl')),
     xUrl: emptyToNull(formData.get('xUrl')),
     youtubeUrl: emptyToNull(formData.get('youtubeUrl')),
+    legalEntityNameEn: emptyToNull(formData.get('legalEntityNameEn')),
+    legalEntityNameAr: emptyToNull(formData.get('legalEntityNameAr')),
+    registrationNumber: emptyToNull(formData.get('registrationNumber')),
   });
   if (!parsed.success) {
     return { status: 'error', message: parsed.error.issues[0]?.message ?? 'Invalid input.' };

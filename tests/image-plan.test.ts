@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { planUploads, storageFolder, storagePath, widestCopy } from '../scripts/seed/image-plan';
+import { planUploads, sha1Hex, storageFolder, storagePath, widestCopy } from '../scripts/seed/image-plan';
 import type { ParsedProduct } from '../scripts/seed/types';
 
 /** The scrape keeps every rendition as its own query-suffixed filename. */
@@ -81,6 +81,16 @@ describe('storagePath', () => {
     expect(storagePath('centellian24-360º-shot', 1, 'a.webp')).toMatch(
       /^centellian24-360-shot-[0-9a-f]{8}\/01-a\.webp$/,
     );
+  });
+});
+
+describe('sha1Hex', () => {
+  it('is stable for identical bytes', () => {
+    expect(sha1Hex(Buffer.from('abib logo bytes'))).toBe(sha1Hex(Buffer.from('abib logo bytes')));
+  });
+
+  it('differs when bytes differ', () => {
+    expect(sha1Hex(Buffer.from('a'))).not.toBe(sha1Hex(Buffer.from('b')));
   });
 });
 
