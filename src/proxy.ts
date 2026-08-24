@@ -80,6 +80,17 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
   const { pathname } = request.nextUrl;
   const firstSegment = pathname.split('/')[1] ?? '';
 
+  // `/admin` lives outside `src/app/[locale]`, unprefixed — it isn't a
+  // locale segment, so the redirect below would otherwise send it to
+  // `/<locale>/admin`, a route that doesn't exist. Its own auth is gated
+  // in `AdminProtectedLayout`, not here; still refresh the Supabase
+  // session so an expiring admin login doesn't silently drop.
+  if (firstSegment === 'admin') {
+    const response = NextResponse.next();
+    await refreshSupabaseSession(request, response);
+    return response;
+  }
+
   if (!isLocale(firstSegment)) {
     const locale = buildLocale(resolveLanguage(request), resolveCountry(request));
     const url = request.nextUrl.clone();
