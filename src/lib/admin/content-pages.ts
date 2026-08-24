@@ -19,6 +19,7 @@ export type ContentPage = {
   title_en: string | null;
   body_ar: string;
   body_en: string | null;
+  hero_image_url: string | null;
   published: boolean;
   created_at: string;
   updated_at: string;
@@ -56,11 +57,15 @@ export type ContentPageInput = {
   titleEn: string | null;
   bodyAr: string;
   bodyEn: string | null;
+  heroImageUrl: string | null;
   published: boolean;
 };
 
 export async function listContentPages(client: Client): Promise<ContentPage[]> {
-  const { data, error } = await withContentPages(client).from('content_pages').select('*').order('slug');
+  const { data, error } = await withContentPages(client)
+    .from('content_pages')
+    .select('*')
+    .order('slug');
   if (error) throw new Error(`listing content pages: ${error.message}`);
   return data;
 }
@@ -75,7 +80,11 @@ export async function getContentPage(client: Client, id: string): Promise<Conten
   return data;
 }
 
-export async function createContentPage(client: Client, slug: string, input: ContentPageInput): Promise<string> {
+export async function createContentPage(
+  client: Client,
+  slug: string,
+  input: ContentPageInput,
+): Promise<string> {
   const { data, error } = await withContentPages(client)
     .from('content_pages')
     .insert({
@@ -84,6 +93,7 @@ export async function createContentPage(client: Client, slug: string, input: Con
       title_en: input.titleEn,
       body_ar: input.bodyAr,
       body_en: input.bodyEn,
+      hero_image_url: input.heroImageUrl,
       published: input.published,
     })
     .select('id')
@@ -95,7 +105,11 @@ export async function createContentPage(client: Client, slug: string, input: Con
   return data.id;
 }
 
-export async function updateContentPage(client: Client, id: string, input: ContentPageInput): Promise<void> {
+export async function updateContentPage(
+  client: Client,
+  id: string,
+  input: ContentPageInput,
+): Promise<void> {
   const { error } = await withContentPages(client)
     .from('content_pages')
     .update({
@@ -103,6 +117,7 @@ export async function updateContentPage(client: Client, id: string, input: Conte
       title_en: input.titleEn,
       body_ar: input.bodyAr,
       body_en: input.bodyEn,
+      hero_image_url: input.heroImageUrl,
       published: input.published,
     })
     .eq('id', id);
@@ -117,7 +132,10 @@ export async function updateContentPage(client: Client, id: string, input: Conte
  * *isn't* going through `withContentPages`' service-bypassing cast, so a
  * draft page 404s for a shopper exactly like it would if RLS alone decided.
  */
-export async function getPublishedContentPage(client: Client, slug: string): Promise<ContentPage | null> {
+export async function getPublishedContentPage(
+  client: Client,
+  slug: string,
+): Promise<ContentPage | null> {
   const { data, error } = await withContentPages(client)
     .from('content_pages')
     .select('*')

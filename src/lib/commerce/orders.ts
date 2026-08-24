@@ -385,6 +385,30 @@ async function loadOrderDetail(client: Client, order: OrderRow): Promise<OrderDe
   return { order, items: items ?? [], events: events ?? [] };
 }
 
+/**
+ * A signed-in customer's own order history for `/account` — list columns
+ * only, no items/events (that's `getOrderForCustomer`, one order at a time,
+ * behind the existing `/checkout/confirmation/[orderNumber]` page rather
+ * than duplicated here). RLS's "a customer can read their own orders"
+ * policy (`customer_id = auth.uid()`) already scopes this; the `.eq` below
+ * is defense in depth, same posture as every other function in this file.
+ */
+export type OrderListEntry = Pick<
+  OrderRow,
+  'id' | 'order_number' | 'country_code' | 'currency' | 'total_minor' | 'fulfilment_status' | 'created_at'
+>;
+
+export async function listOrdersForCustomer(client: Client, customerId: string): Promise<OrderListEntry[]> {
+  const { data, error } = await client
+    .from('orders')
+    .select('id, order_number, country_code, currency, total_minor, fulfilment_status, created_at')
+    .eq('customer_id', customerId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(`reading orders for customer ${customerId}: ${error.message}`);
+  return data;
+}
+
 /** A signed-in customer's own order, by order number — `null` if it isn't theirs or doesn't exist. */
 export async function getOrderForCustomer(
   client: Client,

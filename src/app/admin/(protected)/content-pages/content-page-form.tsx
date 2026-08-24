@@ -15,6 +15,7 @@ export type ContentPageFormInitial = {
   titleEn: string;
   bodyAr: string;
   bodyEn: string;
+  heroImageUrl: string;
   published: boolean;
 };
 
@@ -26,7 +27,7 @@ export function ContentPageForm({ initial }: { initial: ContentPageFormInitial |
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1.5 max-w-xs">
+      <div className="flex max-w-xs flex-col gap-1.5">
         <Label htmlFor="slug">Slug</Label>
         {initial ? (
           // Fixed past creation — existing `/[locale]/p/[slug]` links would
@@ -55,8 +56,29 @@ export function ContentPageForm({ initial }: { initial: ContentPageFormInitial |
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="bodyAr">Body (ar)</Label>
-          <Textarea id="bodyAr" name="bodyAr" dir="rtl" rows={10} defaultValue={initial?.bodyAr} required />
+          <Textarea
+            id="bodyAr"
+            name="bodyAr"
+            dir="rtl"
+            rows={10}
+            defaultValue={initial?.bodyAr}
+            required
+          />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="heroImageUrl">Hero image URL</Label>
+        <Input
+          id="heroImageUrl"
+          name="heroImageUrl"
+          type="url"
+          placeholder="https://images.pexels.com/..."
+          defaultValue={initial?.heroImageUrl}
+        />
+        <span className="text-muted-foreground text-xs">
+          Shown as a banner at the top of the page. Leave blank for no hero image.
+        </span>
       </div>
 
       <label className="flex items-center gap-1.5 text-sm">
