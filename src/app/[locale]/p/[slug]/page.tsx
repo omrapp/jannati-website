@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
 import { getPublishedContentPage } from '@/lib/admin/content-pages';
@@ -76,9 +77,37 @@ export default async function ContentPage({
   const resolvedBody = await applyLegalTokens(body, slug, language, client);
 
   return (
-    <article className="mx-auto flex max-w-2xl flex-col gap-4 py-8">
-      <h1 className="text-2xl font-semibold">{title}</h1>
-      <div className="text-muted-foreground whitespace-pre-wrap">{resolvedBody}</div>
-    </article>
+    <div className="flex flex-col">
+      {page.hero_image_url ? (
+        <div className="relative h-[260px] w-full overflow-hidden sm:h-[340px] md:h-[420px]">
+          <Image
+            src={page.hero_image_url}
+            alt={title}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+          <div className="from-background/90 via-background/30 absolute inset-0 bg-gradient-to-t to-transparent" />
+          <div className="absolute inset-0 flex items-end">
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 pb-10">
+              <span className="bg-primary h-1 w-14 rounded-full" />
+              <h1 className="font-display text-3xl font-semibold md:text-5xl">{title}</h1>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 px-4 pt-16 pb-4 text-center">
+          <span className="bg-primary h-1 w-14 rounded-full" />
+          <h1 className="font-display text-3xl font-semibold md:text-4xl">{title}</h1>
+        </div>
+      )}
+
+      <article className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-12">
+        <div className="text-muted-foreground text-base leading-relaxed whitespace-pre-wrap">
+          {resolvedBody}
+        </div>
+      </article>
+    </div>
   );
 }

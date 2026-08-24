@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       // Supabase Storage serves all product imagery.
       { protocol: 'https', hostname: '*.supabase.co', pathname: '/storage/v1/object/public/**' },
+      // Content-page hero images: admin-editable URLs (see `content_pages.hero_image_url`),
+      // seeded from Pexels for about-us/faqs/shipping-policy/returns. Pixabay
+      // allowlisted too since admins are free to swap in either source.
+      { protocol: 'https', hostname: 'images.pexels.com' },
+      { protocol: 'https', hostname: 'cdn.pixabay.com' },
     ],
   },
 };

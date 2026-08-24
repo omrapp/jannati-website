@@ -69,7 +69,14 @@ function SheetContent({
       >
         {children}
         {showCloseButton && (
-          <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+          // `end-4`, not `right-4`: RTL titles (e.g. Arabic "السلة") start
+          // flush against the same physical right edge a hardcoded `right-4`
+          // sits on, so the close icon sat on top of the title text instead
+          // of opposite it. `inset-inline-end` follows the `dir` attribute
+          // set on `<html>` (`layout.tsx`), landing on the true trailing
+          // corner in both directions — the SheetHeader's `pe-8` below
+          // reserves the run-in space so the title never grows under it.
+          <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 end-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
             <XIcon className="size-4" />
             <span className="sr-only">Close</span>
           </SheetPrimitive.Close>
@@ -83,7 +90,10 @@ function SheetHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="sheet-header"
-      className={cn('flex flex-col gap-1.5 p-4', className)}
+      // `pe-8` reserves room for the close button's `end-4` + its own
+      // width so a long/RTL title never runs underneath it (see
+      // `SheetContent`'s close button comment).
+      className={cn('flex flex-col gap-1.5 p-4 pe-8', className)}
       {...props}
     />
   );

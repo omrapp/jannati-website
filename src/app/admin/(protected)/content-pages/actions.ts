@@ -4,7 +4,11 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
 import { checkAdminAccess } from '@/lib/admin/auth';
-import { createContentPage, updateContentPage, type ContentPageInput } from '@/lib/admin/content-pages';
+import {
+  createContentPage,
+  updateContentPage,
+  type ContentPageInput,
+} from '@/lib/admin/content-pages';
 import { createClient } from '@/lib/supabase/server';
 
 // Same slug shape as brands/categories — kept in sync by hand with the
@@ -16,6 +20,7 @@ const contentPageSchema = z.object({
   titleEn: z.string().trim().min(1).nullable(),
   bodyAr: z.string().trim().min(1),
   bodyEn: z.string().trim().min(1).nullable(),
+  heroImageUrl: z.string().trim().url().nullable(),
   published: z.boolean(),
 });
 
@@ -41,6 +46,7 @@ export async function saveContentPage(
     titleEn: emptyToNull(formData.get('titleEn')),
     bodyAr: formData.get('bodyAr'),
     bodyEn: emptyToNull(formData.get('bodyEn')),
+    heroImageUrl: emptyToNull(formData.get('heroImageUrl')),
     published: formData.get('published') === 'on',
   });
   if (!parsed.success) {
@@ -58,8 +64,12 @@ export async function saveContentPage(
       // `pageId === null` branch is the only path that can set one, so an
       // edit can never smuggle a slug change through this action.
       const slug = formData.get('slug');
-      const slugParsed = z.string().regex(SLUG_RE, 'lowercase letters, numbers, hyphens only').safeParse(slug);
-      if (!slugParsed.success) return { status: 'error', message: slugParsed.error.issues[0].message };
+      const slugParsed = z
+        .string()
+        .regex(SLUG_RE, 'lowercase letters, numbers, hyphens only')
+        .safeParse(slug);
+      if (!slugParsed.success)
+        return { status: 'error', message: slugParsed.error.issues[0].message };
       await createContentPage(client, slugParsed.data, input);
     }
   } catch (err) {

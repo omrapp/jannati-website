@@ -21,6 +21,7 @@ export default async function EditContentPagePage({ params }: { params: Promise<
           titleEn: page.title_en ?? '',
           bodyAr: page.body_ar,
           bodyEn: page.body_en ?? '',
+          heroImageUrl: page.hero_image_url ?? '',
           published: page.published,
         }}
       />

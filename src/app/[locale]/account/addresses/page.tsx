@@ -14,11 +14,7 @@ import { createClient, getAuthUser } from '@/lib/supabase/server';
  * scoping the row to `customer_id = auth.uid()` — there is no guest address
  * book, unlike the guest cart.
  */
-export default async function AddressesPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
+export default async function AddressesPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 

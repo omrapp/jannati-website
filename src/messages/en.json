@@ -221,8 +221,56 @@
       "generic": "Something went wrong. Please try again."
     },
     "account": {
+      "title": "My account",
+      "memberSince": "Member since {date}",
       "signedInAs": "Signed in as {email}",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "profile": {
+        "title": "Profile",
+        "edit": "Edit",
+        "cancel": "Cancel",
+        "fullName": "Full name",
+        "fullNamePlaceholder": "Add your name",
+        "email": "Email",
+        "emailLocked": "Your email can't be changed here.",
+        "phone": "Phone",
+        "phonePlaceholder": "Add a phone number",
+        "save": "Save changes",
+        "saving": "Saving…",
+        "saved": "Profile updated.",
+        "error": "Couldn't save your profile. Please try again."
+      },
+      "orders": {
+        "title": "Order history",
+        "empty": "You haven't placed any orders yet.",
+        "emptyFiltered": "No orders match this status.",
+        "continueShopping": "Continue shopping",
+        "viewOrder": "View order",
+        "filterAll": "All"
+      },
+      "stats": {
+        "title": "Summary",
+        "totalOrders": "Total orders",
+        "active": "Active",
+        "delivered": "Delivered",
+        "spent": "Total spent"
+      },
+      "admin": {
+        "goToDashboard": "Go to admin dashboard"
+      },
+      "danger": {
+        "title": "Delete account",
+        "body": "Deleting your account is permanent. Your profile, addresses and saved data are removed immediately and can't be recovered.",
+        "delete": "Delete my account",
+        "confirmTitle": "Delete your account?",
+        "confirmBody": "This can't be undone.",
+        "confirmPhrase": "DELETE",
+        "typeToConfirm": "Type {phrase} to confirm",
+        "cancel": "Cancel",
+        "submit": "Delete permanently",
+        "deleting": "Deleting…",
+        "error": "Couldn't delete your account. Please try again."
+      }
     }
   },
   "checkout": {

@@ -12,11 +12,7 @@ import { createClient, getAuthUser } from '@/lib/supabase/server';
  * Same auth gate as `/account/addresses` — no guest wishlist, so a
  * signed-out visitor is bounced to login rather than shown an empty page.
  */
-export default async function WishlistPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
+export default async function WishlistPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 

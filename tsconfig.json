@@ -33,5 +33,9 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  // `Account.tsx` at repo root is reference material supplied for the account-page
+  // rework (a Vite/react-router component, not part of this Next.js app) — it
+  // doesn't compile against this project's toolchain and isn't imported anywhere,
+  // so it's excluded here rather than deleted.
+  "exclude": ["node_modules", "Account.tsx"]
 }
