@@ -361,6 +361,7 @@ export type Database = {
           body_ar: string
           body_en: string | null
           created_at: string
+          hero_image_url: string | null
           id: string
           published: boolean
           slug: string
@@ -372,6 +373,7 @@ export type Database = {
           body_ar: string
           body_en?: string | null
           created_at?: string
+          hero_image_url?: string | null
           id?: string
           published?: boolean
           slug: string
@@ -383,6 +385,7 @@ export type Database = {
           body_ar?: string
           body_en?: string | null
           created_at?: string
+          hero_image_url?: string | null
           id?: string
           published?: boolean
           slug?: string
@@ -492,6 +495,7 @@ export type Database = {
         Row: {
           created_at: string
           default_locale: string
+          full_name: string | null
           id: string
           marketing_opt_in: boolean
           phone: string | null
@@ -500,6 +504,7 @@ export type Database = {
         Insert: {
           created_at?: string
           default_locale?: string
+          full_name?: string | null
           id: string
           marketing_opt_in?: boolean
           phone?: string | null
@@ -508,6 +513,7 @@ export type Database = {
         Update: {
           created_at?: string
           default_locale?: string
+          full_name?: string | null
           id?: string
           marketing_opt_in?: boolean
           phone?: string | null
