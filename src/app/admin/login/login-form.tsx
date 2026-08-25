@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -9,17 +10,18 @@ import { idleAuthState } from '@/lib/auth/action-state';
 import { login } from './actions';
 
 export function LoginForm() {
+  const t = useTranslations('login');
   const [state, formAction, pending] = useActionState(login, idleAuthState);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t('email')}</Label>
         <Input id="email" name="email" type="email" autoComplete="email" required />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">{t('password')}</Label>
         <Input
           id="password"
           name="password"
@@ -36,7 +38,7 @@ export function LoginForm() {
       )}
 
       <Button type="submit" disabled={pending}>
-        Sign in
+        {t('signIn')}
       </Button>
     </form>
   );

@@ -1,10 +1,12 @@
 'use server';
 
+import { createTranslator } from 'next-intl';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+import { getAdminLocale, getAdminMessages } from '@/lib/admin/locale';
 import type { AuthActionState } from '@/lib/auth/action-state';
-import { authErrorKey } from '@/lib/supabase/auth-errors';
+import { authErrorKey, type AuthErrorKey } from '@/lib/supabase/auth-errors';
 import { createClient } from '@/lib/supabase/server';
 
 const schema = z.object({
@@ -12,13 +14,29 @@ const schema = z.object({
   password: z.string().min(1),
 });
 
-// Plain English, not next-intl: staff-only surface, same call as the admin
-// layout's lack of RTL/locale provider — see `admin/layout.tsx`.
-const ERROR_MESSAGES: Record<string, string> = {
-  invalidCredentials: 'Incorrect email or password.',
-  rateLimited: 'Too many attempts. Try again in a moment.',
-  generic: 'Something went wrong. Try again.',
-};
+const LOGIN_ERROR_KEYS = ['invalidCredentials', 'rateLimited', 'generic'] as const;
+type LoginErrorKey = (typeof LOGIN_ERROR_KEYS)[number];
+
+function isLoginErrorKey(key: AuthErrorKey): key is LoginErrorKey {
+  return (LOGIN_ERROR_KEYS as readonly string[]).includes(key);
+}
+
+/**
+ * `AuthActionState.message` must already be translated (see that type's file
+ * header) — now that the admin layout carries an i18n provider
+ * (`admin/layout.tsx`), this reads the same `jannati_admin_locale` cookie it
+ * does and translates with next-intl's non-routing `createTranslator`, not
+ * `getTranslations` (which needs `getRequestConfig`, storefront-only here).
+ * `authErrorKey` can also return `emailTaken`/`weakPassword`/`samePassword`
+ * — none apply to sign-in, so those fall back to `generic`, same as the old
+ * `Record` lookup's `?? ERROR_MESSAGES.generic` did.
+ */
+async function translateLoginError(key: AuthErrorKey): Promise<string> {
+  const locale = await getAdminLocale();
+  const messages = await getAdminMessages(locale);
+  const t = createTranslator({ locale, messages, namespace: 'login.errors' });
+  return t(isLoginErrorKey(key) ? key : 'generic');
+}
 
 /**
  * Authenticates any valid Supabase user — it does not itself check
@@ -35,14 +53,13 @@ export async function login(
     password: formData.get('password'),
   });
   if (!parsed.success) {
-    return { status: 'error', message: ERROR_MESSAGES.generic };
+    return { status: 'error', message: await translateLoginError('generic') };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
-    const key = authErrorKey(error.code);
-    return { status: 'error', message: ERROR_MESSAGES[key] ?? ERROR_MESSAGES.generic };
+    return { status: 'error', message: await translateLoginError(authErrorKey(error.code)) };
   }
 
   redirect('/admin');

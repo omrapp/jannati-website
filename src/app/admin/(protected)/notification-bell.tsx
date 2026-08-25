@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { Bell } from 'lucide-react';
 import Link from 'next/link';
@@ -15,14 +16,16 @@ import type { NotificationSummary } from '@/lib/admin/notifications';
 import { cn } from '@/lib/utils';
 import { markNotificationsSeenAction } from './notification-actions';
 
-function timeAgo(iso: string): string {
+// `t` passed in rather than called via a module-level `useTranslations` —
+// this is a plain function, not a component, so it can't call hooks itself.
+function timeAgo(iso: string, t: (key: string, values?: Record<string, number>) => string): string {
   const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (seconds < 60) return 'just now';
+  if (seconds < 60) return t('justNow');
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return t('minutesAgo', { minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  if (hours < 24) return t('hoursAgo', { hours });
+  return t('daysAgo', { days: Math.floor(hours / 24) });
 }
 
 /**
@@ -34,6 +37,7 @@ function timeAgo(iso: string): string {
  * scope elsewhere.
  */
 export function NotificationBell({ initial }: { initial: NotificationSummary }) {
+  const t = useTranslations('notifications');
   const [unseenCount, setUnseenCount] = useState(initial.unseenCount);
   const [, startTransition] = useTransition();
 
@@ -48,7 +52,7 @@ export function NotificationBell({ initial }: { initial: NotificationSummary }) 
   return (
     <DropdownMenu onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
+        <Button variant="ghost" size="icon" aria-label={t('label')} className="relative">
           <Bell className="size-5" />
           {unseenCount > 0 && (
             <span className="bg-destructive text-destructive-foreground absolute -top-0.5 -end-0.5 flex size-4 items-center justify-center rounded-full text-[10px] font-medium">
@@ -59,13 +63,13 @@ export function NotificationBell({ initial }: { initial: NotificationSummary }) 
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         {initial.items.length === 0 ? (
-          <p className="text-muted-foreground p-3 text-sm">Nothing new.</p>
+          <p className="text-muted-foreground p-3 text-sm">{t('empty')}</p>
         ) : (
           initial.items.map((item) => (
             <DropdownMenuItem key={item.id} asChild>
               <Link href={item.href} className="flex flex-col items-start gap-0.5 py-2">
                 <span className={cn('text-sm', item.isNew && 'font-medium')}>{item.title}</span>
-                <span className="text-muted-foreground text-xs">{timeAgo(item.createdAt)}</span>
+                <span className="text-muted-foreground text-xs">{timeAgo(item.createdAt, t)}</span>
               </Link>
             </DropdownMenuItem>
           ))

@@ -18,6 +18,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -25,50 +26,54 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { cn } from '@/lib/utils';
 import { useSidebar } from './sidebar-context';
 
-type NavItem = { href: string; label: string; icon: LucideIcon };
-type NavGroup = { label: string; items: NavItem[] };
+// `labelKey` resolves against the `sidebar` namespace in `admin-{en,ar}.json`
+// via `t(labelKey)` in `SidebarNav`/`SidebarLogo` — kept as data here (not a
+// literal label) since this array is module-level, outside any component
+// that could call `useTranslations`.
+type NavItem = { href: string; labelKey: string; icon: LucideIcon };
+type NavGroup = { labelKey: string; items: NavItem[] };
 
 // Grouped the way TailAdmin's reference sidebar groups its menu, but every
 // item here links straight to an existing route — no submenus, since none
 // of the current admin routes nest under each other.
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: 'Overview',
+    labelKey: 'overview',
     items: [
-      { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-      { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+      { href: '/admin', labelKey: 'dashboard', icon: LayoutDashboard },
+      { href: '/admin/analytics', labelKey: 'analytics', icon: BarChart3 },
     ],
   },
   {
-    label: 'Catalog',
+    labelKey: 'catalog',
     items: [
-      { href: '/admin/products', label: 'Products', icon: Package },
-      { href: '/admin/brands', label: 'Brands', icon: Tag },
-      { href: '/admin/categories', label: 'Categories', icon: Layers },
+      { href: '/admin/products', labelKey: 'products', icon: Package },
+      { href: '/admin/brands', labelKey: 'brands', icon: Tag },
+      { href: '/admin/categories', labelKey: 'categories', icon: Layers },
     ],
   },
   {
-    label: 'Sales',
+    labelKey: 'sales',
     items: [
-      { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
-      { href: '/admin/invoices', label: 'Invoices', icon: Receipt },
-      { href: '/admin/customers', label: 'Customers', icon: Users },
-      { href: '/admin/coupons', label: 'Coupons', icon: Ticket },
-      { href: '/admin/countries', label: 'Countries', icon: Globe },
+      { href: '/admin/orders', labelKey: 'orders', icon: ShoppingCart },
+      { href: '/admin/invoices', labelKey: 'invoices', icon: Receipt },
+      { href: '/admin/customers', labelKey: 'customers', icon: Users },
+      { href: '/admin/coupons', labelKey: 'coupons', icon: Ticket },
+      { href: '/admin/countries', labelKey: 'countries', icon: Globe },
     ],
   },
   {
-    label: 'Content',
+    labelKey: 'content',
     items: [
-      { href: '/admin/banners', label: 'Banners', icon: ImageIcon },
-      { href: '/admin/content-pages', label: 'Pages', icon: FileText },
-      { href: '/admin/reviews', label: 'Reviews', icon: Star },
-      { href: '/admin/messages', label: 'Messages', icon: Mail },
+      { href: '/admin/banners', labelKey: 'banners', icon: ImageIcon },
+      { href: '/admin/content-pages', labelKey: 'contentPages', icon: FileText },
+      { href: '/admin/reviews', labelKey: 'reviews', icon: Star },
+      { href: '/admin/messages', labelKey: 'messages', icon: Mail },
     ],
   },
   {
-    label: 'System',
-    items: [{ href: '/admin/settings', label: 'Settings', icon: Settings }],
+    labelKey: 'system',
+    items: [{ href: '/admin/settings', labelKey: 'settings', icon: Settings }],
   },
 ];
 
@@ -81,40 +86,44 @@ function isActiveHref(pathname: string, href: string) {
 }
 
 function SidebarLogo({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+  const t = useTranslations('sidebar');
+
   return (
     <div className={cn('flex h-16 shrink-0 items-center border-b px-4', collapsed && 'justify-center px-0')}>
       <Link href="/admin" onClick={onNavigate} className="flex items-center gap-2 font-semibold">
         <span className="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-lg text-sm">
           J
         </span>
-        {!collapsed && <span className="text-foreground">Jannati Admin</span>}
+        {!collapsed && <span className="text-foreground">{t('brand')}</span>}
       </Link>
     </div>
   );
 }
 
 function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+  const t = useTranslations('sidebar');
   const pathname = usePathname();
 
   return (
     <nav className="flex flex-col gap-6 overflow-y-auto px-3 py-4">
       {NAV_GROUPS.map((group) => (
-        <div key={group.label}>
+        <div key={group.labelKey}>
           {!collapsed && (
             <h3 className="text-muted-foreground mb-2 px-3 text-xs font-semibold tracking-wider uppercase">
-              {group.label}
+              {t(group.labelKey)}
             </h3>
           )}
           <ul className="flex flex-col gap-1">
             {group.items.map((item) => {
               const active = isActiveHref(pathname, item.href);
               const Icon = item.icon;
+              const label = t(item.labelKey);
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     onClick={onNavigate}
-                    title={collapsed ? item.label : undefined}
+                    title={collapsed ? label : undefined}
                     aria-current={active ? 'page' : undefined}
                     className={cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
@@ -125,7 +134,7 @@ function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
                     )}
                   >
                     <Icon className="size-5 shrink-0" />
-                    {!collapsed && <span>{item.label}</span>}
+                    {!collapsed && <span>{label}</span>}
                   </Link>
                 </li>
               );
@@ -145,6 +154,7 @@ function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
  * `toggleSidebar` and `toggleMobileSidebar` by viewport.
  */
 export function AdminSidebar() {
+  const t = useTranslations('sidebar');
   const { isExpanded, isHovered, isMobileOpen, setIsHovered, setIsMobileOpen } = useSidebar();
   const collapsed = !isExpanded && !isHovered;
 
@@ -165,7 +175,7 @@ export function AdminSidebar() {
       <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
         <SheetContent side="left" className="w-[290px] gap-0 p-0 sm:max-w-[290px]">
           <SheetHeader className="sr-only">
-            <SheetTitle>Admin navigation</SheetTitle>
+            <SheetTitle>{t('navigationLabel')}</SheetTitle>
           </SheetHeader>
           <SidebarLogo collapsed={false} onNavigate={() => setIsMobileOpen(false)} />
           <SidebarNav collapsed={false} onNavigate={() => setIsMobileOpen(false)} />
