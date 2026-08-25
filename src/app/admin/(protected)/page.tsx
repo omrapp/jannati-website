@@ -2,17 +2,12 @@ import { DollarSign, ShoppingCart, Truck, Users } from 'lucide-react';
 import Link from 'next/link';
 
 import { getDashboardSummary, getOrderStatusBreakdown, getRevenueSeries, getTopProducts } from '@/lib/admin/analytics';
-import { OMR_EXPONENT } from '@/lib/commerce/money';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { ChartCard } from './_charts/chart-card';
 import { OrderStatusChart, RevenueChart, TopProductsChart } from './_charts/lazy';
 import { StatCard } from './_charts/stat-card';
 
 const DASHBOARD_RANGE_DAYS = 30;
-
-function formatOmrMinor(n: number): string {
-  return `${(n / 10 ** OMR_EXPONENT).toLocaleString('en-US', { maximumFractionDigits: 0 })} OMR`;
-}
 
 /**
  * Metric cards + a quick visual overview (3 charts) — the fuller breakdown
@@ -43,10 +38,15 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total revenue" value={summary.totalRevenueMinor} formatter={formatOmrMinor} icon={DollarSign} />
-        <StatCard label="Orders" value={summary.orderCount} icon={ShoppingCart} />
-        <StatCard label="Customers" value={summary.customerCount} icon={Users} />
-        <StatCard label="Needs fulfilment" value={summary.pendingFulfilmentCount} icon={Truck} />
+        <StatCard
+          label="Total revenue"
+          value={summary.totalRevenueMinor}
+          format="omr"
+          icon={<DollarSign className="size-5" />}
+        />
+        <StatCard label="Orders" value={summary.orderCount} icon={<ShoppingCart className="size-5" />} />
+        <StatCard label="Customers" value={summary.customerCount} icon={<Users className="size-5" />} />
+        <StatCard label="Needs fulfilment" value={summary.pendingFulfilmentCount} icon={<Truck className="size-5" />} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
