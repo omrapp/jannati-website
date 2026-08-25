@@ -99,16 +99,19 @@ export type Database = {
       admin_users: {
         Row: {
           created_at: string
+          notifications_seen_at: string
           role: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          notifications_seen_at?: string
           role?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          notifications_seen_at?: string
           role?: string
           user_id?: string
         }
@@ -156,6 +159,7 @@ export type Database = {
           description_ar: string | null
           description_en: string | null
           id: string
+          is_archived: boolean
           logo_path: string | null
           name_ar: string | null
           name_en: string
@@ -168,6 +172,7 @@ export type Database = {
           description_ar?: string | null
           description_en?: string | null
           id?: string
+          is_archived?: boolean
           logo_path?: string | null
           name_ar?: string | null
           name_en: string
@@ -180,6 +185,7 @@ export type Database = {
           description_ar?: string | null
           description_en?: string | null
           id?: string
+          is_archived?: boolean
           logo_path?: string | null
           name_ar?: string | null
           name_en?: string
@@ -283,6 +289,7 @@ export type Database = {
           description_en: string | null
           id: string
           image_path: string | null
+          is_archived: boolean
           name_ar: string
           name_en: string | null
           parent_id: string | null
@@ -296,6 +303,7 @@ export type Database = {
           description_en?: string | null
           id?: string
           image_path?: string | null
+          is_archived?: boolean
           name_ar: string
           name_en?: string | null
           parent_id?: string | null
@@ -309,6 +317,7 @@ export type Database = {
           description_en?: string | null
           id?: string
           image_path?: string | null
+          is_archived?: boolean
           name_ar?: string
           name_en?: string | null
           parent_id?: string | null
@@ -493,28 +502,40 @@ export type Database = {
       }
       customers: {
         Row: {
+          blocked_at: string | null
+          blocked_reason: string | null
           created_at: string
           default_locale: string
           full_name: string | null
           id: string
+          is_checkout_blocked: boolean
+          is_login_blocked: boolean
           marketing_opt_in: boolean
           phone: string | null
           updated_at: string
         }
         Insert: {
+          blocked_at?: string | null
+          blocked_reason?: string | null
           created_at?: string
           default_locale?: string
           full_name?: string | null
           id: string
+          is_checkout_blocked?: boolean
+          is_login_blocked?: boolean
           marketing_opt_in?: boolean
           phone?: string | null
           updated_at?: string
         }
         Update: {
+          blocked_at?: string | null
+          blocked_reason?: string | null
           created_at?: string
           default_locale?: string
           full_name?: string | null
           id?: string
+          is_checkout_blocked?: boolean
+          is_login_blocked?: boolean
           marketing_opt_in?: boolean
           phone?: string | null
           updated_at?: string
