@@ -74,10 +74,32 @@ export async function placeOrder(
   const user = await getAuthUser();
   const couponCode = String(formData.get('couponCode') ?? '').trim() || null;
 
+  // Order creation always writes through the service-role client — there is
+  // no RLS insert policy on `orders` for any role, customer or guest alike
+  // (see the migration's trust-boundary note), so the customer-scoped
+  // client from `createClient()` below was only ever needed to read the
+  // signed-in shopper's own addresses. Created up front so the
+  // checkout-block check below can reuse it too.
+  const admin = createAdminClient();
+
   let identity: CreateOrderInput['identity'];
   let shippingAddress: ShippingAddressInput;
 
   if (user) {
+    // Guests are never blocked — this check only applies to an identified
+    // customer, and only gates placing an order, not signing in or
+    // browsing (that's `is_login_blocked`, checked at login instead).
+    const { data: customerRow, error: customerError } = await admin
+      .from('customers')
+      .select('is_checkout_blocked')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (customerError) {
+      console.error('checking checkout block status failed', customerError);
+    } else if (customerRow?.is_checkout_blocked) {
+      return { status: 'error', message: t('errors.accountBlocked') };
+    }
+
     const addressId = formData.get('addressId');
     if (typeof addressId !== 'string' || !addressId) {
       return { status: 'error', message: t('errors.selectAddress') };
@@ -123,13 +145,6 @@ export async function placeOrder(
       line1: parsed.data.line1,
     };
   }
-
-  // Order creation always writes through the service-role client — there is
-  // no RLS insert policy on `orders` for any role, customer or guest alike
-  // (see the migration's trust-boundary note), so the customer-scoped
-  // client from `createClient()` above was only ever needed to read their
-  // own addresses.
-  const admin = createAdminClient();
 
   let result;
   try {

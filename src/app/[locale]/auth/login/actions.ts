@@ -40,6 +40,25 @@ export async function login(
     return { status: 'error', message: t(authErrorKey(error.code)) };
   }
 
+  // `signInWithPassword` has already set the auth session at this point, so
+  // a login-blocked account must be signed straight back out before this
+  // function returns — never redirect with that session left standing.
+  // Service-role read, same posture as every other moderation-flag check in
+  // this app (see `src/lib/admin/customers.ts`); `customers` has no RLS
+  // policy letting a signed-in user read this column reliably here anyway.
+  const admin = createAdminClient();
+  const { data: customerRow, error: customerError } = await admin
+    .from('customers')
+    .select('is_login_blocked')
+    .eq('id', data.user.id)
+    .maybeSingle();
+  if (customerError) {
+    console.error('checking account block status failed', customerError);
+  } else if (customerRow?.is_login_blocked) {
+    await supabase.auth.signOut();
+    return { status: 'error', message: t('accountBlocked') };
+  }
+
   // Fold the guest cart (if any) into the account the shopper just proved
   // ownership of. Guest carts have no RLS policy, so this needs the
   // service-role client — see the file header in `src/lib/commerce/cart.ts`.
@@ -51,7 +70,7 @@ export async function login(
   const guestToken = await getGuestSessionToken();
   if (guestToken) {
     try {
-      await mergeGuestCartIntoCustomer(createAdminClient(), data.user.id, guestToken);
+      await mergeGuestCartIntoCustomer(admin, data.user.id, guestToken);
       await clearGuestSessionCookie();
     } catch (mergeError) {
       console.error('guest cart merge failed on login', mergeError);

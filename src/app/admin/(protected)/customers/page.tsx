@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CUSTOMERS_PAGE_SIZE, listCustomers } from '@/lib/admin/customers';
@@ -32,6 +33,7 @@ export default async function AdminCustomersPage({
             <th className="py-2 font-medium">Email</th>
             <th className="py-2 font-medium">Phone</th>
             <th className="py-2 font-medium">Locale</th>
+            <th className="py-2 font-medium">Status</th>
             <th className="py-2 font-medium">Joined</th>
           </tr>
         </thead>
@@ -45,6 +47,13 @@ export default async function AdminCustomersPage({
               </td>
               <td className="py-2">{c.phone ?? '—'}</td>
               <td className="py-2">{c.default_locale}</td>
+              <td className="py-2">
+                <div className="flex gap-1">
+                  {c.is_login_blocked && <Badge variant="destructive">Login blocked</Badge>}
+                  {c.is_checkout_blocked && <Badge variant="destructive">Checkout blocked</Badge>}
+                  {!c.is_login_blocked && !c.is_checkout_blocked && <span className="text-muted-foreground">—</span>}
+                </div>
+              </td>
               <td className="py-2 text-muted-foreground">{new Date(c.created_at).toLocaleString()}</td>
             </tr>
           ))}

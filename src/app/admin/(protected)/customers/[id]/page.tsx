@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { getCustomerDetail } from '@/lib/admin/customers';
 import { minorToDecimalString } from '@/lib/commerce/money';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { CustomerModerationControls } from './customer-moderation-controls';
+import { DeleteCustomerButton } from './delete-customer-button';
 
 export default async function AdminCustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -27,6 +29,13 @@ export default async function AdminCustomerDetailPage({ params }: { params: Prom
           Marketing opt-in: {detail.customer.marketing_opt_in ? 'yes' : 'no'}
         </p>
       </div>
+
+      <CustomerModerationControls
+        customerId={detail.customer.id}
+        isLoginBlocked={detail.customer.is_login_blocked}
+        isCheckoutBlocked={detail.customer.is_checkout_blocked}
+        blockedReason={detail.customer.blocked_reason}
+      />
 
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-medium">Addresses ({detail.addresses.length})</h2>
@@ -85,6 +94,16 @@ export default async function AdminCustomerDetailPage({ params }: { params: Prom
             </tbody>
           </table>
         )}
+      </section>
+
+      <section className="flex flex-col gap-2 rounded-md border border-destructive/40 p-4">
+        <h2 className="text-lg font-medium text-destructive">Danger zone</h2>
+        <p className="text-muted-foreground text-sm">
+          Permanently deletes this customer&apos;s account and all data tied to it. This can&apos;t be undone.
+        </p>
+        <div>
+          <DeleteCustomerButton customerId={detail.customer.id} />
+        </div>
       </section>
     </div>
   );
