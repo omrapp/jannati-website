@@ -2,6 +2,8 @@
 
 import { useActionState, useState } from 'react';
 
+import { PreviewPane } from '@/components/admin/preview-pane';
+import { ProductPreviewCard, type ProductPreviewStatus } from '@/components/admin/product-preview-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,10 +42,13 @@ export function ProductForm({
   initial,
   brands,
   categories,
+  previewImage,
 }: {
   initial: ProductFormInitial | null;
   brands: { id: string; nameEn: string }[];
   categories: { id: string; nameEn: string; nameAr: string }[];
+  /** First product image (by position), for the live preview card only. */
+  previewImage?: { url: string; alt: string } | null;
 }) {
   const [state, formAction, pending] = useActionState(
     saveProduct.bind(null, initial?.id ?? null),
@@ -53,6 +58,14 @@ export function ProductForm({
     initial && initial.variants.length > 0 ? initial.variants : [emptyVariant(1)],
   );
   const [categoryIds, setCategoryIds] = useState<Set<string>>(new Set(initial?.categoryIds ?? []));
+  // Lifted to controlled state (rather than left as `defaultValue`) purely
+  // so the live preview pane can read current, unsaved field values —
+  // submission still reads these same-named form fields as before.
+  const [status, setStatus] = useState<ProductPreviewStatus>(initial?.status ?? 'draft');
+  const [nameAr, setNameAr] = useState(initial?.nameAr ?? '');
+  const [nameEn, setNameEn] = useState(initial?.nameEn ?? '');
+  const [descriptionAr, setDescriptionAr] = useState(initial?.descriptionAr ?? '');
+  const [descriptionEn, setDescriptionEn] = useState(initial?.descriptionEn ?? '');
 
   function updateVariant(index: number, patch: Partial<VariantRow>) {
     setVariants((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
@@ -105,7 +118,8 @@ export function ProductForm({
           <select
             id="status"
             name="status"
-            defaultValue={initial?.status ?? 'draft'}
+            value={status}
+            onChange={(e) => setStatus(e.target.value as ProductPreviewStatus)}
             className="border-input h-9 rounded-md border bg-transparent px-3 text-sm"
           >
             <option value="draft">Draft</option>
@@ -118,22 +132,40 @@ export function ProductForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="nameAr">Name (Arabic)</Label>
-          <Input id="nameAr" name="nameAr" defaultValue={initial?.nameAr} required dir="rtl" />
+          <Input
+            id="nameAr"
+            name="nameAr"
+            value={nameAr}
+            onChange={(e) => setNameAr(e.target.value)}
+            required
+            dir="rtl"
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="nameEn">Name (English)</Label>
-          <Input id="nameEn" name="nameEn" defaultValue={initial?.nameEn} />
+          <Input id="nameEn" name="nameEn" value={nameEn} onChange={(e) => setNameEn(e.target.value)} />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="descriptionAr">Description (Arabic)</Label>
-          <Textarea id="descriptionAr" name="descriptionAr" defaultValue={initial?.descriptionAr} dir="rtl" />
+          <Textarea
+            id="descriptionAr"
+            name="descriptionAr"
+            value={descriptionAr}
+            onChange={(e) => setDescriptionAr(e.target.value)}
+            dir="rtl"
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="descriptionEn">Description (English)</Label>
-          <Textarea id="descriptionEn" name="descriptionEn" defaultValue={initial?.descriptionEn} />
+          <Textarea
+            id="descriptionEn"
+            name="descriptionEn"
+            value={descriptionEn}
+            onChange={(e) => setDescriptionEn(e.target.value)}
+          />
         </div>
       </div>
 
@@ -251,9 +283,20 @@ export function ProductForm({
         </p>
       )}
 
-      <Button type="submit" disabled={pending} className="self-start">
-        {initial ? 'Save changes' : 'Create product'}
-      </Button>
+      <div className="flex items-center gap-3">
+        <Button type="submit" disabled={pending}>
+          {initial ? 'Save changes' : 'Create product'}
+        </Button>
+        <PreviewPane title="Product preview" description="How this roughly looks to a customer.">
+          <ProductPreviewCard
+            name={nameEn.trim() || nameAr}
+            priceMajor={variants[0]?.priceMajor ?? ''}
+            status={status}
+            description={descriptionEn.trim() || descriptionAr}
+            image={previewImage}
+          />
+        </PreviewPane>
+      </div>
     </form>
   );
 }
