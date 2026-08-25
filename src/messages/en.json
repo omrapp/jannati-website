@@ -218,6 +218,7 @@
       "rateLimited": "Too many attempts. Try again in a few minutes.",
       "samePassword": "Your new password must be different from your current one.",
       "passwordMismatch": "Passwords don't match.",
+      "accountBlocked": "This account can't sign in right now. Contact us if you think this is a mistake.",
       "generic": "Something went wrong. Please try again."
     },
     "account": {
@@ -294,6 +295,7 @@
       "outOfStock": "One or more items are no longer available in the requested quantity. Please review your cart.",
       "couponRejected": "This coupon code can't be applied.",
       "countryMismatch": "That address isn't in this store's country.",
+      "accountBlocked": "This account can't place orders right now. Contact us if you think this is a mistake.",
       "generic": "Something went wrong placing your order. Please try again."
     }
   },
