@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation';
 
 import { defaultLocale } from '@/i18n/config';
 import { checkAdminAccess } from '@/lib/admin/auth';
+import { getNotificationSummary } from '@/lib/admin/notifications';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { AdminShell } from './admin-shell';
 
 /**
@@ -25,5 +27,11 @@ export default async function AdminProtectedLayout({
   const access = await checkAdminAccess();
   if (!access.isAdmin) redirect(access.user ? `/${defaultLocale}` : '/admin/login');
 
-  return <AdminShell email={access.user.email ?? ''}>{children}</AdminShell>;
+  const notifications = await getNotificationSummary(createAdminClient(), access.user.id);
+
+  return (
+    <AdminShell email={access.user.email ?? ''} notifications={notifications}>
+      {children}
+    </AdminShell>
+  );
 }
