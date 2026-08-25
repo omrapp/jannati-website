@@ -1,15 +1,18 @@
 'use client';
 
 import { Menu } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import type { NotificationSummary } from '@/lib/admin/notifications';
 import { logout } from './actions';
+import { AdminLocaleToggle } from './admin-locale-toggle';
 import { AdminThemeToggle } from './admin-theme-toggle';
 import { NotificationBell } from './notification-bell';
 import { useSidebar } from './sidebar-context';
 
 export function AdminHeader({ email, notifications }: { email: string; notifications: NotificationSummary }) {
+  const t = useTranslations('header');
   const { toggleSidebar, toggleMobileSidebar } = useSidebar();
 
   // One button, two behaviors: below `lg` the sidebar is an off-canvas
@@ -26,7 +29,7 @@ export function AdminHeader({ email, notifications }: { email: string; notificat
 
   return (
     <header className="bg-background sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b px-4 md:px-6">
-      <Button variant="ghost" size="icon" aria-label="Toggle sidebar" onClick={handleToggle}>
+      <Button variant="ghost" size="icon" aria-label={t('toggleSidebar')} onClick={handleToggle}>
         <Menu className="size-5" />
       </Button>
 
@@ -36,6 +39,7 @@ export function AdminHeader({ email, notifications }: { email: string; notificat
           input; wire it up when that endpoint exists. */}
 
       <div className="ms-auto flex items-center gap-1">
+        <AdminLocaleToggle />
         <AdminThemeToggle />
         <NotificationBell initial={notifications} />
 
@@ -43,7 +47,7 @@ export function AdminHeader({ email, notifications }: { email: string; notificat
           <span className="text-muted-foreground hidden sm:inline">{email}</span>
           <form action={logout}>
             <Button type="submit" variant="ghost" size="sm">
-              Sign out
+              {t('signOut')}
             </Button>
           </form>
         </div>

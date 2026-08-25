@@ -1,7 +1,9 @@
 import { DollarSign, ShoppingCart, Truck, Users } from 'lucide-react';
+import { createTranslator } from 'next-intl';
 import Link from 'next/link';
 
 import { getDashboardSummary, getOrderStatusBreakdown, getRevenueSeries, getTopProducts } from '@/lib/admin/analytics';
+import { getAdminLocale, getAdminMessages } from '@/lib/admin/locale';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { ChartCard } from './_charts/chart-card';
 import { OrderStatusChart, RevenueChart, TopProductsChart } from './_charts/lazy';
@@ -15,9 +17,16 @@ const DASHBOARD_RANGE_DAYS = 30;
  * (Server Component) and passed as plain props to the lazy client charts
  * under `_charts/` — see `_charts/lazy.tsx` for why the `dynamic(...,
  * { ssr: false })` calls can't live in this file directly.
+ *
+ * Translated with the non-routing `createTranslator` (not `getTranslations`,
+ * which needs `getRequestConfig` — storefront-only), same pattern as
+ * `admin/login/page.tsx`.
  */
 export default async function AdminDashboardPage() {
   const admin = createAdminClient();
+  const locale = await getAdminLocale();
+  const messages = await getAdminMessages(locale);
+  const t = createTranslator({ locale, messages, namespace: 'dashboard' });
 
   const to = new Date();
   const from = new Date(to);
@@ -33,40 +42,44 @@ export default async function AdminDashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold">Dashboard</h1>
-        <p className="text-muted-foreground text-sm">Last {DASHBOARD_RANGE_DAYS} days, unless noted otherwise.</p>
+        <h1 className="text-xl font-semibold">{t('title')}</h1>
+        <p className="text-muted-foreground text-sm">{t('subtitle', { days: DASHBOARD_RANGE_DAYS })}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total revenue"
+          label={t('totalRevenue')}
           value={summary.totalRevenueMinor}
           format="omr"
           icon={<DollarSign className="size-5" />}
         />
-        <StatCard label="Orders" value={summary.orderCount} icon={<ShoppingCart className="size-5" />} />
-        <StatCard label="Customers" value={summary.customerCount} icon={<Users className="size-5" />} />
-        <StatCard label="Needs fulfilment" value={summary.pendingFulfilmentCount} icon={<Truck className="size-5" />} />
+        <StatCard label={t('orders')} value={summary.orderCount} icon={<ShoppingCart className="size-5" />} />
+        <StatCard label={t('customers')} value={summary.customerCount} icon={<Users className="size-5" />} />
+        <StatCard
+          label={t('needsFulfilment')}
+          value={summary.pendingFulfilmentCount}
+          icon={<Truck className="size-5" />}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <ChartCard
-          title="Revenue"
+          title={t('revenue')}
           className="lg:col-span-2"
           action={
             <Link href="/admin/analytics" className="text-primary text-xs font-medium hover:underline">
-              View analytics
+              {t('viewAnalytics')}
             </Link>
           }
         >
           <RevenueChart data={revenueSeries} />
         </ChartCard>
 
-        <ChartCard title="Orders by status">
+        <ChartCard title={t('ordersByStatus')}>
           <OrderStatusChart data={statusBreakdown} />
         </ChartCard>
 
-        <ChartCard title="Top products" className="lg:col-span-3">
+        <ChartCard title={t('topProducts')} className="lg:col-span-3">
           <TopProductsChart data={topProducts} />
         </ChartCard>
       </div>

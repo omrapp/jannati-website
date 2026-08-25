@@ -1,6 +1,7 @@
 'use client';
 
 import { Monitor, Moon, Sun } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 
 import { Button } from '@/components/ui/button';
@@ -12,18 +13,18 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 /**
- * Same visual pattern as `src/components/layout/theme-toggle.tsx`, minus
- * `useTranslations` — `/admin` has no `NextIntlClientProvider` until the
- * AR/RTL step lands (see `admin/layout.tsx`), so this uses plain English
- * strings for now; that later step localizes it in place.
+ * Same visual pattern as `src/components/layout/theme-toggle.tsx`, now
+ * localized via `useTranslations` now that `admin/layout.tsx` carries a
+ * `NextIntlClientProvider` (AR/RTL step).
  */
 export function AdminThemeToggle() {
   const { setTheme } = useTheme();
+  const t = useTranslations('theme');
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Toggle theme">
+        <Button variant="ghost" size="icon" aria-label={t('label')}>
           <Sun className="size-5 dark:hidden" />
           <Moon className="hidden size-5 dark:block" />
         </Button>
@@ -31,15 +32,15 @@ export function AdminThemeToggle() {
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setTheme('light')}>
           <Sun className="size-4" />
-          Light
+          {t('light')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('dark')}>
           <Moon className="size-4" />
-          Dark
+          {t('dark')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('system')}>
           <Monitor className="size-4" />
-          System
+          {t('system')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

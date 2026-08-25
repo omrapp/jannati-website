@@ -1,0 +1,73 @@
+{
+  "sidebar": {
+    "brand": "لوحة تحكم جنتي",
+    "navigationLabel": "قائمة التنقل",
+    "overview": "نظرة عامة",
+    "dashboard": "لوحة التحكم",
+    "analytics": "التحليلات",
+    "catalog": "الكتالوج",
+    "products": "المنتجات",
+    "brands": "العلامات التجارية",
+    "categories": "الفئات",
+    "sales": "المبيعات",
+    "orders": "الطلبات",
+    "invoices": "الفواتير",
+    "customers": "العملاء",
+    "coupons": "القسائم",
+    "countries": "الدول",
+    "content": "المحتوى",
+    "banners": "اللافتات",
+    "contentPages": "الصفحات",
+    "reviews": "التقييمات",
+    "messages": "الرسائل",
+    "system": "النظام",
+    "settings": "الإعدادات"
+  },
+  "header": {
+    "toggleSidebar": "تبديل الشريط الجانبي",
+    "signOut": "تسجيل الخروج"
+  },
+  "theme": {
+    "label": "تبديل المظهر",
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "النظام"
+  },
+  "locale": {
+    "label": "اللغة",
+    "english": "English",
+    "arabic": "العربية"
+  },
+  "notifications": {
+    "label": "الإشعارات",
+    "empty": "لا يوجد جديد.",
+    "justNow": "الآن",
+    "minutesAgo": "منذ {minutes} د",
+    "hoursAgo": "منذ {hours} س",
+    "daysAgo": "منذ {days} يوم"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "subtitle": "آخر {days} يومًا، ما لم يُذكر خلاف ذلك.",
+    "totalRevenue": "إجمالي الإيرادات",
+    "orders": "الطلبات",
+    "customers": "العملاء",
+    "needsFulfilment": "بحاجة إلى التنفيذ",
+    "revenue": "الإيرادات",
+    "ordersByStatus": "الطلبات حسب الحالة",
+    "topProducts": "أفضل المنتجات",
+    "viewAnalytics": "عرض التحليلات"
+  },
+  "login": {
+    "title": "لوحة تحكم جنتي",
+    "subtitle": "تسجيل دخول الموظفين",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "signIn": "تسجيل الدخول",
+    "errors": {
+      "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+      "rateLimited": "محاولات كثيرة جدًا. حاول مرة أخرى بعد قليل.",
+      "generic": "حدث خطأ ما. حاول مرة أخرى."
+    }
+  }
+}

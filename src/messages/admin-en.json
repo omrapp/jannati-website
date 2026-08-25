@@ -1,0 +1,73 @@
+{
+  "sidebar": {
+    "brand": "Jannati Admin",
+    "navigationLabel": "Admin navigation",
+    "overview": "Overview",
+    "dashboard": "Dashboard",
+    "analytics": "Analytics",
+    "catalog": "Catalog",
+    "products": "Products",
+    "brands": "Brands",
+    "categories": "Categories",
+    "sales": "Sales",
+    "orders": "Orders",
+    "invoices": "Invoices",
+    "customers": "Customers",
+    "coupons": "Coupons",
+    "countries": "Countries",
+    "content": "Content",
+    "banners": "Banners",
+    "contentPages": "Pages",
+    "reviews": "Reviews",
+    "messages": "Messages",
+    "system": "System",
+    "settings": "Settings"
+  },
+  "header": {
+    "toggleSidebar": "Toggle sidebar",
+    "signOut": "Sign out"
+  },
+  "theme": {
+    "label": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "locale": {
+    "label": "Language",
+    "english": "English",
+    "arabic": "العربية"
+  },
+  "notifications": {
+    "label": "Notifications",
+    "empty": "Nothing new.",
+    "justNow": "just now",
+    "minutesAgo": "{minutes}m ago",
+    "hoursAgo": "{hours}h ago",
+    "daysAgo": "{days}d ago"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Last {days} days, unless noted otherwise.",
+    "totalRevenue": "Total revenue",
+    "orders": "Orders",
+    "customers": "Customers",
+    "needsFulfilment": "Needs fulfilment",
+    "revenue": "Revenue",
+    "ordersByStatus": "Orders by status",
+    "topProducts": "Top products",
+    "viewAnalytics": "View analytics"
+  },
+  "login": {
+    "title": "Jannati Admin",
+    "subtitle": "Staff sign-in",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign in",
+    "errors": {
+      "invalidCredentials": "Incorrect email or password.",
+      "rateLimited": "Too many attempts. Try again in a moment.",
+      "generic": "Something went wrong. Try again."
+    }
+  }
+}
