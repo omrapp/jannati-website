@@ -142,6 +142,12 @@ export async function listProducts(
   return { items, total: count ?? 0 };
 }
 
+/** Single `.in('id', ids)` update, not a loop — one round trip regardless of selection size. */
+export async function bulkSetProductStatus(client: Client, ids: string[], status: ProductStatus): Promise<void> {
+  const { error } = await client.from('products').update({ status }).in('id', ids);
+  if (error) throw new Error(`bulk-updating products: ${error.message}`);
+}
+
 export async function getProductForEdit(
   client: Client,
   id: string,
