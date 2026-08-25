@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { defaultLocale } from '@/i18n/config';
 import { checkAdminAccess } from '@/lib/admin/auth';
-import { AdminNav } from './admin-nav';
+import { AdminShell } from './admin-shell';
 
 /**
  * The role gate every other `/admin` page depends on — everything under this
@@ -25,10 +25,5 @@ export default async function AdminProtectedLayout({
   const access = await checkAdminAccess();
   if (!access.isAdmin) redirect(access.user ? `/${defaultLocale}` : '/admin/login');
 
-  return (
-    <div className="mx-auto flex min-h-dvh max-w-6xl flex-col gap-6 px-4 py-8">
-      <AdminNav email={access.user.email ?? ''} />
-      <main className="flex-1">{children}</main>
-    </div>
-  );
+  return <AdminShell email={access.user.email ?? ''}>{children}</AdminShell>;
 }
