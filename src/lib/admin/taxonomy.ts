@@ -39,10 +39,21 @@ export type CategoryInput = {
   sortOrder: number;
 };
 
-export async function listBrands(client: Client): Promise<Brand[]> {
-  const { data, error } = await client.from('brands').select('*').order('sort_order').order('name_en');
+/** `includeArchived` defaults to `false` — matches the public-facing RLS
+ * posture (archived rows hidden by default), the admin list opts in via a
+ * "show archived" toggle so archived brands stay reachable for restore. */
+export async function listBrands(client: Client, options: { includeArchived?: boolean } = {}): Promise<Brand[]> {
+  let query = client.from('brands').select('*').order('sort_order').order('name_en');
+  if (!options.includeArchived) query = query.eq('is_archived', false);
+  const { data, error } = await query;
   if (error) throw new Error(`listing brands: ${error.message}`);
   return data;
+}
+
+/** Single `.in('id', ids)` update, not a loop — one round trip regardless of selection size. */
+export async function bulkSetBrandArchived(client: Client, ids: string[], isArchived: boolean): Promise<void> {
+  const { error } = await client.from('brands').update({ is_archived: isArchived }).in('id', ids);
+  if (error) throw new Error(`bulk-updating brands: ${error.message}`);
 }
 
 export async function getBrand(client: Client, id: string): Promise<Brand | null> {
@@ -80,10 +91,23 @@ export async function updateBrand(client: Client, id: string, input: BrandInput)
   }
 }
 
-export async function listCategories(client: Client): Promise<Category[]> {
-  const { data, error } = await client.from('categories').select('*').order('sort_order').order('name_ar');
+/** Same `includeArchived` opt-in as `listBrands` — default view excludes
+ * archived categories, "show archived" toggle passes `true` to restore them. */
+export async function listCategories(
+  client: Client,
+  options: { includeArchived?: boolean } = {},
+): Promise<Category[]> {
+  let query = client.from('categories').select('*').order('sort_order').order('name_ar');
+  if (!options.includeArchived) query = query.eq('is_archived', false);
+  const { data, error } = await query;
   if (error) throw new Error(`listing categories: ${error.message}`);
   return data;
+}
+
+/** Single `.in('id', ids)` update, not a loop — one round trip regardless of selection size. */
+export async function bulkSetCategoryArchived(client: Client, ids: string[], isArchived: boolean): Promise<void> {
+  const { error } = await client.from('categories').update({ is_archived: isArchived }).in('id', ids);
+  if (error) throw new Error(`bulk-updating categories: ${error.message}`);
 }
 
 export async function getCategory(client: Client, id: string): Promise<Category | null> {
