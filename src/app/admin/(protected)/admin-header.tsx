@@ -3,11 +3,13 @@
 import { Menu } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import type { NotificationSummary } from '@/lib/admin/notifications';
 import { logout } from './actions';
 import { AdminThemeToggle } from './admin-theme-toggle';
+import { NotificationBell } from './notification-bell';
 import { useSidebar } from './sidebar-context';
 
-export function AdminHeader({ email }: { email: string }) {
+export function AdminHeader({ email, notifications }: { email: string; notifications: NotificationSummary }) {
   const { toggleSidebar, toggleMobileSidebar } = useSidebar();
 
   // One button, two behaviors: below `lg` the sidebar is an off-canvas
@@ -35,9 +37,7 @@ export function AdminHeader({ email }: { email: string }) {
 
       <div className="ms-auto flex items-center gap-1">
         <AdminThemeToggle />
-
-        {/* NotificationBell — later step, depends on `src/lib/admin/notifications.ts`
-            and the `admin_users.notifications_seen_at` migration column. */}
+        <NotificationBell initial={notifications} />
 
         <div className="ms-2 flex items-center gap-3 border-s ps-3 text-sm">
           <span className="text-muted-foreground hidden sm:inline">{email}</span>

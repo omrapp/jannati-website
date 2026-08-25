@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 
+import type { NotificationSummary } from '@/lib/admin/notifications';
 import { cn } from '@/lib/utils';
 import { AdminHeader } from './admin-header';
 import { AdminSidebar } from './admin-sidebar';
@@ -14,7 +15,15 @@ import { SidebarProvider, useSidebar } from './sidebar-context';
  * (`ms-`/margin-inline-start) rather than `ml-` so this flips correctly once
  * the AR/RTL step sets `dir="rtl"`.
  */
-function AdminShellBody({ email, children }: { email: string; children: ReactNode }) {
+function AdminShellBody({
+  email,
+  notifications,
+  children,
+}: {
+  email: string;
+  notifications: NotificationSummary;
+  children: ReactNode;
+}) {
   const { isExpanded, isHovered } = useSidebar();
 
   return (
@@ -26,17 +35,27 @@ function AdminShellBody({ email, children }: { email: string; children: ReactNod
           isExpanded || isHovered ? 'lg:ms-[290px]' : 'lg:ms-[90px]',
         )}
       >
-        <AdminHeader email={email} />
+        <AdminHeader email={email} notifications={notifications} />
         <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>
     </div>
   );
 }
 
-export function AdminShell({ email, children }: { email: string; children: ReactNode }) {
+export function AdminShell({
+  email,
+  notifications,
+  children,
+}: {
+  email: string;
+  notifications: NotificationSummary;
+  children: ReactNode;
+}) {
   return (
     <SidebarProvider>
-      <AdminShellBody email={email}>{children}</AdminShellBody>
+      <AdminShellBody email={email} notifications={notifications}>
+        {children}
+      </AdminShellBody>
     </SidebarProvider>
   );
 }

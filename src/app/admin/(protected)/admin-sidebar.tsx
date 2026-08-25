@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  BarChart3,
   FileText,
   Globe,
   Image as ImageIcon,
@@ -8,6 +9,7 @@ import {
   Layers,
   Mail,
   Package,
+  Receipt,
   Settings,
   ShoppingCart,
   Star,
@@ -28,13 +30,14 @@ type NavGroup = { label: string; items: NavItem[] };
 
 // Grouped the way TailAdmin's reference sidebar groups its menu, but every
 // item here links straight to an existing route — no submenus, since none
-// of the current admin routes nest under each other. `/admin/analytics` and
-// `/admin/invoices` are a later step's addition; leaving them out keeps
-// every link live.
+// of the current admin routes nest under each other.
 const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Overview',
-    items: [{ href: '/admin', label: 'Dashboard', icon: LayoutDashboard }],
+    items: [
+      { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+    ],
   },
   {
     label: 'Catalog',
@@ -48,6 +51,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sales',
     items: [
       { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
+      { href: '/admin/invoices', label: 'Invoices', icon: Receipt },
       { href: '/admin/customers', label: 'Customers', icon: Users },
       { href: '/admin/coupons', label: 'Coupons', icon: Ticket },
       { href: '/admin/countries', label: 'Countries', icon: Globe },
