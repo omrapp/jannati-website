@@ -1,7 +1,9 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 
+import { ContentPagePreview } from '@/components/admin/content-page-preview';
+import { PreviewPane } from '@/components/admin/preview-pane';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -24,6 +26,14 @@ export function ContentPageForm({ initial }: { initial: ContentPageFormInitial |
     saveContentPage.bind(null, initial?.id ?? null),
     idleContentPageFormState,
   );
+  // Lifted to controlled state (rather than left as `defaultValue`) purely
+  // so the live preview pane can read current, unsaved field values —
+  // submission still reads these same-named form fields as before.
+  const [titleEn, setTitleEn] = useState(initial?.titleEn ?? '');
+  const [titleAr, setTitleAr] = useState(initial?.titleAr ?? '');
+  const [bodyEn, setBodyEn] = useState(initial?.bodyEn ?? '');
+  const [bodyAr, setBodyAr] = useState(initial?.bodyAr ?? '');
+  const [heroImageUrl, setHeroImageUrl] = useState(initial?.heroImageUrl ?? '');
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
@@ -41,18 +51,31 @@ export function ContentPageForm({ initial }: { initial: ContentPageFormInitial |
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="titleEn">Title (en)</Label>
-          <Input id="titleEn" name="titleEn" defaultValue={initial?.titleEn} />
+          <Input id="titleEn" name="titleEn" value={titleEn} onChange={(e) => setTitleEn(e.target.value)} />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="titleAr">Title (ar)</Label>
-          <Input id="titleAr" name="titleAr" dir="rtl" defaultValue={initial?.titleAr} required />
+          <Input
+            id="titleAr"
+            name="titleAr"
+            dir="rtl"
+            value={titleAr}
+            onChange={(e) => setTitleAr(e.target.value)}
+            required
+          />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="bodyEn">Body (en)</Label>
-          <Textarea id="bodyEn" name="bodyEn" rows={10} defaultValue={initial?.bodyEn} />
+          <Textarea
+            id="bodyEn"
+            name="bodyEn"
+            rows={10}
+            value={bodyEn}
+            onChange={(e) => setBodyEn(e.target.value)}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="bodyAr">Body (ar)</Label>
@@ -61,7 +84,8 @@ export function ContentPageForm({ initial }: { initial: ContentPageFormInitial |
             name="bodyAr"
             dir="rtl"
             rows={10}
-            defaultValue={initial?.bodyAr}
+            value={bodyAr}
+            onChange={(e) => setBodyAr(e.target.value)}
             required
           />
         </div>
@@ -74,7 +98,8 @@ export function ContentPageForm({ initial }: { initial: ContentPageFormInitial |
           name="heroImageUrl"
           type="url"
           placeholder="https://images.pexels.com/..."
-          defaultValue={initial?.heroImageUrl}
+          value={heroImageUrl}
+          onChange={(e) => setHeroImageUrl(e.target.value)}
         />
         <span className="text-muted-foreground text-xs">
           Shown as a banner at the top of the page. Leave blank for no hero image.
@@ -88,10 +113,17 @@ export function ContentPageForm({ initial }: { initial: ContentPageFormInitial |
 
       {state.status === 'error' && <p className="text-destructive text-sm">{state.message}</p>}
 
-      <div>
+      <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}>
           {pending ? 'Saving…' : 'Save page'}
         </Button>
+        <PreviewPane title="Page preview" description="How this roughly looks to a customer.">
+          <ContentPagePreview
+            title={titleEn.trim() || titleAr}
+            body={bodyEn.trim() || bodyAr}
+            heroImageUrl={heroImageUrl}
+          />
+        </PreviewPane>
       </div>
     </form>
   );

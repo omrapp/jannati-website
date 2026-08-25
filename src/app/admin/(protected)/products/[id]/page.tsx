@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { listProductImages } from '@/lib/admin/images';
 import { getProductForEdit } from '@/lib/admin/products';
 import { minorToDecimalString, OMR_EXPONENT } from '@/lib/commerce/money';
+import { publicImageUrl } from '@/lib/catalog/mappers';
 import { createClient } from '@/lib/supabase/server';
 import { ProductForm } from '../product-form';
 import { ProductImages } from './product-images';
@@ -20,6 +21,14 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   if (!result) notFound();
 
   const { product, variants, categoryIds } = result;
+
+  // Lowest `position` is the storefront-first image (same ordering
+  // `ProductImages`/`ProductCard` use) — passed through for the live
+  // preview card only, not part of the form's own submitted state.
+  const [firstImage] = [...images].sort((a, b) => a.position - b.position);
+  const previewImage = firstImage
+    ? { url: publicImageUrl(firstImage.storage_path), alt: firstImage.alt_en ?? firstImage.alt_ar ?? '' }
+    : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -48,6 +57,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         }}
         brands={(brands ?? []).map((b) => ({ id: b.id, nameEn: b.name_en }))}
         categories={(categories ?? []).map((c) => ({ id: c.id, nameEn: c.name_en ?? '', nameAr: c.name_ar }))}
+        previewImage={previewImage}
       />
       <ProductImages
         productId={product.id}
