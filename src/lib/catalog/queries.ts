@@ -417,7 +417,7 @@ export async function listCategories(locale: Locale): Promise<CategorySummary[]>
 
   const { data, error } = await supabase
     .from('categories')
-    .select('slug, name_ar, name_en')
+    .select('slug, name_ar, name_en, image_path')
     .order('sort_order', { ascending: true })
     .order('name_ar', { ascending: true });
 

@@ -25,7 +25,10 @@ export type CountryRow = Pick<
 
 export type BrandJoin = Pick<Tables['brands']['Row'], 'slug' | 'name_en' | 'name_ar' | 'logo_path'>;
 
-export type CategoryJoin = Pick<Tables['categories']['Row'], 'slug' | 'name_ar' | 'name_en'>;
+export type CategoryJoin = Pick<
+  Tables['categories']['Row'],
+  'slug' | 'name_ar' | 'name_en' | 'image_path'
+>;
 
 type VariantJoin = Pick<
   Tables['product_variants']['Row'],
@@ -90,7 +93,7 @@ export type ProductDetail = ProductSummary & {
 
 export type BrandSummary = { slug: string; name: string; logoUrl: string | null };
 
-export type CategorySummary = { slug: string; name: string };
+export type CategorySummary = { slug: string; name: string; imageUrl: string | null };
 
 /** Storage is a public bucket, so an object URL can be built without a request. */
 export function publicImageUrl(path: string): string {
@@ -209,5 +212,6 @@ export function toCategorySummary(category: CategoryJoin, locale: Locale): Categ
     slug: category.slug,
     // name_ar is not nullable on categories.
     name: text(category.name_ar, category.name_en, locale) as string,
+    imageUrl: category.image_path ? publicImageUrl(category.image_path) : null,
   };
 }

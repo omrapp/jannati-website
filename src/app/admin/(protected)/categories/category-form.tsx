@@ -1,11 +1,13 @@
 'use client';
 
+import Image from 'next/image';
 import { useActionState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { publicImageUrl } from '@/lib/catalog/mappers';
 import { idleCategoryFormState, saveCategory } from './actions';
 
 export type CategoryFormInitial = {
@@ -17,6 +19,7 @@ export type CategoryFormInitial = {
   descriptionAr: string;
   descriptionEn: string;
   sortOrder: number;
+  imagePath: string | null;
 };
 
 export function CategoryForm({
@@ -37,6 +40,21 @@ export function CategoryForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
+      {initial?.imagePath && (
+        <Image
+          src={publicImageUrl(initial.imagePath)}
+          alt=""
+          width={160}
+          height={160}
+          className="h-40 w-40 rounded-md object-cover"
+        />
+      )}
+
+      <div className="flex flex-col gap-1.5 max-w-xs">
+        <Label htmlFor="image">{initial?.imagePath ? 'Replace image (optional)' : 'Image (optional)'}</Label>
+        <input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp" />
+      </div>
+
       <div className="grid grid-cols-3 gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="slug">Slug</Label>

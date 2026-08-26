@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "createdAt": "2026-08-26T07:25:09.494Z",
+        "reason": "Design brief (.design/storefront-redesign/DESIGN_BRIEF.md) locks Fenty/Rare-Beauty-style bold tactile feedback for add-to-cart/variant-select micro-interactions; --easing-spring is a reserved token used only for those confirmations, not a general default"
+      }
+    ]
+  }
+}

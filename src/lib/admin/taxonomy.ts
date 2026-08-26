@@ -128,8 +128,20 @@ function toCategoryRow(input: CategoryInput) {
   };
 }
 
-export async function createCategory(client: Client, input: CategoryInput): Promise<string> {
-  const { data, error } = await client.from('categories').insert(toCategoryRow(input)).select('id').single();
+/** `imagePath` is a separate, optional argument rather than a `CategoryInput`
+ * field — it comes from `uploadCategoryImage` (a Storage write, needs the
+ * service-role client), while everything else here still goes through the
+ * caller's cookie-bound `client` and the existing RLS write policy. */
+export async function createCategory(
+  client: Client,
+  input: CategoryInput,
+  imagePath: string | null = null,
+): Promise<string> {
+  const { data, error } = await client
+    .from('categories')
+    .insert({ ...toCategoryRow(input), image_path: imagePath })
+    .select('id')
+    .single();
   if (error) {
     if (error.code === UNIQUE_VIOLATION) throw new Error(`Slug "${input.slug}" is already in use.`);
     throw new Error(`creating category: ${error.message}`);
@@ -160,15 +172,59 @@ async function wouldCreateCycle(client: Client, id: string, proposedParentId: st
   return false;
 }
 
-export async function updateCategory(client: Client, id: string, input: CategoryInput): Promise<void> {
+/** `imagePath` left `undefined` leaves the existing image untouched — a
+ * staff member editing the name shouldn't have to re-upload the photo. */
+export async function updateCategory(
+  client: Client,
+  id: string,
+  input: CategoryInput,
+  imagePath?: string,
+): Promise<void> {
   if (input.parentId === id) throw new Error('A category cannot be its own parent.');
   if (input.parentId && (await wouldCreateCycle(client, id, input.parentId))) {
     throw new Error('That parent is a descendant of this category — would create a cycle.');
   }
 
-  const { error } = await client.from('categories').update(toCategoryRow(input)).eq('id', id);
+  const row = { ...toCategoryRow(input), ...(imagePath !== undefined ? { image_path: imagePath } : {}) };
+  const { error } = await client.from('categories').update(row).eq('id', id);
   if (error) {
     if (error.code === UNIQUE_VIOLATION) throw new Error(`Slug "${input.slug}" is already in use.`);
     throw new Error(`updating category: ${error.message}`);
   }
+}
+
+const CATEGORY_IMAGE_BUCKET = 'product-images';
+
+function sanitizeCategoryImageFilename(name: string): string {
+  const dot = name.lastIndexOf('.');
+  const extension = dot >= 0 ? name.slice(dot).toLowerCase() : '';
+  const base = (dot >= 0 ? name.slice(0, dot) : name)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  return `${base || 'category'}${extension}`;
+}
+
+/**
+ * Category photo, stored under `categories/` in the existing `product-images`
+ * bucket rather than a new bucket — one less migration, and the bucket is
+ * already public-read with a service-role-only write policy, exactly what a
+ * category tile image needs. `admin` must be the service-role client
+ * (`createAdminClient()`); the bucket has no client-writable Storage policy,
+ * same posture as `images.ts`/`banners.ts`.
+ */
+export async function uploadCategoryImage(admin: Client, file: File): Promise<string> {
+  const path = `categories/${crypto.randomUUID()}-${sanitizeCategoryImageFilename(file.name)}`;
+  const { error } = await admin.storage
+    .from(CATEGORY_IMAGE_BUCKET)
+    .upload(path, file, { contentType: file.type || 'application/octet-stream' });
+  if (error) throw new Error(`uploading category image: ${error.message}`);
+  return path;
+}
+
+/** Best-effort cleanup, called only after the row committing to the new (or
+ * no) image has already succeeded — same ordering as `updateBanner`. */
+export async function deleteCategoryImage(admin: Client, path: string): Promise<void> {
+  await admin.storage.from(CATEGORY_IMAGE_BUCKET).remove([path]);
 }
