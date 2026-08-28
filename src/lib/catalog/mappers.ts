@@ -64,6 +64,10 @@ export type ProductSummary = {
   name: string;
   brand: { slug: string; name: string } | null;
   brandName: string | null;
+  /** The lead variant's id — same one the listing prices with. `null` when a
+   * product has no variants at all, which quick-add treats as un-addable
+   * (it has nothing to cart). */
+  variantId: string | null;
   /** OMR baisa, so a caller can re-price without another query. */
   basePriceMinor: number | null;
   /** Minor units of the shopper's currency. */
@@ -173,6 +177,7 @@ export function toProductSummary(
     name: text(product.name_ar, product.name_en, locale) as string,
     brand: brand ? { slug: brand.slug, name: brandName as string } : null,
     brandName,
+    variantId: lead?.id ?? null,
     basePriceMinor: lead ? lead.base_price_minor : null,
     priceMinor: lead ? convertFromOmr(lead.base_price_minor, pricing) : null,
     price: lead
