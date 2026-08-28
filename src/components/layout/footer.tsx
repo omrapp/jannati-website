@@ -23,10 +23,10 @@ export async function Footer() {
 
   return (
     <footer className="bg-muted/40 mt-16 border-t">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="max-w-page mx-auto grid gap-10 px-4 py-12 sm:grid-cols-2 sm:py-16 lg:grid-cols-4">
         <div className="space-y-4">
           <Logo />
-          <p className="text-muted-foreground text-sm">{t('brand.tagline')}</p>
+          <p className="text-muted-foreground text-sm leading-relaxed">{t('brand.tagline')}</p>
           {(settings.phone || settings.email) && (
             <ul className="text-muted-foreground space-y-1.5 text-sm">
               {settings.phone && (
@@ -68,7 +68,7 @@ export async function Footer() {
       </div>
 
       <div className="border-t">
-        <div className="text-muted-foreground mx-auto flex max-w-7xl flex-col gap-3 px-4 py-5 text-xs sm:flex-row sm:items-center sm:justify-between">
+        <div className="max-w-page text-muted-foreground mx-auto flex flex-col gap-3 px-4 py-5 text-xs sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} {t('brand.name')}. {t('footer.rights')}
           </p>

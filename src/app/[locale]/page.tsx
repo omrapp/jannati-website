@@ -8,7 +8,6 @@ import { HeroCarousel, type HeroSlide } from '@/components/home/hero-carousel';
 import { NewsletterStrip } from '@/components/home/newsletter-strip';
 import { ProductRail } from '@/components/home/product-rail';
 import { Button } from '@/components/ui/button';
-import { Reveal } from '@/components/ui/reveal';
 import { isLocale, parseLocale, type Locale } from '@/i18n/config';
 import { Link } from '@/i18n/navigation';
 import { listActiveBanners, publicBannerUrl } from '@/lib/admin/banners';
@@ -89,54 +88,42 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </section>
       )}
 
-      <Reveal>
-        <ProductRail
-          heading={t('newArrivals')}
-          viewAllHref="/products?sort=new"
-          viewAllLabel={t('viewAll')}
-          products={newArrivals.items}
-        />
-      </Reveal>
+      <ProductRail
+        heading={t('newArrivals')}
+        viewAllHref="/products?sort=new"
+        viewAllLabel={t('viewAll')}
+        products={newArrivals.items}
+      />
 
-      <Reveal>
-        <CategoryGrid heading={t('shopByCategory')} categories={categories} />
-      </Reveal>
+      <CategoryGrid heading={t('shopByCategory')} categories={categories} />
 
-      <Reveal>
-        <ProductRail
-          heading={t('recommended')}
-          viewAllHref="/products"
-          viewAllLabel={t('viewAll')}
-          products={recommended.items}
-        />
-      </Reveal>
+      <ProductRail
+        heading={t('recommended')}
+        viewAllHref="/products"
+        viewAllLabel={t('viewAll')}
+        products={recommended.items}
+      />
 
-      <Reveal>
-        <ProductRail
-          heading={t('bestSellers')}
-          viewAllHref="/products?sort=best-selling"
-          viewAllLabel={t('viewAll')}
-          products={bestSellers.items}
-        />
-      </Reveal>
+      <ProductRail
+        heading={t('bestSellers')}
+        viewAllHref="/products?sort=best-selling"
+        viewAllLabel={t('viewAll')}
+        products={bestSellers.items}
+      />
 
-      <Reveal>
-        <BrandStrip
-          heading={t('shopByBrand')}
-          viewAllHref="/brands"
-          viewAllLabel={t('viewAll')}
-          brands={brandsWithLogos}
-        />
-      </Reveal>
+      <BrandStrip
+        heading={t('shopByBrand')}
+        viewAllHref="/brands"
+        viewAllLabel={t('viewAll')}
+        brands={brandsWithLogos}
+      />
 
-      <Reveal>
-        <NewsletterStrip
-          title={t('newsletterTitle')}
-          subtitle={t('newsletterSubtitle')}
-          placeholder={t('newsletterPlaceholder')}
-          comingSoon={t('newsletterComingSoon')}
-        />
-      </Reveal>
+      <NewsletterStrip
+        title={t('newsletterTitle')}
+        subtitle={t('newsletterSubtitle')}
+        placeholder={t('newsletterPlaceholder')}
+        comingSoon={t('newsletterComingSoon')}
+      />
     </div>
   );
 }

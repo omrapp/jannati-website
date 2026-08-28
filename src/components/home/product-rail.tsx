@@ -1,13 +1,20 @@
+'use client';
+
+import { motion, useReducedMotion, type Variants } from 'motion/react';
+
 import { ProductCard } from '@/components/commerce/product-card';
 import { Link } from '@/i18n/navigation';
 import type { ProductSummary } from '@/lib/catalog/mappers';
+import { DURATION, EASING, STAGGER_CHILD } from '@/lib/motion-tokens';
 
 /**
  * One home-page product section (New Arrivals / Best Sellers / Recommended).
- * Reuses `ProductCard` from the `/products` grid rather than a new card
- * component — same image/price/badge shape shoppers already recognize.
- * Renders nothing when empty, per the home rebuild's empty-state rule —
- * an empty heading with no products under it would look broken, not "empty".
+ * Reuses `ProductCard` and the same stagger-reveal pattern as `ProductGrid`
+ * on the `/products` grid — same image/price/badge shape and the same
+ * motion language, since a shopper shouldn't feel two different components.
+ * Renders nothing when empty, per the home rebuild's empty-state rule — an
+ * empty section with no products under a heading would look broken, not
+ * "empty".
  */
 export function ProductRail({
   heading,
@@ -20,21 +27,44 @@ export function ProductRail({
   viewAllLabel: string;
   products: ProductSummary[];
 }) {
+  const reduceMotion = useReducedMotion();
+
   if (products.length === 0) return null;
 
+  const container: Variants = {
+    hidden: {},
+    visible: { transition: { staggerChildren: reduceMotion ? 0 : STAGGER_CHILD } },
+  };
+  const item: Variants = {
+    hidden: reduceMotion ? { opacity: 1 } : { opacity: 0, y: 24 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: reduceMotion ? 0 : DURATION.normal, ease: EASING.out },
+    },
+  };
+
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-col gap-4 sm:gap-6">
       <div className="flex items-baseline justify-between">
-        <h2 className="font-display text-xl font-semibold sm:text-2xl">{heading}</h2>
+        <h2 className="font-display text-2xl font-semibold sm:text-3xl">{heading}</h2>
         <Link href={viewAllHref} className="text-primary text-sm font-medium hover:underline">
           {viewAllLabel}
         </Link>
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '0px 0px -80px 0px' }}
+        variants={container}
+        className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4"
+      >
         {products.map((product) => (
-          <ProductCard key={product.handle} product={product} />
+          <motion.div key={product.handle} variants={item}>
+            <ProductCard product={product} />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </section>
   );
 }
