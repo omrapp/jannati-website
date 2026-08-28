@@ -36,6 +36,11 @@
   // `Account.tsx` at repo root is reference material supplied for the account-page
   // rework (a Vite/react-router component, not part of this Next.js app) — it
   // doesn't compile against this project's toolchain and isn't imported anywhere,
-  // so it's excluded here rather than deleted.
-  "exclude": ["node_modules", "Account.tsx"]
+  // so it's excluded here rather than deleted. `free-nextjs-admin-dashboard-main/`
+  // is the same situation: a gitignored reference admin template, not part of
+  // this app, never imported — its own dependencies aren't even installed.
+  // Without this exclude it still matches `**/*.ts`/`**/*.tsx` above, so both
+  // `tsc -p .` and `next build`'s typecheck step surface its ~135 unrelated
+  // errors, sometimes inconsistently depending on incremental-build caching.
+  "exclude": ["node_modules", "Account.tsx", "free-nextjs-admin-dashboard-main"]
 }
