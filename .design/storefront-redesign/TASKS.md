@@ -41,9 +41,9 @@ Philosophy: editorial-clean beauty retail (Glossier/Typology whitespace, Fenty/R
 
 ## Follow-up Requests (2026-08-28)
 
-- [ ] **Remove Category section from Home**: the mega menu now covers category discovery — drop the `CategoryGrid` section from `[locale]/page.tsx`. _Modifies: src/app/[locale]/page.tsx. Leaves category-grid.tsx in place, unused._
-- [ ] **Arabic locale sync**: audit `src/messages/en.json` vs `ar.json` for any keys added during this redesign that are missing an Arabic translation.
-- [ ] **FAQ / shipping / returns pages, Q&A redesign**: restyle as an accordion-style Q&A layout, larger/more readable type, referencing sooqwoow.com's pattern. _Modifies: whichever content pages back these three routes._
+- [x] **Remove Category section from Home**: the mega menu now covers category discovery — drop the `CategoryGrid` section from `[locale]/page.tsx`. _Modifies: src/app/[locale]/page.tsx. Leaves category-grid.tsx in place, unused. Done, commit 685e351._
+- [x] **Arabic locale sync**: audit `src/messages/en.json` vs `ar.json` for any keys added during this redesign that are missing an Arabic translation. _Audited: 293/293 keys match, no gaps — every string added this session was added to both files together._
+- [x] **FAQ / shipping / returns pages, Q&A redesign**: restyle as an accordion-style Q&A layout, larger/more readable type, referencing sooqwoow.com's pattern. _Modifies: whichever content pages back these three routes. Done, commit e904fbd — new Accordion primitive + parseQaPairs helper, tested._
 
 ## Review
 
