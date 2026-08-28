@@ -99,13 +99,11 @@ We ship to Oman, Saudi Arabia, United Arab Emirates, Kuwait, Qatar, Bahrain, and
 Shipping costs
 
 Costs vary by the total weight and volume of your order:
-
 Oman — 1-4 business days, 2.000 OMR, via Dalilee.
 United Arab Emirates — 4-7 business days, 3.500 OMR for the first 5kg, via Dalilee.
 Saudi Arabia, Kuwait, Qatar, Bahrain — 4-7 business days, 7.100 OMR for the first 1.5kg, via Aramex.
 United States — 4-7 business days, 12.000 OMR for the first 1.5kg, via DHL Express.
 United Kingdom and other countries — 4-7 business days, 11.030 OMR for the first 2kg, via DHL Express.
-
 Delivery times are estimates; minor delays can happen, especially in remote areas — check your tracking details for the latest status. Customs fees or taxes may apply on delivery outside the GCC, as set by your country's regulations.`,
     body_ar: `التغطية
 
@@ -114,13 +112,11 @@ Delivery times are estimates; minor delays can happen, especially in remote area
 رسوم الشحن
 
 تختلف تكلفة الشحن حسب الوزن الإجمالي وحجم الطلب:
-
 سلطنة عُمان — 1 إلى 4 أيام عمل، 2.000 ر.ع، عبر Dalilee.
 الإمارات — 4 إلى 7 أيام عمل، 3.500 ر.ع لأول 5 كيلو، عبر Dalilee.
 السعودية، الكويت، قطر، البحرين — 4 إلى 7 أيام عمل، 7.100 ر.ع لأول 1.5 كيلو، عبر Aramex.
 الولايات المتحدة الأمريكية — 4 إلى 7 أيام عمل، 12.000 ر.ع لأول 1.5 كيلو، عبر DHL Express.
 المملكة المتحدة وباقي الدول — 4 إلى 7 أيام عمل، 11.030 ر.ع لأول 2 كيلو، عبر DHL Express.
-
 مدة الشحن تقديرية وقد يحدث بعض التأخير الطفيف خاصة في المناطق النائية — يرجى مراجعة معلومات التتبع لمعرفة آخر حالة لشحنتك. قد تُفرض رسوم جمركية أو ضريبة عند التسليم خارج دول مجلس التعاون الخليجي حسب قوانين بلدك.`,
   },
   {

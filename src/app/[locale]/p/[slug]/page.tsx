@@ -2,9 +2,11 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getPublishedContentPage } from '@/lib/admin/content-pages';
 import { getSiteSettings } from '@/lib/admin/site-settings';
 import { isLocale, parseLocale, type Locale } from '@/i18n/config';
+import { parseQaPairs, QA_SLUGS } from '@/lib/content/qa';
 import { localeAlternates } from '@/lib/seo/alternates';
 import { createClient } from '@/lib/supabase/server';
 
@@ -103,11 +105,26 @@ export default async function ContentPage({
         </div>
       )}
 
-      <article className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-12">
-        <div className="text-muted-foreground text-base leading-relaxed whitespace-pre-wrap">
-          {resolvedBody}
-        </div>
-      </article>
+      {QA_SLUGS.has(slug) ? (
+        <article className="mx-auto flex w-full max-w-3xl flex-col px-4 py-12">
+          <Accordion type="multiple" className="flex flex-col">
+            {parseQaPairs(resolvedBody).map((pair, index) => (
+              // Body content, not a stable id — the question text itself is
+              // the only thing that identifies a pair here.
+              <AccordionItem key={index} value={String(index)}>
+                <AccordionTrigger>{pair.question}</AccordionTrigger>
+                <AccordionContent className="whitespace-pre-wrap">{pair.answer}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </article>
+      ) : (
+        <article className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-12">
+          <div className="text-muted-foreground text-base leading-relaxed whitespace-pre-wrap">
+            {resolvedBody}
+          </div>
+        </article>
+      )}
     </div>
   );
 }
