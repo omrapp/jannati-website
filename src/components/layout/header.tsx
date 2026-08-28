@@ -5,8 +5,13 @@ import { CartDrawer } from '@/components/commerce/cart-drawer';
 import { CountrySwitcher } from '@/components/layout/country-switcher';
 import { LocaleSwitcher } from '@/components/layout/locale-switcher';
 import { Logo } from '@/components/layout/logo';
+import { MegaMenu } from '@/components/layout/mega-menu';
 import { MobileNav } from '@/components/layout/mobile-nav';
-import { primaryNav } from '@/components/layout/nav-links';
+import {
+  buildCategoryTree,
+  fixedUtilityNav,
+  partitionTopLevelCategories,
+} from '@/components/layout/nav-links';
 import { SocialIcons } from '@/components/layout/social-icons';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { Button } from '@/components/ui/button';
@@ -15,7 +20,7 @@ import type { Locale } from '@/i18n/config';
 import { Link } from '@/i18n/navigation';
 import { getSiteSettings } from '@/lib/admin/site-settings';
 import { toCountryPricing } from '@/lib/catalog/mappers';
-import { getCountry, getEnabledCountries } from '@/lib/catalog/queries';
+import { getCountry, getEnabledCountries, listCategories } from '@/lib/catalog/queries';
 import { getCartWithTotals } from '@/lib/commerce/cart';
 import { getCartContext } from '@/lib/commerce/cart-identity';
 import { formatMoney } from '@/lib/commerce/money';
@@ -36,6 +41,11 @@ export async function Header() {
   const cart = context ? await getCartWithTotals(context.client, context.identity, locale) : null;
   const enabledCountries = await getEnabledCountries();
   const settings = await getSiteSettings(await createClient());
+  const categoryTree = buildCategoryTree(await listCategories(locale));
+  const { visible: visibleCategories, overflow: overflowCategories } = partitionTopLevelCategories(
+    categoryTree,
+    fixedUtilityNav.length,
+  );
 
   let cartTotals: {
     subtotal: string;
@@ -57,9 +67,9 @@ export async function Header() {
   }
 
   return (
-    <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-50 border-b backdrop-blur">
+    <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-50 shadow-sm backdrop-blur">
       <div className="bg-primary text-primary-foreground hidden items-center justify-between py-1.5 text-xs md:flex">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4">
+        <div className="max-w-page mx-auto flex w-full items-center justify-between px-4">
           <span>{t('brand.tagline')}</span>
           <div className="flex items-center gap-4">
             {settings.phone && (
@@ -68,7 +78,10 @@ export async function Header() {
               </a>
             )}
             {settings.email && (
-              <a href={`mailto:${settings.email}`} className="flex items-center gap-1 hover:underline">
+              <a
+                href={`mailto:${settings.email}`}
+                className="flex items-center gap-1 hover:underline"
+              >
                 <Mail className="size-3.5" /> {settings.email}
               </a>
             )}
@@ -82,8 +95,9 @@ export async function Header() {
         </div>
       </div>
 
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
-        <MobileNav enabledCountries={enabledCountries} />
+      <div className="max-w-page mx-auto flex h-16 items-center gap-3 px-4">
+        {/* Full tree, unsplit — the desktop bar's 7-slot cap doesn't apply to a scrollable drawer. */}
+        <MobileNav enabledCountries={enabledCountries} categories={categoryTree} />
         <Logo />
 
         <form action="/search" className="relative mx-auto hidden max-w-md flex-1 md:block">
@@ -117,17 +131,11 @@ export async function Header() {
         </div>
       </div>
 
-      <nav className="hidden border-t md:block" aria-label={t('nav.products')}>
-        <ul className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-2.5 text-sm">
-          {primaryNav.map((item) => (
-            <li key={item.href}>
-              <Link href={item.href} className="hover:text-primary transition-colors">
-                {t(item.labelKey)}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <MegaMenu
+        categories={visibleCategories}
+        overflowCategories={overflowCategories}
+        fixedLinks={fixedUtilityNav}
+      />
     </header>
   );
 }

@@ -75,7 +75,9 @@
     "contact": "Contact Us",
     "faq": "FAQ",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "more": "More",
+    "shopAll": "Shop all {name}"
   },
   "common": {
     "search": "Search for a product or brand",

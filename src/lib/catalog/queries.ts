@@ -171,13 +171,19 @@ function resolvePriceOmrBounds(
   maxPriceMajor: string | undefined,
 ): { minPriceOmr?: number; maxPriceOmr?: number } {
   const minPriceMinor =
-    minPriceMajor !== undefined ? majorDecimalToMinor(minPriceMajor, pricing.currencyExponent) : null;
+    minPriceMajor !== undefined
+      ? majorDecimalToMinor(minPriceMajor, pricing.currencyExponent)
+      : null;
   const maxPriceMinor =
-    maxPriceMajor !== undefined ? majorDecimalToMinor(maxPriceMajor, pricing.currencyExponent) : null;
+    maxPriceMajor !== undefined
+      ? majorDecimalToMinor(maxPriceMajor, pricing.currencyExponent)
+      : null;
 
   return {
-    minPriceOmr: minPriceMinor !== null ? convertToOmrBound(minPriceMinor, pricing, 'floor') : undefined,
-    maxPriceOmr: maxPriceMinor !== null ? convertToOmrBound(maxPriceMinor, pricing, 'ceil') : undefined,
+    minPriceOmr:
+      minPriceMinor !== null ? convertToOmrBound(minPriceMinor, pricing, 'floor') : undefined,
+    maxPriceOmr:
+      maxPriceMinor !== null ? convertToOmrBound(maxPriceMinor, pricing, 'ceil') : undefined,
   };
 }
 
@@ -230,7 +236,8 @@ export async function listProducts(options: ListProductsOptions): Promise<Page<P
     options.maxPriceMajor,
   );
 
-  const hasVariantFilter = minPriceOmr !== undefined || maxPriceOmr !== undefined || Boolean(inStockOnly);
+  const hasVariantFilter =
+    minPriceOmr !== undefined || maxPriceOmr !== undefined || Boolean(inStockOnly);
 
   // Ordering by an embedded table's column only sorts rows *within* each
   // parent — PostgREST has no "order the parents by a child column" — so a
@@ -295,8 +302,10 @@ export async function listProducts(options: ListProductsOptions): Promise<Page<P
 
     if (brandSlug) query = query.eq('brands.slug', brandSlug);
     if (hasVariantFilter) query = query.eq('product_variants.position', 1);
-    if (minPriceOmr !== undefined) query = query.gte('product_variants.base_price_minor', minPriceOmr);
-    if (maxPriceOmr !== undefined) query = query.lte('product_variants.base_price_minor', maxPriceOmr);
+    if (minPriceOmr !== undefined)
+      query = query.gte('product_variants.base_price_minor', minPriceOmr);
+    if (maxPriceOmr !== undefined)
+      query = query.lte('product_variants.base_price_minor', maxPriceOmr);
     if (inStockOnly) query = query.gt('product_variants.stock_qty', 0);
 
     const { data, error, count } = await query;
@@ -306,7 +315,9 @@ export async function listProducts(options: ListProductsOptions): Promise<Page<P
     const total = count ?? 0;
 
     return {
-      items: (data as unknown as ProductJoin[]).map((row) => toProductSummary(row, country, locale)),
+      items: (data as unknown as ProductJoin[]).map((row) =>
+        toProductSummary(row, country, locale),
+      ),
       total,
       page,
       pageSize,
@@ -318,10 +329,9 @@ export async function listProducts(options: ListProductsOptions): Promise<Page<P
   // whole, whatever a caller passes.
   let query = supabase
     .from('products')
-    .select(
-      summaryColumns({ brandSlug, categorySlug, variantFilter: hasVariantFilter }),
-      { count: 'exact' },
-    );
+    .select(summaryColumns({ brandSlug, categorySlug, variantFilter: hasVariantFilter }), {
+      count: 'exact',
+    });
 
   // `is_new` only breaks the tie ahead of recency for the "New Arrivals" nav
   // link — the default listing (and a shopper's own "Newest" sort pick)
@@ -339,8 +349,10 @@ export async function listProducts(options: ListProductsOptions): Promise<Page<P
   // that pin, a price/stock filter on `product_variants` would match a
   // product whose *some* variant qualifies, not necessarily the one priced.
   if (hasVariantFilter) query = query.eq('product_variants.position', 1);
-  if (minPriceOmr !== undefined) query = query.gte('product_variants.base_price_minor', minPriceOmr);
-  if (maxPriceOmr !== undefined) query = query.lte('product_variants.base_price_minor', maxPriceOmr);
+  if (minPriceOmr !== undefined)
+    query = query.gte('product_variants.base_price_minor', minPriceOmr);
+  if (maxPriceOmr !== undefined)
+    query = query.lte('product_variants.base_price_minor', maxPriceOmr);
   if (inStockOnly) query = query.gt('product_variants.stock_qty', 0);
 
   const { data, error, count } = await query;
@@ -417,7 +429,7 @@ export async function listCategories(locale: Locale): Promise<CategorySummary[]>
 
   const { data, error } = await supabase
     .from('categories')
-    .select('slug, name_ar, name_en, image_path')
+    .select('id, slug, parent_id, name_ar, name_en, image_path')
     .order('sort_order', { ascending: true })
     .order('name_ar', { ascending: true });
 
@@ -476,12 +488,20 @@ async function resolveFilteredProductIds(
   },
 ): Promise<string[]> {
   const variantFilter =
-    options.minPriceOmr !== undefined || options.maxPriceOmr !== undefined || Boolean(options.inStockOnly);
+    options.minPriceOmr !== undefined ||
+    options.maxPriceOmr !== undefined ||
+    Boolean(options.inStockOnly);
 
   function page(from: number, to: number) {
     let query = supabase
       .from('products')
-      .select(idFilterColumns({ brandSlug: options.brandSlug, categorySlug: options.categorySlug, variantFilter }))
+      .select(
+        idFilterColumns({
+          brandSlug: options.brandSlug,
+          categorySlug: options.categorySlug,
+          variantFilter,
+        }),
+      )
       // Offset pagination is only stable across requests with an explicit
       // order — without one, Postgres is free to return rows in a different
       // sequence per call, which would duplicate or drop ids across pages.
@@ -489,7 +509,8 @@ async function resolveFilteredProductIds(
       .range(from, to);
 
     if (options.brandSlug) query = query.eq('brands.slug', options.brandSlug);
-    if (options.categorySlug) query = query.eq('product_categories.categories.slug', options.categorySlug);
+    if (options.categorySlug)
+      query = query.eq('product_categories.categories.slug', options.categorySlug);
     if (variantFilter) query = query.eq('product_variants.position', 1);
     if (options.minPriceOmr !== undefined) {
       query = query.gte('product_variants.base_price_minor', options.minPriceOmr);
@@ -544,7 +565,10 @@ function chunk<Item>(items: Item[], size: number): Item[][] {
  * brand with none of the given ids — confirmed empirically — so every brand
  * stays in the result rather than disappearing at zero.
  */
-async function tallyByBrand(supabase: SupabaseServerClient, ids: string[]): Promise<Map<string, number>> {
+async function tallyByBrand(
+  supabase: SupabaseServerClient,
+  ids: string[],
+): Promise<Map<string, number>> {
   const counts = new Map<string, number>();
 
   const batches = await Promise.all(
@@ -572,7 +596,10 @@ async function tallyByBrand(supabase: SupabaseServerClient, ids: string[]): Prom
  * against the live project, not a theoretical concern. Counting the join
  * rows directly and tallying in JS sidesteps the aggregate entirely.
  */
-async function tallyByCategory(supabase: SupabaseServerClient, ids: string[]): Promise<Map<string, number>> {
+async function tallyByCategory(
+  supabase: SupabaseServerClient,
+  ids: string[],
+): Promise<Map<string, number>> {
   const counts = new Map<string, number>();
 
   const batches = await Promise.all(
@@ -597,10 +624,17 @@ async function tallyByCategory(supabase: SupabaseServerClient, ids: string[]): P
  * filters (category, price, stock — never brand itself, or every brand but
  * the selected one would show a count of zero).
  */
-export async function listBrandFacets(locale: Locale, filters: FacetFilters): Promise<FacetCount[]> {
+export async function listBrandFacets(
+  locale: Locale,
+  filters: FacetFilters,
+): Promise<FacetCount[]> {
   const [country, supabase] = await Promise.all([getCountry(locale), createClient()]);
   const pricing = toCountryPricing(country);
-  const { minPriceOmr, maxPriceOmr } = resolvePriceOmrBounds(pricing, filters.minPriceMajor, filters.maxPriceMajor);
+  const { minPriceOmr, maxPriceOmr } = resolvePriceOmrBounds(
+    pricing,
+    filters.minPriceMajor,
+    filters.maxPriceMajor,
+  );
 
   const [ids, brands] = await Promise.all([
     resolveFilteredProductIds(supabase, {
@@ -620,21 +654,30 @@ export async function listBrandFacets(locale: Locale, filters: FacetFilters): Pr
 
   const counts = await tallyByBrand(supabase, ids);
 
-  return (brands.data as { slug: string; name_ar: string; name_en: string | null }[]).map((row) => ({
-    slug: row.slug,
-    name: (text(row.name_ar, row.name_en, locale) ?? row.name_en) as string,
-    count: counts.get(row.slug) ?? 0,
-  }));
+  return (brands.data as { slug: string; name_ar: string; name_en: string | null }[]).map(
+    (row) => ({
+      slug: row.slug,
+      name: (text(row.name_ar, row.name_en, locale) ?? row.name_en) as string,
+      count: counts.get(row.slug) ?? 0,
+    }),
+  );
 }
 
 /**
  * Category facet: every category with how many products match the *other*
  * active filters (brand, price, stock — never category itself).
  */
-export async function listCategoryFacets(locale: Locale, filters: FacetFilters): Promise<FacetCount[]> {
+export async function listCategoryFacets(
+  locale: Locale,
+  filters: FacetFilters,
+): Promise<FacetCount[]> {
   const [country, supabase] = await Promise.all([getCountry(locale), createClient()]);
   const pricing = toCountryPricing(country);
-  const { minPriceOmr, maxPriceOmr } = resolvePriceOmrBounds(pricing, filters.minPriceMajor, filters.maxPriceMajor);
+  const { minPriceOmr, maxPriceOmr } = resolvePriceOmrBounds(
+    pricing,
+    filters.minPriceMajor,
+    filters.maxPriceMajor,
+  );
 
   const [ids, categories] = await Promise.all([
     resolveFilteredProductIds(supabase, {
@@ -654,11 +697,11 @@ export async function listCategoryFacets(locale: Locale, filters: FacetFilters):
 
   const counts = await tallyByCategory(supabase, ids);
 
-  return (categories.data as { id: string; slug: string; name_ar: string; name_en: string | null }[]).map(
-    (row) => ({
-      slug: row.slug,
-      name: (text(row.name_ar, row.name_en, locale) ?? row.name_en) as string,
-      count: counts.get(row.id) ?? 0,
-    }),
-  );
+  return (
+    categories.data as { id: string; slug: string; name_ar: string; name_en: string | null }[]
+  ).map((row) => ({
+    slug: row.slug,
+    name: (text(row.name_ar, row.name_en, locale) ?? row.name_en) as string,
+    count: counts.get(row.id) ?? 0,
+  }));
 }

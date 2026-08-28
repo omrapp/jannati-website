@@ -27,7 +27,7 @@ export type BrandJoin = Pick<Tables['brands']['Row'], 'slug' | 'name_en' | 'name
 
 export type CategoryJoin = Pick<
   Tables['categories']['Row'],
-  'slug' | 'name_ar' | 'name_en' | 'image_path'
+  'id' | 'slug' | 'parent_id' | 'name_ar' | 'name_en' | 'image_path'
 >;
 
 type VariantJoin = Pick<
@@ -93,7 +93,20 @@ export type ProductDetail = ProductSummary & {
 
 export type BrandSummary = { slug: string; name: string; logoUrl: string | null };
 
-export type CategorySummary = { slug: string; name: string; imageUrl: string | null };
+/**
+ * `id`/`parentId` are additive on top of the original slug/name/image shape —
+ * every existing caller (`CategoryGrid`, collection pages) still only reads
+ * `slug`/`name`/`imageUrl`. The header mega menu and mobile nav accordion are
+ * the first callers that need the `parent_id` hierarchy to build a category
+ * tree client-side, so it's carried here rather than re-queried separately.
+ */
+export type CategorySummary = {
+  id: string;
+  slug: string;
+  parentId: string | null;
+  name: string;
+  imageUrl: string | null;
+};
 
 /** Storage is a public bucket, so an object URL can be built without a request. */
 export function publicImageUrl(path: string): string {
@@ -209,7 +222,9 @@ export function toBrandSummary(brand: BrandJoin, locale: Locale): BrandSummary {
 
 export function toCategorySummary(category: CategoryJoin, locale: Locale): CategorySummary {
   return {
+    id: category.id,
     slug: category.slug,
+    parentId: category.parent_id,
     // name_ar is not nullable on categories.
     name: text(category.name_ar, category.name_en, locale) as string,
     imageUrl: category.image_path ? publicImageUrl(category.image_path) : null,
