@@ -85,7 +85,8 @@
     "account": "Account",
     "wishlist": "Wishlist",
     "loading": "Loading…",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "close": "Close"
   },
   "theme": {
     "label": "Theme",

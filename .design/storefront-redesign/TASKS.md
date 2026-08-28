@@ -27,7 +27,7 @@ Philosophy: editorial-clean beauty retail (Glossier/Typology whitespace, Fenty/R
 ## Interactions & States
 
 - [ ] **Cart drawer motion**: spring slide-in/out (`SPRING_DRAWER`), line-item add/remove transitions, empty-state treatment. Covers: open, close, item added, item removed, empty cart. _Modifies: cart-drawer.tsx, cart-line-item.tsx._
-- [ ] **Add-to-cart confirmation**: button state change + header cart-icon feedback on add, coordinated with drawer open. Covers: default, loading/pending, success, out-of-stock. _Modifies: product-card.tsx (quick-add), PDP add-to-cart control, header.tsx (cart icon)._
+- [x] **Add-to-cart confirmation**: button state change + header cart-icon feedback on add, coordinated with drawer open. Covers: default, loading/pending, success, out-of-stock. _Modifies: product-card.tsx (quick-add), PDP add-to-cart control, header.tsx (cart icon)._ _Done this session — also wired the underlying add-to-cart mutation itself, which turned out to not exist yet._
 - [ ] **Variant picker feedback**: selected-state animation on shade/size choice, gallery image swap with no layout jump. Covers: default, selected, unavailable/out-of-stock variant. _Modifies: variant-picker.tsx._
 - [ ] **Product gallery motion**: smoother zoom/swipe, thumbnail transition on selection. Covers: swipe (touch), thumbnail click, zoom. _Modifies: product-gallery.tsx._
 - [ ] **Filter panel motion**: animated expand/collapse, active-filter chip feedback, animated grid transition on filter apply. Covers: open, close, filter applied, filter cleared, empty results. _Modifies: filter-panel.tsx._

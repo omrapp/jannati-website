@@ -49,6 +49,7 @@ const sectionVariants = {
  */
 export function FilterPanel({ filters, brands, categories }: FilterPanelProps) {
   const t = useTranslations('catalog');
+  const tCommon = useTranslations('common');
   const locale = useLocale() as Locale;
   const isRtl = textDirection(parseLocale(locale).language) === 'rtl';
   const reduceMotion = useReducedMotion();
@@ -172,9 +173,11 @@ export function FilterPanel({ filters, brands, categories }: FilterPanelProps) {
                 <div className="flex flex-col gap-1.5 p-4 pe-14">
                   <Dialog.Title className="text-foreground font-semibold">{t('filters')}</Dialog.Title>
                 </div>
-                <Dialog.Close className="ring-offset-background focus-visible:ring-ring hover:bg-secondary absolute top-2 end-2 flex size-11 items-center justify-center rounded-md opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none">
+                <Dialog.Close
+                  aria-label={tCommon('close')}
+                  className="ring-offset-background focus-visible:ring-ring hover:bg-secondary absolute top-2 end-2 flex size-11 items-center justify-center rounded-md opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                >
                   <X className="size-4" />
-                  <span className="sr-only">Close</span>
                 </Dialog.Close>
 
                 <motion.div

@@ -28,6 +28,7 @@ function product(overrides: Partial<ProductDetail> = {}): ProductDetail {
     name: 'كريم اليد',
     brand: { slug: 'abib', name: 'Abib' },
     brandName: 'Abib',
+    variantId: 'one',
     basePriceMinor: 6400,
     priceMinor: 6400,
     price: 'x',
