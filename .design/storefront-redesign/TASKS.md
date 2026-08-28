@@ -34,10 +34,10 @@ Philosophy: editorial-clean beauty retail (Glossier/Typology whitespace, Fenty/R
 
 ## Responsive & Polish
 
-- [ ] **Mobile-first pass**: verify every task above at 375px/390px first — tap targets ≥44px, mega menu correctly hidden below `lg`, drawer/accordion nav usable one-handed. Breakpoints: 375px, 640px, 768px, 1024px, 1280px.
-- [ ] **Dark mode pass**: verify new shadow/motion tokens and every restyled component against `.dark` overrides — brand-tinted shadows must not read as murky on dark cards.
-- [ ] **RTL pass**: verify mega menu, mobile accordion, cart drawer, carousel, filter panel all mirror correctly in Arabic locale using logical properties (`start`/`end`) — no visual regressions introduced by new motion/layout code.
-- [ ] **Accessibility pass**: WCAG AA contrast on all new/refined color pairings (light + dark); full keyboard nav for mega menu, filter panel, cart drawer, carousel controls; every `motion` usage gated behind `useReducedMotion()`; focus-visible states intact everywhere restyled.
+- [ ] **Mobile-first pass**: verify every task above at 375px/390px first — tap targets ≥44px, mega menu correctly hidden below `lg`, drawer/accordion nav usable one-handed. Breakpoints: 375px, 640px, 768px, 1024px, 1280px. _Needs a real browser — not done, left for manual QA._
+- [ ] **Dark mode pass**: verify new shadow/motion tokens and every restyled component against `.dark` overrides — brand-tinted shadows must not read as murky on dark cards. _Needs a real browser — not done, left for manual QA._
+- [ ] **RTL pass**: verify mega menu, mobile accordion, cart drawer, carousel, filter panel all mirror correctly in Arabic locale using logical properties (`start`/`end`) — no visual regressions introduced by new motion/layout code. _Static grep pass done this session (no hardcoded left-/right-/ml-/mr- classes found); actual RTL rendering still needs a real browser._
+- [ ] **Accessibility pass**: WCAG AA contrast on all new/refined color pairings (light + dark); full keyboard nav for mega menu, filter panel, cart drawer, carousel controls; every `motion` usage gated behind `useReducedMotion()`; focus-visible states intact everywhere restyled. _Static pass done this session (useReducedMotion coverage confirmed, drawer close buttons were missing translated labels — fixed); contrast/keyboard-nav/focus-visible still need a real browser._
 
 ## Review
 
