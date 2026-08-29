@@ -1,4 +1,5 @@
 import type { SiteSettings } from '@/lib/admin/site-settings';
+import { cn } from '@/lib/utils';
 
 /**
  * Brand glyphs as inline SVGs, not a dependency — `lucide-react` v1 dropped
@@ -79,11 +80,17 @@ export function whatsAppLink(phone: string): string {
   return `https://wa.me/${phone.replace(/[^0-9]/g, '')}`;
 }
 
+const DEFAULT_ICON_CLASS = 'text-muted-foreground hover:text-foreground size-4 transition-colors';
+
 /**
- * Renders only the platforms with a URL set — an icon for an unset link
- * would be a dead click, so it's simply not in the list rather than
- * disabled/greyed. Every icon is an `<a>`, never a `div`/`span` with an
- * `onClick`, per the keyboard-reachability convention from Task 4.6.
+ * Renders the full fixed set of six platform icons, in the same order,
+ * regardless of which ones are configured in admin — a stable layout the
+ * header/footer chrome doesn't reflow around admin data. A platform with no
+ * URL set (or WhatsApp with `whatsapp_show` off / no number) renders as a
+ * non-interactive `<span aria-hidden="true">` at reduced opacity, never an
+ * `<a>` with no `href` — that would be a dead click, a keyboard focus stop,
+ * and a hover state that goes nowhere. A platform *with* a URL renders as a
+ * normal `<a>`, per the keyboard-reachability convention from Task 4.6.
  */
 export function SocialIcons({
   settings,
@@ -96,32 +103,32 @@ export function SocialIcons({
   className?: string;
   iconClassName?: string;
 }) {
-  const links = PLATFORMS.filter((p) => settings[p.key]).map((p) => ({
-    ...p,
-    href: settings[p.key] as string,
-  }));
-
-  const whatsapp = settings.whatsapp_show && settings.whatsapp ? whatsAppLink(settings.whatsapp) : null;
-
-  if (links.length === 0 && !whatsapp) return null;
+  const items = [
+    ...PLATFORMS.map((p) => ({ key: p.key as string, Icon: p.Icon, labelKey: p.labelKey, href: settings[p.key] })),
+    {
+      key: 'whatsapp',
+      Icon: WhatsAppIcon,
+      labelKey: 'social.whatsapp' as const,
+      href: settings.whatsapp_show && settings.whatsapp ? whatsAppLink(settings.whatsapp) : null,
+    },
+  ];
 
   return (
     <ul className={className}>
-      {links.map(({ key, Icon, labelKey, href }) => (
-        <li key={key}>
-          <a href={href} target="_blank" rel="noreferrer noopener" aria-label={t(labelKey)}>
-            <Icon className={iconClassName ?? 'text-muted-foreground hover:text-foreground size-4 transition-colors'} />
-          </a>
-        </li>
-      ))}
-      {whatsapp && (
-        <li>
-          <a href={whatsapp} target="_blank" rel="noreferrer noopener" aria-label={t('social.whatsapp')}>
-            <WhatsAppIcon
-              className={iconClassName ?? 'text-muted-foreground hover:text-foreground size-4 transition-colors'}
-            />
-          </a>
-        </li>
+      {items.map(({ key, Icon, labelKey, href }) =>
+        href ? (
+          <li key={key}>
+            <a href={href} target="_blank" rel="noreferrer noopener" aria-label={t(labelKey)}>
+              <Icon className={iconClassName ?? DEFAULT_ICON_CLASS} />
+            </a>
+          </li>
+        ) : (
+          <li key={key}>
+            <span aria-hidden="true">
+              <Icon className={cn(iconClassName ?? DEFAULT_ICON_CLASS, 'opacity-30 pointer-events-none')} />
+            </span>
+          </li>
+        ),
       )}
     </ul>
   );
