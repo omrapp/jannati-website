@@ -6,9 +6,12 @@ import { notFound } from 'next/navigation';
 
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
+import { WhatsAppButton } from '@/components/layout/whatsapp-button';
 import { ThemeProvider } from '@/components/theme-provider';
 import { htmlLang, isLocale, locales, parseLocale, textDirection } from '@/i18n/config';
+import { getSiteSettings } from '@/lib/admin/site-settings';
 import { env } from '@/lib/env';
+import { createClient } from '@/lib/supabase/server';
 import '../globals.css';
 
 // Darbeauty's actual body/UI fonts (Outfit + Almarai) — headings stay Playfair Display,
@@ -68,6 +71,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
   const messages = await getMessages();
   const { language } = parseLocale(locale);
+  const settings = await getSiteSettings(await createClient());
 
   return (
     <html
@@ -83,6 +87,7 @@ export default async function LocaleLayout({
               <Header />
               <main className="flex-1">{children}</main>
               <Footer />
+              <WhatsAppButton settings={settings} />
             </div>
           </NextIntlClientProvider>
         </ThemeProvider>
