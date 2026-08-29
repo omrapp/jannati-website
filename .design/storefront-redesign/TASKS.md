@@ -45,6 +45,16 @@ Philosophy: editorial-clean beauty retail (Glossier/Typology whitespace, Fenty/R
 - [x] **Arabic locale sync**: audit `src/messages/en.json` vs `ar.json` for any keys added during this redesign that are missing an Arabic translation. _Audited: 293/293 keys match, no gaps — every string added this session was added to both files together._
 - [x] **FAQ / shipping / returns pages, Q&A redesign**: restyle as an accordion-style Q&A layout, larger/more readable type, referencing sooqwoow.com's pattern. _Modifies: whichever content pages back these three routes. Done, commit e904fbd — new Accordion primitive + parseQaPairs helper, tested._
 
+## Follow-up Requests (2026-08-29)
+
+- [x] **Home promo banners (sooqwoow-style)**: full-width promo strips between Home's product rails (new `PromoBanner` component, Jannati copy/gradient — not scraped competitor images, see clarifying Q&A). _Modifies: page.tsx. New: promo-banner.tsx. Done, commit f568b8e._
+- [x] **Brand strip infinite marquee**: `brand-strip.tsx` rewritten as an auto-scrolling loop, pauses on hover/focus, RTL-aware, falls back to static row under `useReducedMotion()`. _Modifies: brand-strip.tsx. Done, commit f568b8e._
+- [x] **Social icons always-show**: `SocialIcons` now renders the full fixed set of 6 platforms always; unset ones render as non-interactive muted spans instead of being hidden. _Modifies: social-icons.tsx. Done, commit 3761399._
+- [x] **Sticky WhatsApp button**: new site-wide floating WhatsApp CTA, gated by `whatsapp_show`. _New: whatsapp-button.tsx. Modifies: layout.tsx. Done, commit 3761399._
+- [x] **Footer contact details**: WhatsApp + address added alongside phone/email under the footer logo. _Modifies: footer.tsx. Done, commit 3761399._
+- [x] **Login side drawer**: header account icon opens a cart-drawer-style side panel with the existing login form when logged out; unchanged (direct link) when logged in. _New: login-drawer.tsx. Modifies: header.tsx. Done, commit d3c7658._
+- [x] **Contact Us / About Us in top nav**: added to the header's thin utility bar (not the mega-menu's 7-slot bar, which stays untouched). _Modifies: header.tsx. Done, commit d3c7658._
+
 ## Review
 
 - [ ] **Design review**: run `/design-review` against `DESIGN_BRIEF.md` once the above is built.
