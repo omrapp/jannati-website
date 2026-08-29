@@ -5,6 +5,7 @@ import { CartDrawer } from '@/components/commerce/cart-drawer';
 import { CountrySwitcher } from '@/components/layout/country-switcher';
 import { LocaleSwitcher } from '@/components/layout/locale-switcher';
 import { Logo } from '@/components/layout/logo';
+import { LoginDrawer } from '@/components/layout/login-drawer';
 import { MegaMenu } from '@/components/layout/mega-menu';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import {
@@ -24,7 +25,7 @@ import { getCountry, getEnabledCountries, listCategories } from '@/lib/catalog/q
 import { getCartWithTotals } from '@/lib/commerce/cart';
 import { getCartContext } from '@/lib/commerce/cart-identity';
 import { formatMoney } from '@/lib/commerce/money';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getAuthUser } from '@/lib/supabase/server';
 
 /**
  * Server Component so the cart drawer (`CartDrawer`) can render from the same
@@ -39,6 +40,7 @@ export async function Header() {
 
   const context = await getCartContext();
   const cart = context ? await getCartWithTotals(context.client, context.identity, locale) : null;
+  const user = await getAuthUser();
   const enabledCountries = await getEnabledCountries();
   const settings = await getSiteSettings(await createClient());
   const categoryTree = buildCategoryTree(await listCategories(locale));
@@ -72,6 +74,12 @@ export async function Header() {
         <div className="max-w-page mx-auto flex w-full items-center justify-between px-4">
           <span>{t('brand.tagline')}</span>
           <div className="flex items-center gap-4">
+            <Link href="/p/about-us" className="hover:underline">
+              {t('nav.about')}
+            </Link>
+            <Link href="/contact" className="hover:underline">
+              {t('nav.contact')}
+            </Link>
             {settings.phone && (
               <a href={`tel:${settings.phone}`} className="flex items-center gap-1 hover:underline">
                 <Phone className="size-3.5" /> {settings.phone}
@@ -122,11 +130,15 @@ export async function Header() {
               <Heart className="size-5" />
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" asChild aria-label={t('common.account')}>
-            <Link href="/account">
-              <User className="size-5" />
-            </Link>
-          </Button>
+          {user ? (
+            <Button variant="ghost" size="icon" asChild aria-label={t('common.account')}>
+              <Link href="/account">
+                <User className="size-5" />
+              </Link>
+            </Button>
+          ) : (
+            <LoginDrawer locale={locale} />
+          )}
           <CartDrawer lines={cart?.lines ?? []} totals={cartTotals} />
         </div>
       </div>
