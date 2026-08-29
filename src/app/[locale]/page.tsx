@@ -6,6 +6,7 @@ import { BrandStrip } from '@/components/home/brand-strip';
 import { HeroCarousel, type HeroSlide } from '@/components/home/hero-carousel';
 import { NewsletterStrip } from '@/components/home/newsletter-strip';
 import { ProductRail } from '@/components/home/product-rail';
+import { PromoBanner } from '@/components/home/promo-banner';
 import { Button } from '@/components/ui/button';
 import { isLocale, parseLocale, type Locale } from '@/i18n/config';
 import { Link } from '@/i18n/navigation';
@@ -93,11 +94,27 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         products={newArrivals.items}
       />
 
+      <PromoBanner
+        heading={t('promoNewHeading')}
+        subheading={t('promoNewSubheading')}
+        ctaLabel={t('promoNewCta')}
+        ctaHref="/products?sort=new"
+        tone="secondary"
+      />
+
       <ProductRail
         heading={t('recommended')}
         viewAllHref="/products"
         viewAllLabel={t('viewAll')}
         products={recommended.items}
+      />
+
+      <PromoBanner
+        heading={t('promoCollectionsHeading')}
+        subheading={t('promoCollectionsSubheading')}
+        ctaLabel={t('promoCollectionsCta')}
+        ctaHref="/collections"
+        tone="primary"
       />
 
       <ProductRail
