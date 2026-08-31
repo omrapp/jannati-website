@@ -86,7 +86,8 @@ export default async function ContentPage({
             src={page.hero_image_url}
             alt={title}
             fill
-            priority
+            loading="eager"
+            fetchPriority="high"
             sizes="100vw"
             className="object-cover"
           />

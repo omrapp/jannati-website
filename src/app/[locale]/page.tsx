@@ -1,22 +1,20 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
-import { BrandStrip } from '@/components/home/brand-strip';
-import { HeroCarousel, type HeroSlide } from '@/components/home/hero-carousel';
+import { BrandStripSection } from '@/components/home/brand-strip-section';
+import { BrandStripSkeleton } from '@/components/home/brand-strip-skeleton';
+import { HeroSection } from '@/components/home/hero-section';
+import { HeroSkeleton } from '@/components/home/hero-skeleton';
 import { NewsletterStrip } from '@/components/home/newsletter-strip';
-import { ProductRail } from '@/components/home/product-rail';
+import { ProductRailSection } from '@/components/home/product-rail-section';
+import { ProductRailSkeleton } from '@/components/home/product-rail-skeleton';
 import { PromoBanner } from '@/components/home/promo-banner';
-import { Button } from '@/components/ui/button';
-import { isLocale, parseLocale, type Locale } from '@/i18n/config';
-import { Link } from '@/i18n/navigation';
-import { listActiveBanners, publicBannerUrl } from '@/lib/admin/banners';
-import { listBrands, listProducts } from '@/lib/catalog/queries';
+import { isLocale, type Locale } from '@/i18n/config';
 import { localeAlternates } from '@/lib/seo/alternates';
-import { createClient } from '@/lib/supabase/server';
 
 const RAIL_SIZE = 8;
-const BRAND_STRIP_SIZE = 20;
 
 export async function generateMetadata({
   params,
@@ -37,62 +35,36 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   setRequestLocale(locale);
   const t = await getTranslations('home');
-  const { language } = parseLocale(locale as Locale);
 
-  const [banners, newArrivals, bestSellers, recommended, brands] = await Promise.all([
-    listActiveBanners(await createClient()),
-    listProducts({ locale: locale as Locale, sort: 'new', pageSize: RAIL_SIZE }),
-    listProducts({ locale: locale as Locale, sort: 'best-selling', pageSize: RAIL_SIZE }),
-    // No recommendation engine yet — a curated pull is just "the next page
-    // of the default (newest-first) listing", so it doesn't repeat New
-    // Arrivals' first page.
-    listProducts({ locale: locale as Locale, page: 2, pageSize: RAIL_SIZE }),
-    listBrands(locale as Locale),
-  ]);
-
-  // Home strip is a teaser, not the full directory — cap it and only show
-  // brands with a logo (a name-only tile reads as a placeholder at a glance);
-  // the "view all" link below takes shoppers to `/brands` for the rest.
-  const brandsWithLogos = brands
-    .filter((brand) => brand.logoUrl !== null)
-    .slice(0, BRAND_STRIP_SIZE);
-
-  const slides: HeroSlide[] = banners.map((banner) => ({
-    id: banner.id,
-    src: publicBannerUrl(banner.image_path),
-    alt: (language === 'ar' ? banner.title_ar : banner.title_en) ?? t('heroTitle'),
-    link: banner.link,
-  }));
-
+  // Hero, each product rail, and the brand strip each carry their own data
+  // fetch and their own `<Suspense>` boundary — previously all five awaited
+  // together in one `Promise.all` before anything (including the hero, the
+  // page's LCP element) could render. Splitting them lets the hero paint as
+  // soon as its own fetch resolves, and lets the rails/brand strip stream in
+  // independently rather than gating each other.
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-16 px-4 py-10 md:py-14">
-      {slides.length > 0 ? (
-        <HeroCarousel slides={slides} />
-      ) : (
-        <section className="from-secondary/60 to-background -mx-4 bg-gradient-to-b md:mx-0 md:rounded-lg">
-          <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 py-20 md:py-28">
-            <h1 className="font-display max-w-2xl text-4xl font-semibold text-balance md:text-6xl">
-              {t('heroTitle')}
-            </h1>
-            <p className="text-muted-foreground max-w-xl text-lg">{t('heroSubtitle')}</p>
-            <div className="flex flex-wrap gap-3">
-              <Button size="lg" asChild>
-                <Link href="/products">{t('shopNow')}</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/brands">{t('exploreBrands')}</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-      )}
+      <Suspense fallback={<HeroSkeleton />}>
+        <HeroSection
+          locale={locale as Locale}
+          heroTitle={t('heroTitle')}
+          heroSubtitle={t('heroSubtitle')}
+          shopNowLabel={t('shopNow')}
+          exploreBrandsLabel={t('exploreBrands')}
+        />
+      </Suspense>
 
-      <ProductRail
-        heading={t('newArrivals')}
-        viewAllHref="/products?sort=new"
-        viewAllLabel={t('viewAll')}
-        products={newArrivals.items}
-      />
+      <Suspense fallback={<ProductRailSkeleton count={RAIL_SIZE} />}>
+        <ProductRailSection
+          locale={locale as Locale}
+          sort="new"
+          pageSize={RAIL_SIZE}
+          heading={t('newArrivals')}
+          viewAllHref="/products?sort=new"
+          viewAllLabel={t('viewAll')}
+          priority
+        />
+      </Suspense>
 
       <PromoBanner
         heading={t('promoNewHeading')}
@@ -102,12 +74,19 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         tone="secondary"
       />
 
-      <ProductRail
-        heading={t('recommended')}
-        viewAllHref="/products"
-        viewAllLabel={t('viewAll')}
-        products={recommended.items}
-      />
+      <Suspense fallback={<ProductRailSkeleton count={RAIL_SIZE} />}>
+        <ProductRailSection
+          locale={locale as Locale}
+          // No recommendation engine yet — a curated pull is just "the next
+          // page of the default (newest-first) listing", so it doesn't
+          // repeat New Arrivals' first page.
+          page={2}
+          pageSize={RAIL_SIZE}
+          heading={t('recommended')}
+          viewAllHref="/products"
+          viewAllLabel={t('viewAll')}
+        />
+      </Suspense>
 
       <PromoBanner
         heading={t('promoCollectionsHeading')}
@@ -117,19 +96,25 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         tone="primary"
       />
 
-      <ProductRail
-        heading={t('bestSellers')}
-        viewAllHref="/products?sort=best-selling"
-        viewAllLabel={t('viewAll')}
-        products={bestSellers.items}
-      />
+      <Suspense fallback={<ProductRailSkeleton count={RAIL_SIZE} />}>
+        <ProductRailSection
+          locale={locale as Locale}
+          sort="best-selling"
+          pageSize={RAIL_SIZE}
+          heading={t('bestSellers')}
+          viewAllHref="/products?sort=best-selling"
+          viewAllLabel={t('viewAll')}
+        />
+      </Suspense>
 
-      <BrandStrip
-        heading={t('shopByBrand')}
-        viewAllHref="/brands"
-        viewAllLabel={t('viewAll')}
-        brands={brandsWithLogos}
-      />
+      <Suspense fallback={<BrandStripSkeleton />}>
+        <BrandStripSection
+          locale={locale as Locale}
+          heading={t('shopByBrand')}
+          viewAllHref="/brands"
+          viewAllLabel={t('viewAll')}
+        />
+      </Suspense>
 
       <NewsletterStrip
         title={t('newsletterTitle')}

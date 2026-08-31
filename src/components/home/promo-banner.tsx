@@ -68,7 +68,13 @@ export function PromoBanner({
         </div>
         {imageSrc ? (
           <div className="relative aspect-square w-full max-w-xs flex-1 overflow-hidden rounded-lg shadow-sm md:max-w-sm">
-            <Image src={imageSrc} alt={imageAlt ?? ''} fill className="object-cover" />
+            <Image
+              src={imageSrc}
+              alt={imageAlt ?? ''}
+              fill
+              sizes="(min-width: 768px) 384px, 320px"
+              className="object-cover"
+            />
           </div>
         ) : null}
       </div>

@@ -10,12 +10,14 @@
  * `status = 'active'` products, and only their variants and imagery.
  */
 
+import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
 
 import { parseLocale, type CountryCode, type Locale } from '@/i18n/config';
 import { convertToOmrBound, majorDecimalToMinor } from '@/lib/commerce/money';
 import type { CountryPricing } from '@/lib/commerce/types';
 import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/public';
 
 import {
   text,
@@ -188,12 +190,15 @@ function resolvePriceOmrBounds(
 }
 
 /**
- * The active country's pricing row. Cached for the render, so a page with a
- * dozen priced components still asks once.
+ * The active country's pricing row. Persistently cached 5 minutes (tag
+ * `countries`) — pricing config changes rarely and every priced component on
+ * every page reads it, so this is the highest-leverage read to keep off
+ * Supabase. React's `cache()` stays on top so a single render with a dozen
+ * priced components still asks the persistent cache once.
  */
-export const getCountry = cache(async (locale: Locale): Promise<CountryRow> => {
+async function getCountryUncached(locale: Locale): Promise<CountryRow> {
   const { country } = parseLocale(locale);
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   const { data, error } = await supabase
     .from('countries')
@@ -207,28 +212,47 @@ export const getCountry = cache(async (locale: Locale): Promise<CountryRow> => {
   }
 
   return data;
-});
+}
+
+export const getCountry = cache(
+  unstable_cache(getCountryUncached, ['catalog-country'], {
+    tags: ['countries'],
+    revalidate: 300,
+  }),
+);
 
 /**
  * Enabled country codes only, for the header's country switcher. `countries`
  * in `i18n/config.ts` stays the static list of all six locale-routable
  * codes (routing has to exist for a country an admin might re-enable); this
  * is the narrower, admin-editable set that's actually offered to shoppers.
+ * Cached 5 minutes (tag `countries`) for the same reason as `getCountry`.
  */
-export const getEnabledCountries = cache(async (): Promise<CountryCode[]> => {
-  const supabase = await createClient();
+async function getEnabledCountriesUncached(): Promise<CountryCode[]> {
+  const supabase = createPublicClient();
   const { data, error } = await supabase.from('countries').select('code').eq('enabled', true);
   if (error) throw new Error(`listing enabled countries: ${error.message}`);
   return data.map((row) => row.code as CountryCode);
-});
+}
 
-export async function listProducts(options: ListProductsOptions): Promise<Page<ProductSummary>> {
+export const getEnabledCountries = cache(
+  unstable_cache(getEnabledCountriesUncached, ['catalog-enabled-countries'], {
+    tags: ['countries'],
+    revalidate: 300,
+  }),
+);
+
+/** Uncached implementation — see the exported `listProducts` wrapper below. */
+async function listProductsUncached(
+  options: ListProductsOptions,
+): Promise<Page<ProductSummary>> {
   const { locale, brandSlug, categorySlug, inStockOnly } = options;
   const page = Math.max(1, options.page ?? 1);
   const pageSize = Math.min(60, Math.max(1, options.pageSize ?? DEFAULT_PAGE_SIZE));
   const from = (page - 1) * pageSize;
 
-  const [country, supabase] = await Promise.all([getCountry(locale), createClient()]);
+  const country = await getCountry(locale);
+  const supabase = createPublicClient();
   const pricing = toCountryPricing(country);
   const { minPriceOmr, maxPriceOmr } = resolvePriceOmrBounds(
     pricing,
@@ -371,14 +395,27 @@ export async function listProducts(options: ListProductsOptions): Promise<Page<P
 }
 
 /**
- * Cached for the render: a product page asks once for its metadata and again
- * for its body, and this is the heaviest join in the catalog.
+ * Read-heavy catalog listing, persistently cached 60s (tag `products`) and
+ * keyed on every option (locale, page, filters, sort) — `unstable_cache`
+ * folds the arguments into the cache key automatically. A minute-long window
+ * balances storefront responsiveness against staleness on price/stock.
  */
-export const getProductByHandle = cache(async function getProductByHandle(
+export const listProducts = unstable_cache(listProductsUncached, ['catalog-list-products'], {
+  tags: ['products'],
+  revalidate: 60,
+});
+
+/**
+ * Cached for the render: a product page asks once for its metadata and again
+ * for its body, and this is the heaviest join in the catalog. Also
+ * persistently cached 2 minutes (tag `products`) across requests/visitors.
+ */
+async function getProductByHandleUncached(
   handle: string,
   locale: Locale,
 ): Promise<ProductDetail | null> {
-  const [country, supabase] = await Promise.all([getCountry(locale), createClient()]);
+  const country = await getCountry(locale);
+  const supabase = createPublicClient();
 
   const { data, error } = await supabase
     .from('products')
@@ -390,7 +427,14 @@ export const getProductByHandle = cache(async function getProductByHandle(
   if (!data) return null;
 
   return toProductDetail(data as unknown as ProductJoin, country, locale);
-});
+}
+
+export const getProductByHandle = cache(
+  unstable_cache(getProductByHandleUncached, ['catalog-product-by-handle'], {
+    tags: ['products'],
+    revalidate: 120,
+  }),
+);
 
 /**
  * Product cards by id, unordered by the query — callers that need a
@@ -410,8 +454,8 @@ export async function getProductsByIds(ids: string[], locale: Locale): Promise<P
   return (data as unknown as ProductJoin[]).map((row) => toProductSummary(row, country, locale));
 }
 
-export async function listBrands(locale: Locale): Promise<BrandSummary[]> {
-  const supabase = await createClient();
+async function listBrandsUncached(locale: Locale): Promise<BrandSummary[]> {
+  const supabase = createPublicClient();
 
   const { data, error } = await supabase
     .from('brands')
@@ -424,8 +468,18 @@ export async function listBrands(locale: Locale): Promise<BrandSummary[]> {
   return data.map((row) => toBrandSummary(row, locale));
 }
 
-export async function listCategories(locale: Locale): Promise<CategorySummary[]> {
-  const supabase = await createClient();
+/**
+ * The brand directory changes only when an admin edits it, so a longer,
+ * 5-minute cache (tag `brands`) trades a bit of staleness for far fewer
+ * reads — every storefront nav re-hit Supabase for this before caching.
+ */
+export const listBrands = unstable_cache(listBrandsUncached, ['catalog-list-brands'], {
+  tags: ['brands'],
+  revalidate: 300,
+});
+
+async function listCategoriesUncached(locale: Locale): Promise<CategorySummary[]> {
+  const supabase = createPublicClient();
 
   const { data, error } = await supabase
     .from('categories')
@@ -437,6 +491,12 @@ export async function listCategories(locale: Locale): Promise<CategorySummary[]>
 
   return data.map((row) => toCategorySummary(row, locale));
 }
+
+/** Same rationale as `listBrands`: rarely-changing directory data, 5-minute cache (tag `categories`). */
+export const listCategories = unstable_cache(listCategoriesUncached, ['catalog-list-categories'], {
+  tags: ['categories'],
+  revalidate: 300,
+});
 
 export type FacetCount = { slug: string; name: string; count: number };
 
@@ -624,11 +684,12 @@ async function tallyByCategory(
  * filters (category, price, stock — never brand itself, or every brand but
  * the selected one would show a count of zero).
  */
-export async function listBrandFacets(
+async function listBrandFacetsUncached(
   locale: Locale,
   filters: FacetFilters,
 ): Promise<FacetCount[]> {
-  const [country, supabase] = await Promise.all([getCountry(locale), createClient()]);
+  const country = await getCountry(locale);
+  const supabase = createPublicClient();
   const pricing = toCountryPricing(country);
   const { minPriceOmr, maxPriceOmr } = resolvePriceOmrBounds(
     pricing,
@@ -664,14 +725,26 @@ export async function listBrandFacets(
 }
 
 /**
+ * Facet counts are read-heavy (every `/products` and category-page render
+ * asks for both) but move with stock/price, so a short 60s cache (tag
+ * `products`) fits the same window as `listProducts` without the count
+ * badges drifting far from reality.
+ */
+export const listBrandFacets = unstable_cache(listBrandFacetsUncached, ['catalog-brand-facets'], {
+  tags: ['products'],
+  revalidate: 60,
+});
+
+/**
  * Category facet: every category with how many products match the *other*
  * active filters (brand, price, stock — never category itself).
  */
-export async function listCategoryFacets(
+async function listCategoryFacetsUncached(
   locale: Locale,
   filters: FacetFilters,
 ): Promise<FacetCount[]> {
-  const [country, supabase] = await Promise.all([getCountry(locale), createClient()]);
+  const country = await getCountry(locale);
+  const supabase = createPublicClient();
   const pricing = toCountryPricing(country);
   const { minPriceOmr, maxPriceOmr } = resolvePriceOmrBounds(
     pricing,
@@ -705,3 +778,10 @@ export async function listCategoryFacets(
     count: counts.get(row.id) ?? 0,
   }));
 }
+
+/** Same rationale as `listBrandFacets`: 60s cache, tag `products`. */
+export const listCategoryFacets = unstable_cache(
+  listCategoryFacetsUncached,
+  ['catalog-category-facets'],
+  { tags: ['products'], revalidate: 60 },
+);

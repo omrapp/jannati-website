@@ -76,7 +76,13 @@ export function ProductCard({ product, priority }: { product: ProductSummary; pr
             fill
             // Three columns on desktop, two on mobile.
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-            priority={priority}
+            // `priority` was deprecated in Next.js 16 in favor of `preload`,
+            // but neither sets `fetchPriority="high"` on the rendered
+            // `<img>` — the attribute real browsers (and Lighthouse's LCP
+            // discovery) use to prioritize the network fetch. `loading`
+            // mirrors what `priority` used to imply (skip lazy-loading).
+            loading={priority ? 'eager' : undefined}
+            fetchPriority={priority ? 'high' : undefined}
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (

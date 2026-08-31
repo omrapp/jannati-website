@@ -40,15 +40,25 @@ export function ProductGrid({ products }: { products: ProductSummary[] }) {
       variants={container}
       className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4"
     >
-      {products.map((product, index) => (
-        <motion.div key={product.handle} variants={item}>
-          <ProductCard
-            product={product}
-            // The first row is above the fold on every width.
-            priority={index < 4}
-          />
-        </motion.div>
-      ))}
+      {products.map((product, index) => {
+        // The first row is above the fold on every width, and is the LCP
+        // candidate. Rendering it inside the stagger-reveal wrapper ships it
+        // from the server as `opacity:0`, which the browser can't paint —
+        // and therefore can't count as LCP — until JS hydrates and the
+        // enter animation runs. Priority cards skip the motion wrapper
+        // entirely so they paint immediately; the rest keep the reveal.
+        const isPriority = index < 4;
+
+        return isPriority ? (
+          <div key={product.handle}>
+            <ProductCard product={product} priority />
+          </div>
+        ) : (
+          <motion.div key={product.handle} variants={item}>
+            <ProductCard product={product} priority={false} />
+          </motion.div>
+        );
+      })}
     </motion.div>
   );
 }

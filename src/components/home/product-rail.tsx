@@ -21,11 +21,14 @@ export function ProductRail({
   viewAllHref,
   viewAllLabel,
   products,
+  priority = false,
 }: {
   heading: string;
   viewAllHref: string;
   viewAllLabel: string;
   products: ProductSummary[];
+  /** Marks the first row's images `fetchpriority="high"` and skips lazy-loading — set this only on the rail that renders above the fold (the home page's first one). */
+  priority?: boolean;
 }) {
   const reduceMotion = useReducedMotion();
 
@@ -59,11 +62,23 @@ export function ProductRail({
         variants={container}
         className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4"
       >
-        {products.map((product) => (
-          <motion.div key={product.handle} variants={item}>
-            <ProductCard product={product} />
-          </motion.div>
-        ))}
+        {products.map((product, index) => {
+          // Same LCP-vs-opacity:0 tradeoff as ProductGrid: the priority
+          // cards (the rail marked `priority`, first row) must paint on
+          // first render, so they skip the whileInView reveal wrapper
+          // entirely instead of shipping `opacity:0` until it fires.
+          const isPriorityCard = priority && index < 4;
+
+          return isPriorityCard ? (
+            <div key={product.handle}>
+              <ProductCard product={product} priority />
+            </div>
+          ) : (
+            <motion.div key={product.handle} variants={item}>
+              <ProductCard product={product} priority={false} />
+            </motion.div>
+          );
+        })}
       </motion.div>
     </section>
   );

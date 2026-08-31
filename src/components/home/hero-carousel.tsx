@@ -70,7 +70,8 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       src={slide.src}
       alt={slide.alt}
       fill
-      priority
+      loading="eager"
+      fetchPriority="high"
       sizes="100vw"
       className="pointer-events-none object-cover"
       draggable={false}

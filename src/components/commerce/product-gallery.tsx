@@ -94,7 +94,8 @@ export function ProductGallery({ images, name }: { images: ProductImage[]; name:
                   alt={current.alt ?? name}
                   fill
                   sizes="(min-width: 1024px) 50vw, 100vw"
-                  priority
+                  loading="eager"
+                  fetchPriority="high"
                   draggable={false}
                   className="pointer-events-none object-cover"
                 />
