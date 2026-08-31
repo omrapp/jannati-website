@@ -23,6 +23,7 @@ export default async function EditCategoryPage({ params }: { params: Promise<{ i
           descriptionAr: category.description_ar ?? '',
           descriptionEn: category.description_en ?? '',
           sortOrder: category.sort_order,
+          imagePath: category.image_path,
         }}
         categories={categories.map((c) => ({ id: c.id, label: c.name_en ?? c.name_ar }))}
       />

@@ -22,7 +22,8 @@ export function Logo({ className }: { className?: string }) {
         alt=""
         width={36}
         height={36}
-        priority
+        loading="eager"
+        fetchPriority="high"
         className="size-9 object-contain"
       />
       <span className="flex flex-col leading-tight">

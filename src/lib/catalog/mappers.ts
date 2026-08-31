@@ -25,7 +25,10 @@ export type CountryRow = Pick<
 
 export type BrandJoin = Pick<Tables['brands']['Row'], 'slug' | 'name_en' | 'name_ar' | 'logo_path'>;
 
-export type CategoryJoin = Pick<Tables['categories']['Row'], 'slug' | 'name_ar' | 'name_en'>;
+export type CategoryJoin = Pick<
+  Tables['categories']['Row'],
+  'id' | 'slug' | 'parent_id' | 'name_ar' | 'name_en' | 'image_path'
+>;
 
 type VariantJoin = Pick<
   Tables['product_variants']['Row'],
@@ -61,6 +64,10 @@ export type ProductSummary = {
   name: string;
   brand: { slug: string; name: string } | null;
   brandName: string | null;
+  /** The lead variant's id — same one the listing prices with. `null` when a
+   * product has no variants at all, which quick-add treats as un-addable
+   * (it has nothing to cart). */
+  variantId: string | null;
   /** OMR baisa, so a caller can re-price without another query. */
   basePriceMinor: number | null;
   /** Minor units of the shopper's currency. */
@@ -90,7 +97,20 @@ export type ProductDetail = ProductSummary & {
 
 export type BrandSummary = { slug: string; name: string; logoUrl: string | null };
 
-export type CategorySummary = { slug: string; name: string };
+/**
+ * `id`/`parentId` are additive on top of the original slug/name/image shape —
+ * every existing caller (`CategoryGrid`, collection pages) still only reads
+ * `slug`/`name`/`imageUrl`. The header mega menu and mobile nav accordion are
+ * the first callers that need the `parent_id` hierarchy to build a category
+ * tree client-side, so it's carried here rather than re-queried separately.
+ */
+export type CategorySummary = {
+  id: string;
+  slug: string;
+  parentId: string | null;
+  name: string;
+  imageUrl: string | null;
+};
 
 /** Storage is a public bucket, so an object URL can be built without a request. */
 export function publicImageUrl(path: string): string {
@@ -157,6 +177,7 @@ export function toProductSummary(
     name: text(product.name_ar, product.name_en, locale) as string,
     brand: brand ? { slug: brand.slug, name: brandName as string } : null,
     brandName,
+    variantId: lead?.id ?? null,
     basePriceMinor: lead ? lead.base_price_minor : null,
     priceMinor: lead ? convertFromOmr(lead.base_price_minor, pricing) : null,
     price: lead
@@ -206,8 +227,11 @@ export function toBrandSummary(brand: BrandJoin, locale: Locale): BrandSummary {
 
 export function toCategorySummary(category: CategoryJoin, locale: Locale): CategorySummary {
   return {
+    id: category.id,
     slug: category.slug,
+    parentId: category.parent_id,
     // name_ar is not nullable on categories.
     name: text(category.name_ar, category.name_en, locale) as string,
+    imageUrl: category.image_path ? publicImageUrl(category.image_path) : null,
   };
 }

@@ -205,14 +205,20 @@ describe('toBrandSummary and toCategorySummary', () => {
 
   it('resolves a category name for the locale', () => {
     const category: CategoryJoin = {
+      id: 'cat-1',
       slug: 'hand-care',
+      parent_id: null,
       name_ar: 'العناية باليدين',
       name_en: null,
+      image_path: null,
     };
 
     expect(toCategorySummary(category, 'en-om')).toEqual({
+      id: 'cat-1',
       slug: 'hand-care',
+      parentId: null,
       name: 'العناية باليدين',
+      imageUrl: null,
     });
   });
 });

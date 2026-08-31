@@ -42,6 +42,30 @@
   --border: oklch(0.9 0.012 340);
   --input: oklch(0.9 0.012 340);
   --ring: oklch(0.604 0.227 354.7);
+
+  /* Layout — tokenizes the `max-w-7xl px-4` pattern repeated across every
+   * page shell (header, footer, page containers) so it stays one source. */
+  --max-width-page: 80rem; /* 1280px, == Tailwind's max-w-7xl */
+  --max-width-content: 65ch; /* long-form copy: about/policy pages */
+
+  /* Motion — shared by CSS transitions and the `motion` library (see
+   * src/lib/motion-tokens.ts) so JS and CSS animation timing never drift. */
+  --duration-instant: 100ms;
+  --duration-fast: 180ms;
+  --duration-normal: 280ms;
+  --duration-slow: 420ms;
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-out: cubic-bezier(0, 0, 0.2, 1);
+  --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Shadows — brand-tinted (magenta hue) instead of neutral black, soft and
+   * low-opacity for the editorial feel; overrides Tailwind's default
+   * `shadow-sm/md/lg` scale via @theme below. */
+  --shadow-color: 354.7 30% 20%;
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.06);
+  --shadow-md: 0 4px 16px -4px hsl(var(--shadow-color) / 0.1), 0 2px 6px -2px hsl(var(--shadow-color) / 0.06);
+  --shadow-lg: 0 12px 32px -8px hsl(var(--shadow-color) / 0.14), 0 4px 12px -4px hsl(var(--shadow-color) / 0.08);
+  --shadow-focus: 0 0 0 3px oklch(0.604 0.227 354.7 / 0.35);
 }
 
 /* Both brand colours are lifted and de-saturated for contrast on dark. */
@@ -75,6 +99,14 @@
   --border: oklch(0.3 0.02 330);
   --input: oklch(0.3 0.02 330);
   --ring: oklch(0.72 0.19 354.7);
+
+  /* Dark shadows go deeper/more transparent, not the same tint as light —
+   * a light-mode shadow's opacity reads as a grey haze on a dark card. */
+  --shadow-color: 330 40% 2%;
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.3);
+  --shadow-md: 0 4px 16px -4px hsl(var(--shadow-color) / 0.45), 0 2px 6px -2px hsl(var(--shadow-color) / 0.3);
+  --shadow-lg: 0 12px 32px -8px hsl(var(--shadow-color) / 0.55), 0 4px 12px -4px hsl(var(--shadow-color) / 0.35);
+  --shadow-focus: 0 0 0 3px oklch(0.72 0.19 354.7 / 0.4);
 }
 
 @theme inline {
@@ -107,6 +139,23 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --container-page: var(--max-width-page);
+  --container-content: var(--max-width-content);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-focus: var(--shadow-focus);
+
+  --ease-default: var(--easing-default);
+  --ease-out: var(--easing-out);
+  --ease-spring: var(--easing-spring);
+
+  --duration-instant: var(--duration-instant);
+  --duration-fast: var(--duration-fast);
+  --duration-normal: var(--duration-normal);
+  --duration-slow: var(--duration-slow);
 }
 
 @layer base {

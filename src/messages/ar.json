@@ -75,7 +75,9 @@
     "contact": "اتصل بنا",
     "faq": "الأسئلة الشائعة",
     "openMenu": "فتح القائمة",
-    "closeMenu": "إغلاق القائمة"
+    "closeMenu": "إغلاق القائمة",
+    "more": "المزيد",
+    "shopAll": "تسوق كل {name}"
   },
   "common": {
     "search": "ابحث عن منتج أو علامة تجارية",
@@ -83,7 +85,9 @@
     "account": "حسابي",
     "wishlist": "المفضلة",
     "loading": "جارٍ التحميل…",
-    "comingSoon": "قريباً"
+    "comingSoon": "قريباً",
+    "close": "إغلاق",
+    "whatsappContact": "تواصل معنا عبر واتساب"
   },
   "theme": {
     "label": "المظهر",
@@ -113,6 +117,12 @@
     "newArrivals": "وصل حديثاً",
     "bestSellers": "الأكثر مبيعاً",
     "recommended": "نوصي لك",
+    "promoNewHeading": "مجموعة الجمال لهذا الموسم",
+    "promoNewSubheading": "أحدث المنتجات من علاماتك التجارية المفضلة، متوفرة الآن ويتم شحنها إلى جميع دول الخليج.",
+    "promoNewCta": "تسوق الوصول الحديث",
+    "promoCollectionsHeading": "اكتشف مجموعات مختارة بعناية",
+    "promoCollectionsSubheading": "منتجات العناية بالبشرة والتجميل من أفضل العلامات التجارية العالمية والإقليمية، مختارة خصيصاً لك.",
+    "promoCollectionsCta": "تصفح المجموعات",
     "shopByCategory": "تسوق حسب الفئة",
     "shopByBrand": "تسوق حسب العلامة التجارية",
     "viewAll": "عرض الكل",
@@ -147,7 +157,8 @@
     "chooseOption": "اختر الخيار",
     "inStock": "متوفر",
     "addToCart": "أضف إلى السلة",
-    "cartComingSoon": "الطلب عبر الموقع قريبًا. اتصل بالمتجر لحجز هذا المنتج.",
+    "adding": "جارٍ الإضافة…",
+    "addedToCart": "أُضيف إلى السلة",
     "description": "الوصف",
     "allBrands": "جميع العلامات التجارية",
     "brandCount": "{count} علامة تجارية",

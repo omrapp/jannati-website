@@ -75,7 +75,9 @@
     "contact": "Contact Us",
     "faq": "FAQ",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "more": "More",
+    "shopAll": "Shop all {name}"
   },
   "common": {
     "search": "Search for a product or brand",
@@ -83,7 +85,9 @@
     "account": "Account",
     "wishlist": "Wishlist",
     "loading": "Loading…",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "close": "Close",
+    "whatsappContact": "Chat with us on WhatsApp"
   },
   "theme": {
     "label": "Theme",
@@ -113,6 +117,12 @@
     "newArrivals": "New Arrivals",
     "bestSellers": "Best Sellers",
     "recommended": "Recommended For You",
+    "promoNewHeading": "This Season's Beauty Edit",
+    "promoNewSubheading": "Fresh drops from the brands you love, restocked and ready to ship across the GCC.",
+    "promoNewCta": "Shop new arrivals",
+    "promoCollectionsHeading": "Discover Curated Collections",
+    "promoCollectionsSubheading": "Skincare and beauty edits from top international and regional brands, handpicked for you.",
+    "promoCollectionsCta": "Browse collections",
     "shopByCategory": "Shop by Category",
     "shopByBrand": "Shop by Brand",
     "viewAll": "View all",
@@ -147,7 +157,8 @@
     "chooseOption": "Choose an option",
     "inStock": "In stock",
     "addToCart": "Add to cart",
-    "cartComingSoon": "Online ordering opens soon. Call the shop to reserve this item.",
+    "adding": "Adding…",
+    "addedToCart": "Added to cart",
     "description": "Description",
     "allBrands": "All brands",
     "brandCount": "{count} brands",

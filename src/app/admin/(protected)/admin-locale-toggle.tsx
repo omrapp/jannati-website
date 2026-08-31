@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { setAdminLocale } from '@/lib/admin/locale';
+import { setAdminLocale } from './actions';
 
 /**
  * Same shell placement/pattern as `admin-theme-toggle.tsx`, but flips
