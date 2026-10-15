@@ -14,14 +14,16 @@ const contactSchema = z.object({
   name: z.string().trim().min(1).max(200),
   email: z.string().trim().email().max(320),
   phone: z.string().trim().max(50).nullable(),
+  service: z.string().trim().max(50).nullable(),
   message: z.string().trim().min(1).max(5000),
 });
 
 export type ContactFormState = { status: 'idle' | 'error' | 'success'; message?: string };
 
-export const idleContactFormState: ContactFormState = { status: 'idle' };
-
-export async function submitContact(_prevState: ContactFormState, formData: FormData): Promise<ContactFormState> {
+export async function submitContact(
+  _prevState: ContactFormState,
+  formData: FormData,
+): Promise<ContactFormState> {
   // Honeypot: a real visitor never fills this field in (it's visually
   // hidden, see `ContactForm`). A bot filling every input does — treated as
   // spam and dropped silently, reporting success so it learns nothing.
@@ -33,6 +35,7 @@ export async function submitContact(_prevState: ContactFormState, formData: Form
     name: formData.get('name'),
     email: formData.get('email'),
     phone: emptyToNull(formData.get('phone')),
+    service: emptyToNull(formData.get('service')),
     message: formData.get('message'),
   });
   if (!parsed.success) {

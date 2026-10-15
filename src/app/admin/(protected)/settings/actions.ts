@@ -35,8 +35,6 @@ const settingsSchema = z.object({
 
 export type SettingsFormState = { status: 'idle' | 'error' | 'success'; message?: string };
 
-export const idleSettingsFormState: SettingsFormState = { status: 'idle' };
-
 export async function saveSiteSettings(
   _prevState: SettingsFormState,
   formData: FormData,

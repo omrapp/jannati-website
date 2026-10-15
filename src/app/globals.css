@@ -168,9 +168,7 @@
     font-family: var(--font-latin), system-ui, sans-serif;
   }
 
-  /* Arabic pages get the Arabic family for both body and headings. */
-  html[lang^='ar'] body,
-  html[lang^='ar'] .font-display {
+  html[lang^='ar'] body {
     font-family: var(--font-arabic), system-ui, sans-serif;
   }
 
@@ -182,4 +180,18 @@
   html[lang^='ar'] {
     font-feature-settings: 'ss01';
   }
+
+  /* Cairo glyphs read smaller/thinner than Latin at same size/weight — compensate size + weight + leading. */
+  html[lang^='ar'] body {
+    font-size: 1.15em;
+    font-weight: 600;
+    line-height: 1.75;
+  }
+}
+
+/* Unlayered on purpose: Tailwind auto-generates a `.font-display` utility from the
+ * `--font-display` theme key, and utilities always beat @layer base regardless of
+ * selector specificity. Only an unlayered rule reliably overrides it. */
+html[lang^='ar'] .font-display {
+  font-family: var(--font-arabic), system-ui, sans-serif;
 }

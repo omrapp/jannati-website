@@ -9,7 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { Review } from '@/lib/commerce/reviews';
 
-import { idleReviewState, type ReviewActionState } from '@/app/[locale]/products/[handle]/actions';
+import type { ReviewActionState } from '@/app/[locale]/products/[handle]/actions';
+
+const idleReviewState: ReviewActionState = { status: 'idle' };
 
 type ReviewFormAction = (state: ReviewActionState, formData: FormData) => Promise<ReviewActionState>;
 

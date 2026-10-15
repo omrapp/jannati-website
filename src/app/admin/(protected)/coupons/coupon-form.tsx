@@ -5,7 +5,9 @@ import { useActionState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { idleCouponFormState, saveCoupon } from './actions';
+import { saveCoupon, type CouponFormState } from './actions';
+
+const idleCouponFormState: CouponFormState = { status: 'idle' };
 
 export type CouponFormInitial = {
   id: string;

@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { idleBrandFormState, saveBrand } from './actions';
+import { saveBrand, type BrandFormState } from './actions';
+
+const idleBrandFormState: BrandFormState = { status: 'idle' };
 
 export type BrandFormInitial = {
   id: string;

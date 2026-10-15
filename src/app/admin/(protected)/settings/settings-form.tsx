@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { idleSettingsFormState, saveSiteSettings } from './actions';
+import { saveSiteSettings, type SettingsFormState } from './actions';
+
+const idleSettingsFormState: SettingsFormState = { status: 'idle' };
 
 export type SettingsFormInitial = {
   phone: string;

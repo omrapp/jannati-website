@@ -9,11 +9,13 @@ import { Label } from '@/components/ui/label';
 import { publicImageUrl } from '@/lib/catalog/mappers';
 import {
   deleteProductImageAction,
-  idleImageFormState,
   reorderProductImagesAction,
   updateProductImageAltAction,
   uploadProductImageAction,
+  type ImageFormState,
 } from './actions';
+
+const idleImageFormState: ImageFormState = { status: 'idle' };
 
 export type ProductImageRow = {
   id: string;

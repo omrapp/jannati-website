@@ -14,7 +14,9 @@ import type { Address } from '@/lib/commerce/addresses';
 import { formatMoney } from '@/lib/commerce/money';
 import type { CountryPricing } from '@/lib/commerce/types';
 
-import { idleCheckoutState, placeOrder } from '@/app/[locale]/checkout/actions';
+import { placeOrder, type CheckoutActionState } from '@/app/[locale]/checkout/actions';
+
+const idleCheckoutState: CheckoutActionState = { status: 'idle' };
 
 /**
  * One form, two shapes of address fields (saved-address radios for a

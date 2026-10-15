@@ -10,8 +10,9 @@ import { countries } from '@/i18n/config';
 import { cn } from '@/lib/utils';
 
 import type { AddressActionState } from '@/app/[locale]/account/addresses/actions';
-import { idleAddressState } from '@/app/[locale]/account/addresses/actions';
 import type { Address } from '@/lib/commerce/addresses';
+
+const idleAddressState: AddressActionState = { status: 'idle' };
 
 type AddressFormAction = (
   state: AddressActionState,

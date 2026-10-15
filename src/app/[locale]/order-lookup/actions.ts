@@ -10,8 +10,6 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 export type OrderLookupState = { status: 'idle' | 'error'; message?: string };
 
-export const idleOrderLookupState: OrderLookupState = { status: 'idle' };
-
 const schema = z.object({
   orderNumber: z.string().trim().min(1),
   email: z.email(),
@@ -47,5 +45,5 @@ export async function lookupOrder(
 
   const token = signOrderToken(detail.order.order_number);
   redirect({ href: `/checkout/confirmation/${detail.order.order_number}?token=${token}`, locale });
-  return idleOrderLookupState;
+  return { status: 'idle' };
 }

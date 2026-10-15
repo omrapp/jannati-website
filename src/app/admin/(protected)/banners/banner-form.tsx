@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { publicBannerUrl } from '@/lib/admin/banners';
-import { idleBannerFormState, saveBanner } from './actions';
+import { saveBanner, type BannerFormState } from './actions';
+
+const idleBannerFormState: BannerFormState = { status: 'idle' };
 
 export type BannerFormInitial = {
   id: string;

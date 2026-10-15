@@ -11,7 +11,8 @@ export default async function AdminMessagesPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">
-        Contact messages {unreadCount > 0 && <span className="text-muted-foreground">({unreadCount} unread)</span>}
+        Contact messages{' '}
+        {unreadCount > 0 && <span className="text-muted-foreground">({unreadCount} unread)</span>}
       </h1>
 
       <div className="flex flex-col gap-3">
@@ -24,9 +25,12 @@ export default async function AdminMessagesPage() {
               <span className="font-medium">
                 {m.name} — <span className="text-muted-foreground font-normal">{m.email}</span>
               </span>
-              <span className="text-muted-foreground text-xs">{new Date(m.created_at).toLocaleString()}</span>
+              <span className="text-muted-foreground text-xs">
+                {new Date(m.created_at).toLocaleString()}
+              </span>
             </div>
             {m.phone && <p className="text-muted-foreground text-xs">Phone: {m.phone}</p>}
+            {m.service && <p className="text-muted-foreground text-xs">Topic: {m.service}</p>}
             <p className="text-sm whitespace-pre-wrap">{m.message}</p>
             <div className="flex gap-2">
               <form action={markMessageReadAction.bind(null, m.id, !m.is_read)}>

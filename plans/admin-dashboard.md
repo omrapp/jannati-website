@@ -1,6 +1,6 @@
 ## Admin Dashboard Management 
 
-***Goal*** is to refine the Admin Dashboard management UI and permissions and to make it more facial and easy for using with full admin controller and to align to the ree-nextjs-admin-dashboard  
+***Goal*** is to refine the Admin Dashboard management UI and permissions and to make it more facial and easy for using with full admin controller and to align to the free-nextjs-admin-dashboard  
 
 
 ### Tasks

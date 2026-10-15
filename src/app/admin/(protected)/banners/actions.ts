@@ -23,8 +23,6 @@ const bannerSchema = z.object({
 
 export type BannerFormState = { status: 'idle' | 'error'; message?: string };
 
-export const idleBannerFormState: BannerFormState = { status: 'idle' };
-
 function emptyToNull(value: FormDataEntryValue | null): string | null {
   const s = typeof value === 'string' ? value.trim() : '';
   return s.length > 0 ? s : null;
