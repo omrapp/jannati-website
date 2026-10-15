@@ -13,8 +13,6 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 export type ImageFormState = { status: 'idle' | 'error'; message?: string };
 
-export const idleImageFormState: ImageFormState = { status: 'idle' };
-
 const MAX_BYTES = 8 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 

@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { publicImageUrl } from '@/lib/catalog/mappers';
-import { idleCategoryFormState, saveCategory } from './actions';
+import { saveCategory, type CategoryFormState } from './actions';
+
+const idleCategoryFormState: CategoryFormState = { status: 'idle' };
 
 export type CategoryFormInitial = {
   id: string;

@@ -22,8 +22,6 @@ const settingsSchema = z.object({
 
 export type CountrySettingsFormState = { status: 'idle' | 'error' | 'success'; message?: string };
 
-export const idleCountrySettingsFormState: CountrySettingsFormState = { status: 'idle' };
-
 function emptyToNull(value: FormDataEntryValue | null): string | null {
   const s = typeof value === 'string' ? value.trim() : '';
   return s.length > 0 ? s : null;

@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { idleProductFormState, saveProduct } from './actions';
+import { saveProduct, type ProductFormState } from './actions';
+
+const idleProductFormState: ProductFormState = { status: 'idle' };
 
 type VariantRow = {
   id?: string;

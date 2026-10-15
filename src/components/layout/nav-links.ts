@@ -24,7 +24,7 @@ export const fixedUtilityNav: NavItem[] = [
  */
 export const secondaryNav: NavItem[] = [
   { labelKey: 'nav.products', href: '/products' },
-  { labelKey: 'nav.about', href: '/p/about-us' },
+  { labelKey: 'nav.about', href: '/about' },
   { labelKey: 'nav.contact', href: '/contact' },
 ];
 
@@ -48,7 +48,7 @@ export const footerHelpNav: NavItem[] = [
 ];
 
 export const footerAboutNav: NavItem[] = [
-  { labelKey: 'nav.about', href: '/p/about-us' },
+  { labelKey: 'nav.about', href: '/about' },
   { labelKey: 'footer.privacy', href: '/p/privacy-policy' },
   { labelKey: 'footer.terms', href: '/p/terms-of-service' },
 ];

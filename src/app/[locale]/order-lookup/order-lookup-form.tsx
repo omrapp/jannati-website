@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Locale } from '@/i18n/config';
 
-import { idleOrderLookupState, lookupOrder } from './actions';
+import { lookupOrder, type OrderLookupState } from './actions';
+
+const idleOrderLookupState: OrderLookupState = { status: 'idle' };
 
 export function OrderLookupForm({ locale }: { locale: Locale }) {
   const t = useTranslations('orderLookup');

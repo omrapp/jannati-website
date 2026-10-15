@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Almarai, Outfit, Playfair_Display } from 'next/font/google';
+import { Cairo, Outfit, Playfair_Display } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -14,11 +14,11 @@ import { env } from '@/lib/env';
 import { createClient } from '@/lib/supabase/server';
 import '../globals.css';
 
-// Darbeauty's actual body/UI fonts (Outfit + Almarai) — headings stay Playfair Display,
+// Darbeauty's actual body/UI fonts (Outfit + Cairo) — headings stay Playfair Display,
 // which darbeauty doesn't have but the user asked to keep.
-const arabic = Almarai({
+const arabic = Cairo({
   subsets: ['arabic'],
-  weight: ['300', '400', '700', '800'],
+  weight: ['300', '400', '600', '700', '800'],
   variable: '--font-arabic',
   display: 'swap',
 });

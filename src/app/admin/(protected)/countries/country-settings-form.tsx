@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Country } from '@/lib/admin/countries';
-import { idleCountrySettingsFormState, saveCountrySettings } from './actions';
+import { saveCountrySettings, type CountrySettingsFormState } from './actions';
+
+const idleCountrySettingsFormState: CountrySettingsFormState = { status: 'idle' };
 
 export function CountrySettingsForm({ country }: { country: Country }) {
   const [state, formAction, pending] = useActionState(

@@ -32,8 +32,6 @@ const productSchema = z.object({
 
 export type ProductFormState = { status: 'idle' | 'error'; message?: string };
 
-export const idleProductFormState: ProductFormState = { status: 'idle' };
-
 function emptyToNull(value: FormDataEntryValue | null): string | null {
   const s = typeof value === 'string' ? value.trim() : '';
   return s.length > 0 ? s : null;

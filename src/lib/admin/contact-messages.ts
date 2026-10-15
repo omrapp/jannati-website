@@ -23,15 +23,20 @@ export type ContactMessageInput = {
   name: string;
   email: string;
   phone: string | null;
+  service: string | null;
   message: string;
 };
 
 /** Storefront-side submit — relies on the insert-only anon policy, not an admin check. */
-export async function submitContactMessage(client: Client, input: ContactMessageInput): Promise<void> {
+export async function submitContactMessage(
+  client: Client,
+  input: ContactMessageInput,
+): Promise<void> {
   const { error } = await client.from('contact_messages').insert({
     name: input.name,
     email: input.email,
     phone: input.phone,
+    service: input.service,
     message: input.message,
   });
   if (error) throw new Error(`submitting contact message: ${error.message}`);
@@ -46,7 +51,11 @@ export async function listContactMessages(client: Client): Promise<ContactMessag
   return data;
 }
 
-export async function markContactMessageRead(client: Client, id: string, isRead: boolean): Promise<void> {
+export async function markContactMessageRead(
+  client: Client,
+  id: string,
+  isRead: boolean,
+): Promise<void> {
   const { error } = await client.from('contact_messages').update({ is_read: isRead }).eq('id', id);
   if (error) throw new Error(`updating contact message: ${error.message}`);
 }

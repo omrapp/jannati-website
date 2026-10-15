@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { idleContentPageFormState, saveContentPage } from './actions';
+import { saveContentPage, type ContentPageFormState } from './actions';
+
+const idleContentPageFormState: ContentPageFormState = { status: 'idle' };
 
 export type ContentPageFormInitial = {
   id: string;

@@ -23,8 +23,6 @@ import { getAuthUser, createClient } from '@/lib/supabase/server';
  */
 export type AddressActionState = { status: 'idle' | 'error'; message?: string };
 
-export const idleAddressState: AddressActionState = { status: 'idle' };
-
 const addressSchema = z.object({
   fullName: z.string().trim().min(1),
   phone: z.string().trim().min(1),
@@ -69,7 +67,7 @@ export async function createAddressAction(
   });
 
   revalidatePath('/account/addresses');
-  return idleAddressState;
+  return { status: 'idle' };
 }
 
 export async function updateAddressAction(
@@ -97,7 +95,7 @@ export async function updateAddressAction(
   });
 
   revalidatePath('/account/addresses');
-  return idleAddressState;
+  return { status: 'idle' };
 }
 
 export async function deleteAddressAction(formData: FormData): Promise<void> {

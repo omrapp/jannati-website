@@ -26,8 +26,6 @@ const couponSchema = z.object({
 
 export type CouponFormState = { status: 'idle' | 'error'; message?: string };
 
-export const idleCouponFormState: CouponFormState = { status: 'idle' };
-
 function emptyToNull(value: FormDataEntryValue | null): string | null {
   const s = typeof value === 'string' ? value.trim() : '';
   return s.length > 0 ? s : null;

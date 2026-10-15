@@ -13,8 +13,6 @@ import { createClient, getAuthUser } from '@/lib/supabase/server';
  * show the pending-approval message instead of just clearing errors. */
 export type ReviewActionState = { status: 'idle' | 'error' | 'success'; message?: string };
 
-export const idleReviewState: ReviewActionState = { status: 'idle' };
-
 const reviewSchema = z.object({
   productId: z.string().uuid(),
   handle: z.string().trim().min(1),

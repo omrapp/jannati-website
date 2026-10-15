@@ -24,8 +24,6 @@ import { createClient, getAuthUser } from '@/lib/supabase/server';
 
 export type CheckoutActionState = { status: 'idle' | 'error'; message?: string };
 
-export const idleCheckoutState: CheckoutActionState = { status: 'idle' };
-
 const guestAddressSchema = z.object({
   email: z.email(),
   fullName: z.string().trim().min(1),
@@ -198,5 +196,5 @@ export async function placeOrder(
       : `/checkout/confirmation/${result.orderNumber}`;
 
   redirect({ href: confirmationPath, locale });
-  return idleCheckoutState;
+  return { status: 'idle' };
 }

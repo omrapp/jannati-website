@@ -74,7 +74,7 @@ export async function Header() {
         <div className="max-w-page mx-auto flex w-full items-center justify-between px-4">
           <span>{t('brand.tagline')}</span>
           <div className="flex items-center gap-4">
-            <Link href="/p/about-us" className="hover:underline">
+            <Link href="/about" className="hover:underline">
               {t('nav.about')}
             </Link>
             <Link href="/contact" className="hover:underline">
