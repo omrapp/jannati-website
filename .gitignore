@@ -83,3 +83,14 @@ free-nextjs-admin-dashboard-main/*
 .impeccable/live/deferred-svelte-component-accepts.json
 .impeccable/live/*.png
 # impeccable-ignore-end
+# internal docs, plans, specs and AI-agent tooling — kept local, not published
+*.md
+!README.md
+/plans/
+/tasks/
+/.design/
+/.claude/
+/.impeccable/
+/.github/agents/
+/.github/skills/
+/.github/hooks/
